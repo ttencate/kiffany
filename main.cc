@@ -22,6 +22,11 @@ void keyCallback(int key, int state) {
 void setup() {
 	glClearColor(0, 0, 0, 1);
 	glEnable(GL_DEPTH_TEST);
+
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	float lightPos[] = { 1, 1, 1, 0 };
+	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 }
 
 void update() {
