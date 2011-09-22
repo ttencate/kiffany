@@ -1,6 +1,8 @@
 #include "world.h"
 
+#include <GL/glew.h>
 #include <GL/glfw.h>
+#include <iostream>
 #include <cstdlib>
 
 World *world = 0;
@@ -17,12 +19,28 @@ void keyCallback(int key, int state) {
 	}
 }
 
+void setup() {
+	glClearColor(0, 0, 0, 1);
+	glEnable(GL_DEPTH_TEST);
+}
+
 void update() {
 }
 
 void render() {
-	glClearColor(1, 0, 0, 1);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	int width, height;
+	glfwGetWindowSize(&width, &height);
+	glViewport(0, 0, width, height);
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(45, (double)width / height, 0.1, 1000);
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glTranslatef(0, 0, -128);
 
 	world->render();
 }
@@ -32,18 +50,31 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	World world;
-	::world = &world;
-
 	glfwOpenWindow(1024,768, 8, 8, 8, 8, 16, 0, GLFW_WINDOW);
 	glfwSwapInterval(1); // vsync
 	glfwSetWindowTitle("Kiffany");
+
+	GLenum err = glewInit();
+	if (err != GLEW_OK) {
+		std::cerr << "Error: " << glewGetErrorString(err) << "\n";
+		return EXIT_FAILURE;
+	}
+	if (!GLEW_VERSION_2_1) {
+		std::cerr << "Error: OpenGL 2.1 not supported\n";
+		return EXIT_FAILURE;
+	}
+
+	World world;
+	::world = &world;
+
 	glfwSetKeyCallback(keyCallback);
 
+	setup();
 	while (running && glfwGetWindowParam(GLFW_OPENED)) {
 		update();
 		render();
 		glfwSwapBuffers();
 	}
+
 	glfwTerminate();
 }

@@ -3,13 +3,19 @@
 
 #include "vector.h"
 
+extern const unsigned CHUNK_SIZE;
+
 class Chunk {
 
-	int3 pos;
+	int3 const pos;
+
+	unsigned vertexBuffer;
 
 	public:
 
 		Chunk(int3 const &pos);
+
+		void render();
 
 };
 

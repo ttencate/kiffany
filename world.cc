@@ -7,4 +7,5 @@ World::World()
 }
 
 void World::render() {
+	chunk.render();
 }
