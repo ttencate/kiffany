@@ -10,7 +10,7 @@ Chunk::Chunk(int3 const &pos)
 {
 	glGenBuffers(1, &vertexBuffer); // TODO delete afterwards
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-	float const x = pos.x(), y = pos.y(), z = pos.z();
+	float const x = pos.x, y = pos.y, z = pos.z;
 	float const d = CHUNK_SIZE;
 	float const X = x+d, Y = y+d, Z = z+d;
 	float vertices[] = {

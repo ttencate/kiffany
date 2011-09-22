@@ -1,7 +1,9 @@
 #ifndef CHUNK_H
 #define CHUNK_H
 
-#include "vector.h"
+#include "glm/gtx/compatibility.hpp"
+
+using glm::gtx::compatibility::int3;
 
 extern const unsigned CHUNK_SIZE;
 

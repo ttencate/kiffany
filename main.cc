@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	glfwOpenWindow(1024,768, 8, 8, 8, 8, 16, 0, GLFW_WINDOW);
+	glfwOpenWindow(1024, 768, 8, 8, 8, 8, 16, 0, GLFW_WINDOW);
 	glfwSwapInterval(1); // vsync
 	glfwSetWindowTitle("Kiffany");
 
