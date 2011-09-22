@@ -23,6 +23,11 @@ void setup() {
 	glClearColor(0, 0, 0, 1);
 	glEnable(GL_DEPTH_TEST);
 
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glRotatef(90, -1, 0, 0);
+	glTranslatef(0, 128, 0);
+
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 	float lightPos[] = { 1, 1, 1, 0 };
@@ -30,6 +35,19 @@ void setup() {
 }
 
 void update() {
+	float const s = 1.0;
+	if (glfwGetKey('O')) {
+		glTranslatef(s, 0, 0);
+	}
+	if (glfwGetKey('U')) {
+		glTranslatef(-s, 0, 0);
+	}
+	if (glfwGetKey('.')) {
+		glTranslatef(0, -s, 0);
+	}
+	if (glfwGetKey('E')) {
+		glTranslatef(0, s, 0);
+	}
 }
 
 void render() {
@@ -42,10 +60,7 @@ void render() {
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluPerspective(45, (double)width / height, 0.1, 1000);
-
 	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glTranslatef(0, 0, -128);
 
 	world->render();
 }
