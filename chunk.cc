@@ -13,7 +13,7 @@ Chunk::Chunk(int3 const &pos)
 	float const x = pos.x(), y = pos.y(), z = pos.z();
 	float const d = CHUNK_SIZE;
 	float const X = x+d, Y = y+d, Z = z+d;
-	float data[] = {
+	float vertices[] = {
 		x, y, z,
 		x, y, Z,
 		x, Y, Z,
@@ -44,12 +44,52 @@ Chunk::Chunk(int3 const &pos)
 		X, Y, Z,
 		x, Y, Z,
 	};
-	glBufferData(GL_ARRAY_BUFFER, 6 * 4 * 3 * sizeof(float), data, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 6 * 4 * 3 * sizeof(float), vertices, GL_STATIC_DRAW);
+
+	glGenBuffers(1, &normalBuffer); // TODO delete afterwards
+	glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+	float normals[] = {
+		-1, 0, 0,
+		-1, 0, 0,
+		-1, 0, 0,
+		-1, 0, 0,
+
+		1, 0, 0,
+		1, 0, 0,
+		1, 0, 0,
+		1, 0, 0,
+
+		0, -1, 0,
+		0, -1, 0,
+		0, -1, 0,
+		0, -1, 0,
+
+		0, 1, 0,
+		0, 1, 0,
+		0, 1, 0,
+		0, 1, 0,
+
+		0, 0, -1,
+		0, 0, -1,
+		0, 0, -1,
+		0, 0, -1,
+
+		0, 0, 1,
+		0, 0, 1,
+		0, 0, 1,
+		0, 0, 1,
+	};
+	glBufferData(GL_ARRAY_BUFFER, 6 * 4 * 3 * sizeof(float), normals, GL_STATIC_DRAW);
 }
 
 void Chunk::render() {
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 	glVertexPointer(3, GL_FLOAT, 0, 0);
+
+	glEnableClientState(GL_NORMAL_ARRAY);
+	glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+	glNormalPointer(GL_FLOAT, 0, 0);
+
 	glDrawArrays(GL_QUADS, 0, 6 * 4);
 }

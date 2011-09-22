@@ -10,6 +10,7 @@ class Chunk {
 	int3 const pos;
 
 	unsigned vertexBuffer;
+	unsigned normalBuffer;
 
 	public:
 
