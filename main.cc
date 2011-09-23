@@ -1,11 +1,19 @@
 #include "world.h"
 
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
+
 #include <GL/glew.h>
 #include <GL/glfw.h>
 #include <iostream>
 #include <cstdlib>
 
+glm::mat4 const IDENTITY;
+
 World *world = 0;
+glm::mat4 projectionMatrix;
+glm::mat4 viewMatrix;
 
 bool running = true;
 
@@ -24,10 +32,9 @@ void setup() {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glRotatef(90, -1, 0, 0);
-	glTranslatef(0, 128, 0);
+	glm::mat4 translation = glm::translate(IDENTITY, glm::vec3(0, 128, 0));
+	glm::mat4 rotation = glm::rotate(IDENTITY, 90.0f, glm::vec3(-1, 0, 0));
+	viewMatrix = rotation * translation;
 
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
@@ -35,19 +42,19 @@ void setup() {
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 }
 
-void update() {
-	float const s = 1.0;
+void update(float dt) {
+	float const s = 30.0f * dt;
 	if (glfwGetKey('O')) {
-		glTranslatef(s, 0, 0);
+		viewMatrix = glm::translate(viewMatrix, glm::vec3(s, 0, 0));
 	}
 	if (glfwGetKey('U')) {
-		glTranslatef(-s, 0, 0);
-	}
-	if (glfwGetKey('.')) {
-		glTranslatef(0, -s, 0);
+		viewMatrix = glm::translate(viewMatrix, glm::vec3(-s, 0, 0));
 	}
 	if (glfwGetKey('E')) {
-		glTranslatef(0, s, 0);
+		viewMatrix = glm::translate(viewMatrix, glm::vec3(0, s, 0));
+	}
+	if (glfwGetKey('.')) {
+		viewMatrix = glm::translate(viewMatrix, glm::vec3(0, -s, 0));
 	}
 }
 
@@ -57,11 +64,13 @@ void render() {
 	int width, height;
 	glfwGetWindowSize(&width, &height);
 	glViewport(0, 0, width, height);
+	projectionMatrix = glm::perspective(45.0f, (float)width / height, 0.1f, 1000.0f);
 
 	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(45, (double)width / height, 0.1, 1000);
+	glLoadMatrixf(glm::value_ptr(projectionMatrix));
+
 	glMatrixMode(GL_MODELVIEW);
+	glLoadMatrixf(glm::value_ptr(viewMatrix));
 
 	world->render();
 }
@@ -91,8 +100,15 @@ int main(int argc, char **argv) {
 	glfwSetKeyCallback(keyCallback);
 
 	setup();
+	timespec lastUpdate;
+	clock_gettime(CLOCK_MONOTONIC, &lastUpdate);
 	while (running && glfwGetWindowParam(GLFW_OPENED)) {
-		update();
+		timespec now;
+		clock_gettime(CLOCK_MONOTONIC, &now);
+		float dt = (now.tv_sec - lastUpdate.tv_sec) + 1e-9 * (now.tv_nsec - lastUpdate.tv_nsec);
+		lastUpdate = now;
+
+		update(dt);
 		render();
 		glfwSwapBuffers();
 	}
