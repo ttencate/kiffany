@@ -1,6 +1,8 @@
 #ifndef CHUNK_H
 #define CHUNK_H
 
+#include "buffer.h"
+
 #include "glm/ext.hpp"
 
 #include <boost/noncopyable.hpp>
@@ -14,8 +16,8 @@ class Chunk
 
 	glm::int3 const pos;
 
-	unsigned vertexBuffer;
-	unsigned normalBuffer;
+	Buffer vertexBuffer;
+	Buffer normalBuffer;
 
 	public:
 

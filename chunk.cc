@@ -8,7 +8,6 @@ Chunk::Chunk(glm::int3 const &pos)
 :
 	pos(pos)
 {
-	glGenBuffers(1, &vertexBuffer); // TODO delete afterwards
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 	float const d = CHUNK_SIZE;
 	float const x = d * pos.x, y = d * pos.y, z = d * pos.z;
@@ -46,7 +45,6 @@ Chunk::Chunk(glm::int3 const &pos)
 	};
 	glBufferData(GL_ARRAY_BUFFER, 6 * 4 * 3 * sizeof(float), vertices, GL_STATIC_DRAW);
 
-	glGenBuffers(1, &normalBuffer); // TODO delete afterwards
 	glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
 	float normals[] = {
 		-1, 0, 0,
