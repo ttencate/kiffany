@@ -34,7 +34,7 @@ void mousePosCallback(int x, int y) {
 	glm::int2 newMousePos(x, y);
 	glm::int2 delta = newMousePos - mousePos;
 
-	float const s = 1.0f;
+	float const s = 0.5f;
 	cameraAzimuth += s * -delta.x;
 	cameraElevation += s * -delta.y;
 	cameraElevation = glm::clamp(cameraElevation, -90.0f, 90.0f);
@@ -49,8 +49,6 @@ void setup() {
 
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
-	float lightPos[] = { 1, 1, 1, 0 };
-	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 }
 
 void update(float dt) {
@@ -95,6 +93,9 @@ void render() {
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixf(glm::value_ptr(viewMatrix));
+
+	float lightPos[] = { 1, 2, 3, 0 };
+	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 
 	world->render();
 }
