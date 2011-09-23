@@ -1,24 +1,27 @@
 #ifndef CHUNK_H
 #define CHUNK_H
 
-#include "glm/gtx/compatibility.hpp"
+#include "glm/ext.hpp"
 
-using glm::gtx::compatibility::int3;
+#include <boost/noncopyable.hpp>
 
 extern const unsigned CHUNK_SIZE;
 
-class Chunk {
+class Chunk
+:
+	boost::noncopyable
+{
 
-	int3 const pos;
+	glm::int3 const pos;
 
 	unsigned vertexBuffer;
 	unsigned normalBuffer;
 
 	public:
 
-		Chunk(int3 const &pos);
+		Chunk(glm::int3 const &pos);
 
-		void render();
+		void render() const;
 
 };
 

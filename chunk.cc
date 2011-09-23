@@ -4,15 +4,15 @@
 
 const unsigned CHUNK_SIZE = 32;
 
-Chunk::Chunk(int3 const &pos)
+Chunk::Chunk(glm::int3 const &pos)
 :
 	pos(pos)
 {
 	glGenBuffers(1, &vertexBuffer); // TODO delete afterwards
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-	float const x = pos.x, y = pos.y, z = pos.z;
 	float const d = CHUNK_SIZE;
-	float const X = x+d, Y = y+d, Z = z+d;
+	float const x = d * pos.x, y = d * pos.y, z = d * pos.z;
+	float const X = x + d, Y = y + d, Z = z + d;
 	float vertices[] = {
 		x, y, z,
 		x, y, Z,
@@ -82,7 +82,7 @@ Chunk::Chunk(int3 const &pos)
 	glBufferData(GL_ARRAY_BUFFER, 6 * 4 * 3 * sizeof(float), normals, GL_STATIC_DRAW);
 }
 
-void Chunk::render() {
+void Chunk::render() const {
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 	glVertexPointer(3, GL_FLOAT, 0, 0);
