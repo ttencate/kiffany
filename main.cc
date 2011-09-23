@@ -1,20 +1,23 @@
 #include "world.h"
 
 #include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
-#include "glm/gtc/type_ptr.hpp"
+#include "glm/ext.hpp"
 
 #include <GL/glew.h>
 #include <GL/glfw.h>
 #include <iostream>
 #include <cstdlib>
 
-glm::mat4 const IDENTITY;
+glm::vec3 const X_AXIS(1, 0, 0);
+glm::vec3 const Y_AXIS(0, 1, 0);
+glm::vec3 const Z_AXIS(0, 0, 1);
 
 World *world = 0;
-glm::mat4 projectionMatrix;
-glm::mat4 viewMatrix;
+glm::vec3 cameraPosition(0, -128, 0);
+float cameraAzimuth = 0;
+float cameraElevation = 0;
 
+glm::int2 mousePos;
 bool running = true;
 
 void keyCallback(int key, int state) {
@@ -27,14 +30,22 @@ void keyCallback(int key, int state) {
 	}
 }
 
+void mousePosCallback(int x, int y) {
+	glm::int2 newMousePos(x, y);
+	glm::int2 delta = newMousePos - mousePos;
+
+	float const s = 1.0f;
+	cameraAzimuth += s * -delta.x;
+	cameraElevation += s * -delta.y;
+	cameraElevation = glm::clamp(cameraElevation, -90.0f, 90.0f);
+
+	mousePos = newMousePos;
+}
+
 void setup() {
 	glClearColor(0, 0, 0, 1);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
-
-	glm::mat4 translation = glm::translate(IDENTITY, glm::vec3(0, 128, 0));
-	glm::mat4 rotation = glm::rotate(IDENTITY, 90.0f, glm::vec3(-1, 0, 0));
-	viewMatrix = rotation * translation;
 
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
@@ -44,17 +55,24 @@ void setup() {
 
 void update(float dt) {
 	float const s = 30.0f * dt;
+	glm::mat3 cameraRotation = glm::mat3(glm::rotate(cameraAzimuth, Z_AXIS) * glm::rotate(cameraElevation, X_AXIS));
 	if (glfwGetKey('O')) {
-		viewMatrix = glm::translate(viewMatrix, glm::vec3(s, 0, 0));
+		cameraPosition += cameraRotation * (s * -X_AXIS);
 	}
 	if (glfwGetKey('U')) {
-		viewMatrix = glm::translate(viewMatrix, glm::vec3(-s, 0, 0));
+		cameraPosition += cameraRotation * (s * X_AXIS);
 	}
 	if (glfwGetKey('E')) {
-		viewMatrix = glm::translate(viewMatrix, glm::vec3(0, s, 0));
+		cameraPosition += cameraRotation * (s * -Y_AXIS);
 	}
 	if (glfwGetKey('.')) {
-		viewMatrix = glm::translate(viewMatrix, glm::vec3(0, -s, 0));
+		cameraPosition += cameraRotation * (s * Y_AXIS);
+	}
+	if (glfwGetKey(GLFW_KEY_LSHIFT)) {
+		cameraPosition += cameraRotation * (s * -Z_AXIS);
+	}
+	if (glfwGetKey(' ')) {
+		cameraPosition += cameraRotation * (s * Z_AXIS);
 	}
 }
 
@@ -64,7 +82,13 @@ void render() {
 	int width, height;
 	glfwGetWindowSize(&width, &height);
 	glViewport(0, 0, width, height);
-	projectionMatrix = glm::perspective(45.0f, (float)width / height, 0.1f, 1000.0f);
+	glm::mat4 projectionMatrix = glm::perspective(45.0f, (float)width / height, 0.1f, 1000.0f);
+
+	glm::mat4 rotateCoords = glm::rotate(-90.0f, X_AXIS);
+	glm::mat4 translate = glm::translate(-cameraPosition);
+	glm::mat4 rotateZ = glm::rotate(-cameraAzimuth, Z_AXIS);
+	glm::mat4 rotateX = glm::rotate(-cameraElevation, X_AXIS);
+	glm::mat4 viewMatrix = rotateCoords * rotateX * rotateZ * translate;
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadMatrixf(glm::value_ptr(projectionMatrix));
@@ -98,6 +122,9 @@ int main(int argc, char **argv) {
 	::world = &world;
 
 	glfwSetKeyCallback(keyCallback);
+	glfwSetMousePosCallback(mousePosCallback);
+	glfwDisable(GLFW_MOUSE_CURSOR);
+	glfwGetMousePos(&mousePos[0], &mousePos[1]);
 
 	setup();
 	timespec lastUpdate;
