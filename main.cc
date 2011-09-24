@@ -1,5 +1,7 @@
-#include "world.h"
+#include "camera.h"
 #include "maths.h"
+#include "terragen.h"
+#include "world.h"
 
 #include <iostream>
 #include <cstdlib>
@@ -108,7 +110,7 @@ int main(int argc, char **argv) {
 
 	Camera camera;
 	::camera = &camera;
-	World world(&camera);
+	World world(&camera, new SineTerrainGenerator());
 	::world = &world;
 
 	glfwSetKeyCallback(keyCallback);

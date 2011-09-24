@@ -1,8 +1,10 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include "camera.h"
 #include "terrain.h"
+
+class Camera;
+class TerrainGenerator;
 
 class World {
 
@@ -11,9 +13,9 @@ class World {
 
 	public:
 
-		World(Camera *camera);
+		World(Camera *camera, TerrainGenerator *terrainGenerator);
 
-		void render() const;
+		void render();
 
 };
 

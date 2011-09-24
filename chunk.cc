@@ -17,7 +17,8 @@ void Chunk::fillBuffers() {
 	};
 	std::vector<float> vertices;
 	std::vector<float> normals;
-	for (ChunkData::coords_iterator i = data.beginCoords(); i != data.endCoords(); ++i) {
+	CoordsBlock coordsBlock = data.getCoordsBlock();
+	for (CoordsBlock::const_iterator i = coordsBlock.begin(); i != coordsBlock.end(); ++i) {
 		if (data[*i] == STONE_BLOCK) {
 			vec3 m = blockMin(position + *i);
 			vec3 M = blockMax(position + *i);

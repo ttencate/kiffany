@@ -1,11 +1,12 @@
 #include "world.h"
 
-World::World(Camera *camera)
+World::World(Camera *camera, TerrainGenerator *terrainGenerator)
 :
-	camera(camera)
+	camera(camera),
+	terrain(terrainGenerator)
 {
 }
 
-void World::render() const {
-	terrain.render();
+void World::render() {
+	terrain.render(*camera);
 }
