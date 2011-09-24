@@ -120,18 +120,22 @@ int main(int argc, char **argv) {
 	glfwGetMousePos(&mousePos[0], &mousePos[1]);
 
 	setup();
-	timespec lastUpdate;
-	clock_gettime(CLOCK_MONOTONIC, &lastUpdate);
-	while (running && glfwGetWindowParam(GLFW_OPENED)) {
-		timespec now;
-		clock_gettime(CLOCK_MONOTONIC, &now);
-		float dt = (now.tv_sec - lastUpdate.tv_sec) + 1e-9 * (now.tv_nsec - lastUpdate.tv_nsec);
-		lastUpdate = now;
 
-		update(dt);
-		render();
-		stats.framesRendered.increment();
-		glfwSwapBuffers();
+	{
+		Timed t = stats.runningTime.timed();
+		timespec lastUpdate;
+		clock_gettime(CLOCK_MONOTONIC, &lastUpdate);
+		while (running && glfwGetWindowParam(GLFW_OPENED)) {
+			timespec now;
+			clock_gettime(CLOCK_MONOTONIC, &now);
+			float dt = (now.tv_sec - lastUpdate.tv_sec) + 1e-9 * (now.tv_nsec - lastUpdate.tv_nsec);
+			lastUpdate = now;
+
+			update(dt);
+			render();
+			stats.framesRendered.increment();
+			glfwSwapBuffers();
+		}
 	}
 
 	stats.print();
