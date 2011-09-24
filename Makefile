@@ -9,6 +9,7 @@ CC_FILES=\
   gl.cc \
   main.cc \
   maths.cc \
+  stats.cc \
   terrain.cc \
   terragen.cc \
   world.cc

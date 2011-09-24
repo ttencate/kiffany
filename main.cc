@@ -1,5 +1,6 @@
 #include "camera.h"
 #include "maths.h"
+#include "stats.h"
 #include "terragen.h"
 #include "world.h"
 
@@ -129,8 +130,10 @@ int main(int argc, char **argv) {
 
 		update(dt);
 		render();
+		stats.framesRendered.increment();
 		glfwSwapBuffers();
 	}
 
+	stats.print();
 	glfwTerminate();
 }

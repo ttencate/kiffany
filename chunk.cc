@@ -1,5 +1,6 @@
 #include "chunk.h"
 
+#include "stats.h"
 #include "terragen.h"
 
 #include <algorithm>
@@ -38,6 +39,7 @@ void Chunk::fillBuffers() {
 	}
 	vertexBuffer.putData(vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
 	normalBuffer.putData(normals.size() * sizeof(float), &normals[0], GL_STATIC_DRAW);
+	stats.quadsGenerated.increment(vertices.size() / 4);
 }
 
 Chunk::Chunk(int3 const &index, TerrainGenerator &terrainGenerator)
@@ -45,11 +47,14 @@ Chunk::Chunk(int3 const &index, TerrainGenerator &terrainGenerator)
 	index(index),
 	position(CHUNK_SIZE * index.x, CHUNK_SIZE * index.y, CHUNK_SIZE * index.z)
 {
+	stats.chunksGenerated.increment();
 	terrainGenerator.generateChunk(data, position);
 	fillBuffers();
 }
 
 void Chunk::render() const {
+	stats.chunksRendered.increment();
+
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 	glVertexPointer(3, GL_FLOAT, 0, 0);
@@ -59,4 +64,5 @@ void Chunk::render() const {
 	glNormalPointer(GL_FLOAT, 0, 0);
 
 	glDrawArrays(GL_QUADS, 0, vertexBuffer.getSizeInBytes() / sizeof(float) / 3);
+	stats.quadsRendered.increment(vertexBuffer.getSizeInBytes() / sizeof(float) / 3 / 4);
 }
