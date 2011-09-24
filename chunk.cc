@@ -4,7 +4,7 @@
 
 const unsigned CHUNK_SIZE = 32;
 
-Chunk::Chunk(glm::int3 const &pos)
+Chunk::Chunk(int3 const &pos)
 :
 	pos(pos)
 {

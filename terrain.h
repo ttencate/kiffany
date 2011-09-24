@@ -8,13 +8,13 @@
 #include <tr1/unordered_map>
 
 struct CoordsHasher {
-	size_t operator()(glm::int3 const &p) const;
+	size_t operator()(int3 const &p) const;
 };
 
 class Terrain {
 
 	typedef boost::shared_ptr<Chunk> ChunkPtr;
-	typedef std::tr1::unordered_map<glm::int3, ChunkPtr, CoordsHasher> ChunkMap;
+	typedef std::tr1::unordered_map<int3, ChunkPtr, CoordsHasher> ChunkMap;
 
 	ChunkMap chunks;
 

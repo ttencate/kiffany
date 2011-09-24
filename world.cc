@@ -1,6 +1,9 @@
 #include "world.h"
 
-World::World() {
+World::World(Camera *camera)
+:
+	camera(camera)
+{
 }
 
 void World::render() const {

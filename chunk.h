@@ -2,8 +2,7 @@
 #define CHUNK_H
 
 #include "buffer.h"
-
-#include "glm/ext.hpp"
+#include "maths.h"
 
 #include <boost/noncopyable.hpp>
 
@@ -14,14 +13,14 @@ class Chunk
 	boost::noncopyable
 {
 
-	glm::int3 const pos;
+	int3 const pos;
 
 	Buffer vertexBuffer;
 	Buffer normalBuffer;
 
 	public:
 
-		Chunk(glm::int3 const &pos);
+		Chunk(int3 const &pos);
 
 		void render() const;
 

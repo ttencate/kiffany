@@ -1,23 +1,15 @@
 #include "world.h"
-
-#include "glm/glm.hpp"
-#include "glm/ext.hpp"
+#include "maths.h"
 
 #include <GL/glew.h>
 #include <GL/glfw.h>
 #include <iostream>
 #include <cstdlib>
 
-glm::vec3 const X_AXIS(1, 0, 0);
-glm::vec3 const Y_AXIS(0, 1, 0);
-glm::vec3 const Z_AXIS(0, 0, 1);
-
 World *world = 0;
-glm::vec3 cameraPosition(0, -128, 0);
-float cameraAzimuth = 0;
-float cameraElevation = 0;
+Camera *camera = 0;
 
-glm::int2 mousePos;
+int2 mousePos;
 bool running = true;
 
 void keyCallback(int key, int state) {
@@ -31,13 +23,12 @@ void keyCallback(int key, int state) {
 }
 
 void mousePosCallback(int x, int y) {
-	glm::int2 newMousePos(x, y);
-	glm::int2 delta = newMousePos - mousePos;
+	int2 newMousePos(x, y);
+	int2 delta = newMousePos - mousePos;
 
 	float const s = 0.5f;
-	cameraAzimuth += s * -delta.x;
-	cameraElevation += s * -delta.y;
-	cameraElevation = glm::clamp(cameraElevation, -90.0f, 90.0f);
+	camera->setAzimuth(camera->getAzimuth() + s * -delta.x);
+	camera->setElevation(camera->getElevation() + s * -delta.y);
 
 	mousePos = newMousePos;
 }
@@ -53,25 +44,26 @@ void setup() {
 
 void update(float dt) {
 	float const s = 30.0f * dt;
-	glm::mat3 cameraRotation = glm::mat3(glm::rotate(cameraAzimuth, Z_AXIS) * glm::rotate(cameraElevation, X_AXIS));
+	vec3 delta;
 	if (glfwGetKey('O')) {
-		cameraPosition += cameraRotation * (s * -X_AXIS);
+		delta += s * -X_AXIS;
 	}
 	if (glfwGetKey('U')) {
-		cameraPosition += cameraRotation * (s * X_AXIS);
+		delta += s * X_AXIS;
 	}
 	if (glfwGetKey('E')) {
-		cameraPosition += cameraRotation * (s * -Y_AXIS);
+		delta += s * -Y_AXIS;
 	}
 	if (glfwGetKey('.')) {
-		cameraPosition += cameraRotation * (s * Y_AXIS);
+		delta += s * Y_AXIS;
 	}
 	if (glfwGetKey(GLFW_KEY_LSHIFT)) {
-		cameraPosition += cameraRotation * (s * -Z_AXIS);
+		delta += s * -Z_AXIS;
 	}
 	if (glfwGetKey(' ')) {
-		cameraPosition += cameraRotation * (s * Z_AXIS);
+		delta += s * Z_AXIS;
 	}
+	camera->moveRelative(delta);
 }
 
 void render() {
@@ -80,19 +72,16 @@ void render() {
 	int width, height;
 	glfwGetWindowSize(&width, &height);
 	glViewport(0, 0, width, height);
-	glm::mat4 projectionMatrix = glm::perspective(45.0f, (float)width / height, 0.1f, 1000.0f);
+	mat4 projectionMatrix = perspective(45.0f, (float)width / height, 0.1f, 1000.0f);
 
-	glm::mat4 rotateCoords = glm::rotate(-90.0f, X_AXIS);
-	glm::mat4 translate = glm::translate(-cameraPosition);
-	glm::mat4 rotateZ = glm::rotate(-cameraAzimuth, Z_AXIS);
-	glm::mat4 rotateX = glm::rotate(-cameraElevation, X_AXIS);
-	glm::mat4 viewMatrix = rotateCoords * rotateX * rotateZ * translate;
+	mat4 rotateCoords = rotate(-90.0f, X_AXIS);
+	mat4 viewMatrix = rotateCoords * camera->getMatrix();
 
 	glMatrixMode(GL_PROJECTION);
-	glLoadMatrixf(glm::value_ptr(projectionMatrix));
+	glLoadMatrixf(value_ptr(projectionMatrix));
 
 	glMatrixMode(GL_MODELVIEW);
-	glLoadMatrixf(glm::value_ptr(viewMatrix));
+	glLoadMatrixf(value_ptr(viewMatrix));
 
 	float lightPos[] = { 1, 2, 3, 0 };
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
@@ -119,7 +108,9 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	World world;
+	Camera camera;
+	::camera = &camera;
+	World world(&camera);
 	::world = &world;
 
 	glfwSetKeyCallback(keyCallback);
