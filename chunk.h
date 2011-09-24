@@ -10,10 +10,30 @@
 
 extern const unsigned CHUNK_SIZE;
 
+class TerrainGenerator;
+
 class ChunkData
 :
 	boost::noncopyable
 {
+
+	class CoordsIterator {
+
+		int3 coords;
+
+		public:
+
+			CoordsIterator(int3 const &coords);
+
+			CoordsIterator &operator++();
+			CoordsIterator operator++(int);
+
+			bool operator==(CoordsIterator const &other) const;
+			bool operator!=(CoordsIterator const &other) const;
+
+			int3 const &operator*() const;
+
+	};
 
 	boost::scoped_array<Block> blocks;
 
@@ -21,6 +41,7 @@ class ChunkData
 
 		typedef Block* iterator;
 		typedef Block const* const_iterator;
+		typedef CoordsIterator coords_iterator;
 
 		ChunkData();
 
@@ -31,6 +52,9 @@ class ChunkData
 		iterator end();
 		const_iterator begin() const;
 		const_iterator end() const;
+
+		coords_iterator beginCoords() const;
+		coords_iterator endCoords() const;
 
 };
 
@@ -49,7 +73,7 @@ class Chunk
 
 	public:
 
-		Chunk(int3 const &pos);
+		Chunk(int3 const &pos, TerrainGenerator &terrainGenerator);
 
 		void render() const;
 
