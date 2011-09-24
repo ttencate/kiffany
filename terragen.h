@@ -33,6 +33,7 @@ class PerlinTerrainGenerator
 
 	private:
 
+		float lookup(int x, int y, int z) const;
 		float perlin(int3 const &pos) const;
 
 };

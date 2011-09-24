@@ -16,6 +16,7 @@ using glm::vec4;
 
 using glm::clamp;
 using glm::floor;
+using glm::mix;
 using glm::perspective;
 using glm::translate;
 using glm::rotate;
