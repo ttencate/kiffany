@@ -15,6 +15,7 @@ struct Flags {
 	bool vsync;
 	unsigned fixedTimestep;
 	unsigned exitAfter;
+	unsigned seed;
 };
 Flags flags;
 
@@ -34,6 +35,7 @@ bool parseCommandLine(int argc, char **argv, Flags &flags) {
 		("vsync", po::bool_switch(&flags.vsync), "synchronize on vertical blank")
 		("fixed_timestep", po::value<unsigned>(&flags.fixedTimestep)->default_value(0), "fixed simulation timestep value (ms)")
 		("exit_after", po::value<unsigned>(&flags.exitAfter)->default_value(0), "terminate after this many frames")
+		("seed", po::value<unsigned>(&flags.seed)->default_value(4), "seed for world generation")
 	;
 	po::variables_map vm;
 	po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -83,7 +85,7 @@ void update(float dt) {
 		float const s = 30.0f * dt;
 		camera->moveRelative(s * Y_AXIS);
 	} else {
-		float const s = 30.0f * dt;
+		float const s = 5.0f * dt;
 		vec3 delta;
 		if (glfwGetKey('O')) {
 			delta += s * -X_AXIS;
@@ -156,7 +158,7 @@ int main(int argc, char **argv) {
 	Camera camera;
 	camera.setPosition(vec3(0.0f, 0.0f, 16.0f));
 	::camera = &camera;
-	World world(&camera, new SineTerrainGenerator());
+	World world(&camera, new PerlinTerrainGenerator(32, flags.seed));
 	::world = &world;
 
 	glfwSetKeyCallback(keyCallback);

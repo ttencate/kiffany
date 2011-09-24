@@ -29,4 +29,10 @@ extern int3 const X_STEP;
 extern int3 const Y_STEP;
 extern int3 const Z_STEP;
 
+template<typename T>
+T mod(T const &a, T const &b) {
+	T r = a % b;
+	return r < 0 ? r + b : r;
+}
+
 #endif

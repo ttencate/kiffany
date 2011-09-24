@@ -1,6 +1,6 @@
 #include "chunkdata.h"
 
-const unsigned CHUNK_SIZE = 128;
+const unsigned CHUNK_SIZE = 32;
 
 const unsigned BLOCKS_PER_CHUNK = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
 
