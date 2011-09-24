@@ -72,7 +72,7 @@ void mousePosCallback(int x, int y) {
 }
 
 void setup() {
-	glClearColor(0, 0, 0, 1);
+	glClearColor(0.7f, 0.8f, 1.0f, 1);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
@@ -158,7 +158,7 @@ int main(int argc, char **argv) {
 	Camera camera;
 	camera.setPosition(vec3(0.0f, 0.0f, 16.0f));
 	::camera = &camera;
-	World world(&camera, new PerlinTerrainGenerator(32, flags.seed));
+	World world(&camera, new SineTerrainGenerator()); //PerlinTerrainGenerator(32, flags.seed));
 	::world = &world;
 
 	glfwSetKeyCallback(keyCallback);

@@ -38,7 +38,7 @@ float PerlinTerrainGenerator::perlin(int3 const &pos) const {
 	float sum = 0.0f;
 	float max = 0.0f;
 	vec3 p(pos);
-	for (unsigned i = 0; i < 6; ++i) {
+	for (unsigned i = 0; i < 7; ++i) {
 		int3 index(mod((int)p.x, (int)size), mod((int)p.y, (int)size), mod((int)p.z, (int)size));
 		int x = mod((int)floor(p.x), (int)size);
 		int X = (x + 1) % size;

@@ -37,7 +37,7 @@ Terrain::~Terrain() {
 
 void Terrain::render(Camera const &camera) {
 	int3 center = chunkIndexFromPosition(camera.getPosition());
-	int radius = 1;
+	int radius = 4;
 	CoordsBlock coordsBlock(int3(1 + 2 * radius), center - radius);
 	for (CoordsBlock::const_iterator i = coordsBlock.begin(); i != coordsBlock.end(); ++i) {
 		if (Chunk *chunk = chunkMap.get(*i)) {
