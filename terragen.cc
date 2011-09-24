@@ -4,8 +4,8 @@
 #include <cmath>
 
 void SineTerrainGenerator::generateChunk(ChunkData &data, int3 const &pos) const {
-	float const amplitude = 2 * CHUNK_SIZE;
-	float const period = 2 * CHUNK_SIZE;
+	float const amplitude = 1.0f * CHUNK_SIZE;
+	float const period = 4.0f * CHUNK_SIZE;
 	float const omega = 2 * M_PI / period;
 	for (ChunkData::coords_iterator i = data.beginCoords(); i != data.endCoords(); ++i) {
 		vec3 c = blockCenter(pos + *i);

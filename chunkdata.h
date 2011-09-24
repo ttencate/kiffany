@@ -55,6 +55,8 @@ class ChunkData
 
 };
 
+vec3 blockMin(int3 const &pos);
+vec3 blockMax(int3 const &pos);
 vec3 blockCenter(int3 const &pos);
 
 #endif

@@ -12,11 +12,16 @@ class GLBuffer
 {
 
 	unsigned name;
+	unsigned sizeInBytes;
 
 	public:
 
 		GLBuffer();
 		~GLBuffer();
+
+		void putData(unsigned size, void *data, GLenum usage);
+
+		unsigned getSizeInBytes() const;
 
 		operator unsigned() const; // TODO stop being lazy and make into a function
 

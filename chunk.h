@@ -12,16 +12,19 @@ class Chunk
 	boost::noncopyable
 {
 
-	int3 const pos;
+	int3 const index;
+	int3 const position;
 
 	ChunkData data;
 
 	GLBuffer vertexBuffer;
 	GLBuffer normalBuffer;
 
+	void fillBuffers();
+
 	public:
 
-		Chunk(int3 const &pos, TerrainGenerator &terrainGenerator);
+		Chunk(int3 const &index, TerrainGenerator &terrainGenerator);
 
 		void render() const;
 
