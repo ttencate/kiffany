@@ -19,4 +19,4 @@ H_FILES=$(CC_FILES:.cc=.h)
 .PHONY all: kiffany
 
 kiffany: $(CC_FILES) $(H_FILES)
-	$(CXX) -g -o$@ -lboost_program_options -lglfw -lGLEW -lGL $(CC_FILES)
+	$(CXX) -g -O2 -o$@ -lboost_program_options -lglfw -lGLEW -lGL $(CC_FILES)

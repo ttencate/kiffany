@@ -51,6 +51,10 @@ double TimerStat::get() const {
 void Stats::print() const {
 	std::cout
 		<< "Chunks generated: " << chunksGenerated.get() << '\n'
+		<< "Time per chunk: " << (chunkGenerationTime.get() / chunksGenerated.get()) << '\n'
+		<< "Tesselations done: " << chunksTesselated.get() << '\n'
+		<< "Time per chunk: " << (chunkTesselationTime.get() / chunksTesselated.get()) << '\n'
+		<< '\n'
 		<< "Quads generated: " << quadsGenerated.get() << '\n'
 		<< "Quads per chunk: " << (quadsGenerated.get() / chunksGenerated.get()) << '\n'
 		<< '\n'

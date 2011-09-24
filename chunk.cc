@@ -69,8 +69,15 @@ Chunk::Chunk(int3 const &index, TerrainGenerator &terrainGenerator)
 	position(CHUNK_SIZE * index.x, CHUNK_SIZE * index.y, CHUNK_SIZE * index.z)
 {
 	stats.chunksGenerated.increment();
-	terrainGenerator.generateChunk(data, position);
-	fillBuffers();
+	{
+		Timed t = stats.chunkGenerationTime.timed();
+		terrainGenerator.generateChunk(data, position);
+	}
+	stats.chunksTesselated.increment();
+	{
+		Timed t = stats.chunkTesselationTime.timed();
+		fillBuffers();
+	}
 }
 
 void Chunk::render() const {

@@ -51,12 +51,18 @@ class TimerStat {
 };
 
 struct Stats {
+	TimerStat runningTime;
+
 	CounterStat chunksGenerated;
 	CounterStat quadsGenerated;
+	TimerStat chunkGenerationTime;
+
+	CounterStat chunksTesselated;
+	TimerStat chunkTesselationTime;
+
 	CounterStat framesRendered;
 	CounterStat chunksRendered;
 	CounterStat quadsRendered;
-	TimerStat runningTime;
 
 	void print() const;
 };
