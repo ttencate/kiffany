@@ -1,7 +1,5 @@
 #include "chunk.h"
 
-#include <GL/glew.h>
-
 const unsigned CHUNK_SIZE = 32;
 
 Chunk::Chunk(int3 const &pos)

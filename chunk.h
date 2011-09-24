@@ -1,7 +1,7 @@
 #ifndef CHUNK_H
 #define CHUNK_H
 
-#include "buffer.h"
+#include "gl.h"
 #include "maths.h"
 
 #include <boost/noncopyable.hpp>
@@ -15,8 +15,8 @@ class Chunk
 
 	int3 const pos;
 
-	Buffer vertexBuffer;
-	Buffer normalBuffer;
+	GLBuffer vertexBuffer;
+	GLBuffer normalBuffer;
 
 	public:
 

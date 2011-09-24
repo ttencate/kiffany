@@ -1,8 +1,6 @@
 #include "world.h"
 #include "maths.h"
 
-#include <GL/glew.h>
-#include <GL/glfw.h>
 #include <iostream>
 #include <cstdlib>
 

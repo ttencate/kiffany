@@ -1,4 +1,4 @@
 .PHONY all: kiffany
 
-kiffany: main.cc maths.cc camera.cc chunk.cc terrain.cc world.cc buffer.cc
+kiffany: camera.cc chunk.cc gl.cc main.cc maths.cc terrain.cc world.cc
 	g++ -g -o$@ -lglfw -lGLEW -lGL $^
