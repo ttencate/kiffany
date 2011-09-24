@@ -1,4 +1,4 @@
-#include "chunk.h"
+#include "chunkdata.h"
 #include "terragen.h"
 
 #include <cmath>
