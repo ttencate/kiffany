@@ -8,33 +8,54 @@
 #include <vector>
 
 void Chunk::fillBuffers() {
-	float const cubeNormals[] = {
-		-1,  0,  0, -1,  0,  0, -1,  0,  0, -1,  0,  0,
-		 1,  0,  0,  1,  0,  0,  1,  0,  0,  1,  0,  0,
-		 0, -1,  0,  0, -1,  0,  0, -1,  0,  0, -1,  0,
-		 0,  1,  0,  0,  1,  0,  0,  1,  0,  0,  1,  0,
-		 0,  0, -1,  0,  0, -1,  0,  0, -1,  0,  0, -1,
-		 0,  0,  1,  0,  0,  1,  0,  0,  1,  0,  0,  1,
-	};
 	std::vector<float> vertices;
 	std::vector<float> normals;
 	CoordsBlock coordsBlock = data.getCoordsBlock();
 	for (CoordsBlock::const_iterator i = coordsBlock.begin(); i != coordsBlock.end(); ++i) {
-		if (data[*i] == STONE_BLOCK) {
-			vec3 m = blockMin(position + *i);
-			vec3 M = blockMax(position + *i);
-			float const x = m.x, y = m.y, z = m.z;
-			float const X = M.x, Y = M.y, Z = M.z;
-			float cubeVertices[] = {
-				x, y, z, x, y, Z, x, Y, Z, x, Y, z,
-				X, y, z, X, Y, z, X, Y, Z, X, y, Z,
-				x, y, z, X, y, z, X, y, Z, x, y, Z,
-				x, Y, z, x, Y, Z, X, Y, Z, X, Y, z,
-				x, y, z, x, Y, z, X, Y, z, X, y, z,
-				x, y, Z, X, y, Z, X, Y, Z, x, Y, Z,
-			};
-			std::copy(cubeVertices, cubeVertices + 6 * 4 * 3, std::back_inserter(vertices));
-			std::copy(cubeNormals, cubeNormals + 6 * 4 * 3, std::back_inserter(normals));
+		int3 const pos = *i;
+		Block block = data[pos];
+		if (!needsDrawing(block)) {
+			continue;
+		}
+		vec3 m = blockMin(position + pos);
+		vec3 M = blockMax(position + pos);
+		float const x = m.x, y = m.y, z = m.z;
+		float const X = M.x, Y = M.y, Z = M.z;
+		if (pos.x == 0 || needsDrawing(block, data[pos - X_STEP])) {
+			float v[] = { x, y, z, x, y, Z, x, Y, Z, x, Y, z };
+			float n[] = { -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, };
+			std::copy(v, v + 12, std::back_inserter(vertices));
+			std::copy(n, n + 12, std::back_inserter(normals));
+		}
+		if (pos.x == CHUNK_SIZE - 1 || needsDrawing(block, data[pos + X_STEP])) {
+			float v[] = { X, y, z, X, Y, z, X, Y, Z, X, y, Z, };
+			float n[] = { 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, };
+			std::copy(v, v + 12, std::back_inserter(vertices));
+			std::copy(n, n + 12, std::back_inserter(normals));
+		}
+		if (pos.y == 0 || needsDrawing(block, data[pos - Y_STEP])) {
+			float v[] = { x, y, z, X, y, z, X, y, Z, x, y, Z, };
+			float n[] = { 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, };
+			std::copy(v, v + 12, std::back_inserter(vertices));
+			std::copy(n, n + 12, std::back_inserter(normals));
+		}
+		if (pos.y == CHUNK_SIZE - 1 || needsDrawing(block, data[pos + Y_STEP])) {
+			float v[] = { x, Y, z, x, Y, Z, X, Y, Z, X, Y, z, };
+			float n[] = { 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, };
+			std::copy(v, v + 12, std::back_inserter(vertices));
+			std::copy(n, n + 12, std::back_inserter(normals));
+		}
+		if (pos.z == 0 || needsDrawing(block, data[pos - Z_STEP])) {
+			float v[] = { x, y, z, x, Y, z, X, Y, z, X, y, z, };
+			float n[] = { 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, };
+			std::copy(v, v + 12, std::back_inserter(vertices));
+			std::copy(n, n + 12, std::back_inserter(normals));
+		}
+		if (pos.z == 0 || needsDrawing(block, data[pos + Z_STEP])) {
+			float v[] = { x, y, Z, X, y, Z, X, Y, Z, x, Y, Z, };
+			float n[] = { 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, };
+			std::copy(v, v + 12, std::back_inserter(vertices));
+			std::copy(n, n + 12, std::back_inserter(normals));
 		}
 	}
 	vertexBuffer.putData(vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);

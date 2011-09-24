@@ -25,4 +25,8 @@ extern vec3 const X_AXIS;
 extern vec3 const Y_AXIS;
 extern vec3 const Z_AXIS;
 
+extern int3 const X_STEP;
+extern int3 const Y_STEP;
+extern int3 const Z_STEP;
+
 #endif

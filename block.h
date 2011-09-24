@@ -10,4 +10,7 @@ enum {
 	STONE_BLOCK = 1,
 };
 
+bool needsDrawing(Block block);
+bool needsDrawing(Block back, Block front);
+
 #endif
