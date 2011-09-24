@@ -51,7 +51,7 @@ void Chunk::fillBuffers() {
 			std::copy(v, v + 12, std::back_inserter(vertices));
 			std::copy(n, n + 12, std::back_inserter(normals));
 		}
-		if (pos.z == 0 || needsDrawing(block, data[pos + Z_STEP])) {
+		if (pos.z == CHUNK_SIZE - 1 || needsDrawing(block, data[pos + Z_STEP])) {
 			float v[] = { x, y, Z, X, y, Z, X, Y, Z, x, Y, Z, };
 			float n[] = { 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, };
 			std::copy(v, v + 12, std::back_inserter(vertices));

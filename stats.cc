@@ -59,6 +59,10 @@ void Stats::print() const {
 		<< "Frames per second: " << (framesRendered.get() / runningTime.get()) << '\n'
 		<< '\n'
 		<< "Chunks rendered: " << chunksRendered.get() << '\n'
+		<< "Chunks per frame: " << (chunksRendered.get() / framesRendered.get()) << '\n'
+		<< "Chunks per second: " << (chunksRendered.get() / runningTime.get()) << '\n'
 		<< "Quads rendered: " << quadsRendered.get() << '\n'
-		<< "Quads per frame: " << (quadsRendered.get() / framesRendered.get()) << '\n';
+		<< "Quads per frame: " << (quadsRendered.get() / framesRendered.get()) << '\n'
+		<< "Quads per second: " << (quadsRendered.get() / runningTime.get()) << '\n'
+		;
 }
