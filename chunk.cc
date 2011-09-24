@@ -46,11 +46,11 @@ ChunkData::ChunkData() {
 	}
 }
 
-Block &ChunkData::at(int3 pos) {
+Block &ChunkData::operator[](int3 pos) {
 	return blocks[CHUNK_SIZE * CHUNK_SIZE * pos.z + CHUNK_SIZE * pos.y + pos.x];
 }
 
-Block const &ChunkData::at(int3 pos) const {
+Block const &ChunkData::operator[](int3 pos) const {
 	return blocks[CHUNK_SIZE * CHUNK_SIZE * pos.z + CHUNK_SIZE * pos.y + pos.x];
 }
 
@@ -120,4 +120,8 @@ void Chunk::render() const {
 	glNormalPointer(GL_FLOAT, 0, 0);
 
 	glDrawArrays(GL_QUADS, 0, 6 * 4);
+}
+
+vec3 blockCenter(int3 const &pos) {
+	return vec3(pos.x + 0.5f, pos.y + 0.5f, pos.z + 0.5f);
 }

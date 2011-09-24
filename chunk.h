@@ -45,8 +45,8 @@ class ChunkData
 
 		ChunkData();
 
-		Block &at(int3 pos);
-		Block const &at(int3 pos) const;
+		Block &operator[](int3 pos);
+		Block const &operator[](int3 pos) const;
 
 		iterator begin();
 		iterator end();
@@ -78,5 +78,7 @@ class Chunk
 		void render() const;
 
 };
+
+vec3 blockCenter(int3 const &pos);
 
 #endif
