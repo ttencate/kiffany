@@ -35,11 +35,7 @@ Terrain::~Terrain() {
 }
 
 void Terrain::update(float dt) {
-	int3 index;
-	ChunkData *chunkData;
-	while (asyncTerrainGenerator.reap(&index, &chunkData)) {
-		chunkMap.get(index)->setGenerated();
-	}
+	asyncTerrainGenerator.gather();
 }
 
 void Terrain::render(Camera const &camera) {
@@ -54,7 +50,7 @@ void Terrain::render(Camera const &camera) {
 		} else {
 			boost::shared_ptr<Chunk> newChunk(new Chunk(*i));
 			chunkMap.put(*i, newChunk);
-			asyncTerrainGenerator.sow(*i, &newChunk->getData());
+			asyncTerrainGenerator.generate(newChunk.get());
 		}
 	}
 }

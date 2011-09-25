@@ -7,6 +7,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_array.hpp>
 
+class Chunk;
 class ChunkData;
 
 class TerrainGenerator {
@@ -55,26 +56,20 @@ class AsyncTerrainGenerator
 	boost::noncopyable
 {
 
-	// Must be binary serializable
-	struct WorkUnit {
-		TerrainGenerator *terrainGenerator;
-		ChunkData *chunkData;
-		int3 pos;
-	};
-
 	TerrainGenerator &terrainGenerator;
-	ThreadPool<WorkUnit> threadPool;
+	ThreadPool threadPool;
 
 	public:
 
 		AsyncTerrainGenerator(TerrainGenerator &terrainGenerator);
 
-		void sow(int3 const &pos, ChunkData *chunkData);
-		bool reap(int3 *pos, ChunkData **chunkData);
+		void generate(Chunk *chunk);
+		void gather();
 
 	private:
 
-		static void work(WorkUnit *workUnit);
+		void work(Chunk *chunk);
+		void finalize(Chunk *chunk);
 
 };
 

@@ -21,11 +21,12 @@ class Chunk
 	GLBuffer vertexBuffer;
 	GLBuffer normalBuffer;
 
-	void tesselate();
-
 	public:
 
 		Chunk(int3 const &index);
+
+		int3 const &getIndex() { return index; }
+		int3 const &getPosition() { return position; }
 
 		bool isGenerated() const { return generated; }
 		void setGenerated() { generated = true; }
@@ -33,6 +34,10 @@ class Chunk
 		ChunkData &getData() { return data; }
 
 		void render();
+	
+	private:
+
+		void tesselate();
 
 };
 

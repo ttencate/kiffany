@@ -1,8 +1,10 @@
 #include "terragen.h"
 
+#include "chunk.h"
 #include "chunkdata.h"
 #include "stats.h"
 
+#include <boost/bind.hpp>
 #include <boost/random.hpp>
 
 #include <cmath>
@@ -86,30 +88,24 @@ void SineTerrainGenerator::generateChunk(ChunkData &data, int3 const &pos) const
 AsyncTerrainGenerator::AsyncTerrainGenerator(TerrainGenerator &terrainGenerator)
 :
 	terrainGenerator(terrainGenerator),
-	threadPool(&work, 32)
+	threadPool(32)
 {
 }
 
-void AsyncTerrainGenerator::sow(int3 const &pos, ChunkData *chunkData) {
-	WorkUnit workUnit;
-	workUnit.terrainGenerator = &terrainGenerator;
-	workUnit.chunkData = chunkData;
-	workUnit.pos = pos;
-	threadPool.enqueue(workUnit);
+void AsyncTerrainGenerator::generate(Chunk *chunk) {
+	threadPool.enqueue(
+		boost::bind(&AsyncTerrainGenerator::work, this, chunk),
+		boost::bind(&AsyncTerrainGenerator::finalize, this, chunk));
 }
 
-bool AsyncTerrainGenerator::reap(int3 *pos, ChunkData **chunkData) {
-	WorkUnit workUnit;
-	if (threadPool.dequeue(&workUnit)) {
-		*pos = workUnit.pos;
-		*chunkData = workUnit.chunkData;
-		stats.chunksGenerated.increment();
-		return true;
-	} else {
-		return false;
-	}
+void AsyncTerrainGenerator::gather() {
+	threadPool.runFinalizers();
 }
 
-void AsyncTerrainGenerator::work(WorkUnit *workUnit) {
-	workUnit->terrainGenerator->generateChunk(*workUnit->chunkData, workUnit->pos);
+void AsyncTerrainGenerator::work(Chunk *chunk) {
+	terrainGenerator.generateChunk(chunk->getData(), chunk->getPosition());
+}
+
+void AsyncTerrainGenerator::finalize(Chunk *chunk) {
+	chunk->setGenerated();
 }
