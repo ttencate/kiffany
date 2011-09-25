@@ -95,5 +95,7 @@ void Chunk::tesselate() {
 	}
 	vertexBuffer.putData(vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
 	normalBuffer.putData(normals.size() * sizeof(float), &normals[0], GL_STATIC_DRAW);
+
 	stats.quadsGenerated.increment(vertices.size() / 4);
+	tesselated = true;
 }
