@@ -17,6 +17,10 @@ void GLBuffer::putData(unsigned size, void *data, GLenum usage) {
 	glBufferData(GL_ARRAY_BUFFER, size, data, usage);
 }
 
+bool GLBuffer::isEmpty() const {
+	return sizeInBytes == 0;
+}
+
 unsigned GLBuffer::getSizeInBytes() const {
 	return sizeInBytes;
 }

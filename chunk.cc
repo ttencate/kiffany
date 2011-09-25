@@ -27,6 +27,9 @@ void Chunk::render() {
 		}
 		stats.chunksTesselated.increment();
 	}
+	if (vertexBuffer.isEmpty()) {
+		return;
+	}
 
 	stats.chunksRendered.increment();
 

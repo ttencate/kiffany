@@ -21,6 +21,7 @@ class GLBuffer
 
 		void putData(unsigned size, void *data, GLenum usage);
 
+		bool isEmpty() const;
 		unsigned getSizeInBytes() const;
 
 		operator unsigned() const; // TODO stop being lazy and make into a function
