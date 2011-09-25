@@ -1,5 +1,6 @@
 #include "terrain.h"
 
+#include "flags.h"
 #include "terragen.h"
 
 size_t CoordsHasher::operator()(int3 const &p) const {
@@ -40,7 +41,7 @@ void Terrain::update(float dt) {
 
 void Terrain::render(Camera const &camera) {
 	int3 center = chunkIndexFromPosition(camera.getPosition());
-	int radius = 1; // TODO make a flag
+	int radius = flags.viewDistance / CHUNK_SIZE;
 	CoordsBlock coordsBlock(int3(1 + 2 * radius), center - radius);
 	for (CoordsBlock::const_iterator i = coordsBlock.begin(); i != coordsBlock.end(); ++i) {
 		if (Chunk *chunk = chunkMap.get(*i)) {

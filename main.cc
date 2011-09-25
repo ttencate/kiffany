@@ -1,52 +1,18 @@
 #include "camera.h"
+#include "flags.h"
 #include "maths.h"
 #include "stats.h"
 #include "terragen.h"
 #include "world.h"
 
-#include <boost/program_options.hpp>
-
 #include <iostream>
 #include <cstdlib>
-
-struct Flags {
-	bool help;
-	bool autofly;
-	bool vsync;
-	unsigned fixedTimestep;
-	unsigned exitAfter;
-	unsigned seed;
-};
-Flags flags;
 
 World *world = 0;
 Camera *camera = 0;
 
 int2 mousePos;
 bool running = true;
-
-bool parseCommandLine(int argc, char **argv, Flags &flags) {
-	namespace po = boost::program_options;
-
-	po::options_description desc("Available options");
-	desc.add_options()
-		("help", po::bool_switch(&flags.help), "print list of options and exit")
-		("autofly", po::bool_switch(&flags.autofly), "automatically fly forward")
-		("vsync", po::bool_switch(&flags.vsync), "synchronize on vertical blank")
-		("fixed_timestep", po::value<unsigned>(&flags.fixedTimestep)->default_value(0), "fixed simulation timestep value (ms)")
-		("exit_after", po::value<unsigned>(&flags.exitAfter)->default_value(0), "terminate after this many frames")
-		("seed", po::value<unsigned>(&flags.seed)->default_value(4), "seed for world generation")
-	;
-	po::variables_map vm;
-	po::store(po::parse_command_line(argc, argv, desc), vm);
-	po::notify(vm);
-
-	if (flags.help) {
-		std::cout << desc << '\n';
-		return false;
-	}
-	return true;
-}
 
 void keyCallback(int key, int state) {
 	if (state == GLFW_PRESS) {
@@ -135,8 +101,8 @@ void render() {
 }
 
 int main(int argc, char **argv) {
-	if (!parseCommandLine(argc, argv, flags)) {
-		return 1;
+	if (!parseCommandLine(argc, argv)) {
+		return EXIT_FAILURE;
 	}
 
 	if (!glfwInit()) {

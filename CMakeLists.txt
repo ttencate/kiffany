@@ -15,6 +15,7 @@ set(sources
 	chunk.cc chunk.h
 	chunkdata.cc chunkdata.h
 	coords.cc coords.h
+	flags.cc flags.h
 	gl.cc gl.h
 	main.cc
 	maths.cc maths.h
