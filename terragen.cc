@@ -73,13 +73,18 @@ void SineTerrainGenerator::generateChunk(ChunkData &data, int3 const &pos) const
 	float const amplitude = 32.0f;
 	float const period = 256.0f;
 	float const omega = 2 * M_PI / period;
-	CoordsBlock coordsBlock = data.getCoordsBlock();
-	for (CoordsBlock::const_iterator i = coordsBlock.begin(); i != coordsBlock.end(); ++i) {
-		vec3 c = blockCenter(pos + *i);
-		if (c.z > amplitude * (sinf(omega * c.x) + sinf(omega * c.y))) {
-			data[*i] = AIR_BLOCK;
-		} else {
-			data[*i] = STONE_BLOCK;
+	Block *p = data.raw();
+	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
+		for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
+			for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
+				vec3 c = blockCenter(pos + int3(x, y, z));
+				if (c.z > amplitude * (sinf(omega * c.x) + sinf(omega * c.y))) {
+					*p = AIR_BLOCK;
+				} else {
+					*p = STONE_BLOCK;
+				}
+				++p;
+			}
 		}
 	}
 }
