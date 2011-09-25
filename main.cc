@@ -181,6 +181,9 @@ int main(int argc, char **argv) {
 				clock_gettime(CLOCK_MONOTONIC, &now);
 				dt = (now.tv_sec - lastUpdate.tv_sec) + 1e-9 * (now.tv_nsec - lastUpdate.tv_nsec);
 				lastUpdate = now;
+				if (dt > 0.1f) {
+					dt = 0.1f;
+				}
 			}
 
 			update(dt);
