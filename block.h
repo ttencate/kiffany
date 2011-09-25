@@ -10,7 +10,12 @@ enum {
 	STONE_BLOCK = 1
 };
 
-bool needsDrawing(Block block);
-bool needsDrawing(Block back, Block front);
+inline bool needsDrawing(Block block) {
+	return block != AIR_BLOCK;
+}
+
+inline bool needsDrawing(Block back, Block front) {
+	return back == STONE_BLOCK && front == AIR_BLOCK;
+}
 
 #endif

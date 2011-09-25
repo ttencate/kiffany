@@ -46,8 +46,15 @@ class CoordsBlock {
 
 };
 
-vec3 blockMin(int3 const &pos);
-vec3 blockMax(int3 const &pos);
-vec3 blockCenter(int3 const &pos);
+inline vec3 blockMin(int3 const &pos) {
+	return vec3(pos);
+}
 
+inline vec3 blockMax(int3 const &pos) {
+	return vec3(pos) + vec3(1.0f);
+}
+
+inline vec3 blockCenter(int3 const &pos) {
+	return vec3(pos.x + 0.5f, pos.y + 0.5f, pos.z + 0.5f);
+}
 #endif
