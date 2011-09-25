@@ -42,17 +42,37 @@ void Terrain::update(float dt) {
 void Terrain::render(Camera const &camera) {
 	int3 center = chunkIndexFromPosition(camera.getPosition());
 	int radius = flags.viewDistance / CHUNK_SIZE;
-	CoordsBlock coordsBlock(int3(1 + 2 * radius), center - radius);
-	for (CoordsBlock::const_iterator i = coordsBlock.begin(); i != coordsBlock.end(); ++i) {
-		if (Chunk *chunk = chunkMap.get(*i)) {
-			if (chunk->isGenerated()) {
-				chunk->render();
+	for (int r = 0; r <= radius; ++r) {
+		for (int z = -r; z <= r; ++z) {
+			for (int y = -r; y <= r; ++y) {
+				renderChunk(center + int3(-r, y, z));
+				renderChunk(center + int3(r, y, z));
 			}
-		} else {
-			boost::shared_ptr<Chunk> newChunk(new Chunk(*i));
-			chunkMap.put(*i, newChunk);
-			asyncTerrainGenerator.generate(newChunk.get());
 		}
+		for (int z = -r; z <= r; ++z) {
+			for (int x = -r + 1; x <= r - 1; ++x) {
+				renderChunk(center + int3(x, -r, z));
+				renderChunk(center + int3(x, r, z));
+			}
+		}
+		for (int y = -r + 1; y <= r - 1; ++y) {
+			for (int x = -r + 1; x <= r - 1; ++x) {
+				renderChunk(center + int3(x, y, -r));
+				renderChunk(center + int3(x, y, r));
+			}
+		}
+	}
+}
+
+void Terrain::renderChunk(int3 const &index) {
+	if (Chunk *chunk = chunkMap.get(index)) {
+		if (chunk->isGenerated()) {
+			chunk->render();
+		}
+	} else {
+		boost::shared_ptr<Chunk> newChunk(new Chunk(index));
+		chunkMap.put(index, newChunk);
+		asyncTerrainGenerator.generate(newChunk.get());
 	}
 }
 

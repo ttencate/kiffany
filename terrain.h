@@ -51,6 +51,10 @@ class Terrain
 		void update(float dt);
 		void render(Camera const &camera);
 
+	private:
+
+		void renderChunk(int3 const &index);
+
 };
 
 int3 chunkIndexFromPosition(vec3 const &position);
