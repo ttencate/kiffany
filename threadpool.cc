@@ -5,7 +5,7 @@ ThreadPool::ThreadPool(unsigned queueSize, unsigned size)
 	size(size)
 {
 	if (size == 0) {
-		size = boost::thread::hardware_concurrency();
+		size = boost::thread::hardware_concurrency() - 1;
 		if (size == 0) {
 			size = 1;
 		}
