@@ -1,3 +1,7 @@
 *.o
 callgrind.out.*
 kiffany
+CMakeFiles/
+CMakeCache.txt
+*.cmake
+Makefile
