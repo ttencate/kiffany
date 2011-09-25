@@ -103,6 +103,8 @@ void AsyncTerrainGenerator::gather() {
 }
 
 void AsyncTerrainGenerator::work(Chunk *chunk) {
+	stats.chunksGenerated.increment();
+	Timed t = stats.chunkGenerationTime.timed();
 	terrainGenerator.generateChunk(chunk->getData(), chunk->getPosition());
 }
 
