@@ -38,3 +38,7 @@ ChunkData::const_iterator ChunkData::end() const {
 CoordsBlock ChunkData::getCoordsBlock() const {
 	return CoordsBlock(int3(CHUNK_SIZE));
 }
+
+Block *ChunkData::raw() {
+	return &blocks[0];
+}

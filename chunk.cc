@@ -45,52 +45,54 @@ void Chunk::render() {
 void Chunk::tesselate() {
 	std::vector<float> vertices;
 	std::vector<float> normals;
-	CoordsBlock coordsBlock = data.getCoordsBlock();
-	for (CoordsBlock::const_iterator i = coordsBlock.begin(); i != coordsBlock.end(); ++i) {
-		int3 const pos = *i;
-		Block block = data[pos];
-		if (!needsDrawing(block)) {
-			continue;
-		}
-		vec3 m = blockMin(position + pos);
-		vec3 M = blockMax(position + pos);
-		float const x = m.x, y = m.y, z = m.z;
-		float const X = M.x, Y = M.y, Z = M.z;
-		if (pos.x == 0 || needsDrawing(block, data[pos - X_STEP])) {
-			float v[] = { x, y, z, x, y, Z, x, Y, Z, x, Y, z };
-			float n[] = { -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, };
-			std::copy(v, v + 12, std::back_inserter(vertices));
-			std::copy(n, n + 12, std::back_inserter(normals));
-		}
-		if (pos.x == (int)CHUNK_SIZE - 1 || needsDrawing(block, data[pos + X_STEP])) {
-			float v[] = { X, y, z, X, Y, z, X, Y, Z, X, y, Z, };
-			float n[] = { 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, };
-			std::copy(v, v + 12, std::back_inserter(vertices));
-			std::copy(n, n + 12, std::back_inserter(normals));
-		}
-		if (pos.y == 0 || needsDrawing(block, data[pos - Y_STEP])) {
-			float v[] = { x, y, z, X, y, z, X, y, Z, x, y, Z, };
-			float n[] = { 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, };
-			std::copy(v, v + 12, std::back_inserter(vertices));
-			std::copy(n, n + 12, std::back_inserter(normals));
-		}
-		if (pos.y == (int)CHUNK_SIZE - 1 || needsDrawing(block, data[pos + Y_STEP])) {
-			float v[] = { x, Y, z, x, Y, Z, X, Y, Z, X, Y, z, };
-			float n[] = { 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, };
-			std::copy(v, v + 12, std::back_inserter(vertices));
-			std::copy(n, n + 12, std::back_inserter(normals));
-		}
-		if (pos.z == 0 || needsDrawing(block, data[pos - Z_STEP])) {
-			float v[] = { x, y, z, x, Y, z, X, Y, z, X, y, z, };
-			float n[] = { 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, };
-			std::copy(v, v + 12, std::back_inserter(vertices));
-			std::copy(n, n + 12, std::back_inserter(normals));
-		}
-		if (pos.z == (int)CHUNK_SIZE - 1 || needsDrawing(block, data[pos + Z_STEP])) {
-			float v[] = { x, y, Z, X, y, Z, X, Y, Z, x, Y, Z, };
-			float n[] = { 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, };
-			std::copy(v, v + 12, std::back_inserter(vertices));
-			std::copy(n, n + 12, std::back_inserter(normals));
+	Block *p = data.raw();
+	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
+		for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
+			for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
+				Block block = *p;
+				if (needsDrawing(block)) {
+					int3 const pos(x, y, z);
+					vec3 m = blockMin(position + pos);
+					vec3 M = blockMax(position + pos);
+					if (pos.x == 0 || needsDrawing(block, data[pos - X_STEP])) {
+						float v[] = { m.x, m.y, m.z, m.x, m.y, M.z, m.x, M.y, M.z, m.x, M.y, m.z };
+						float n[] = { -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0 };
+						std::copy(v, v + 12, std::back_inserter(vertices));
+						std::copy(n, n + 12, std::back_inserter(normals));
+					}
+					if (pos.x == (int)CHUNK_SIZE - 1 || needsDrawing(block, data[pos + X_STEP])) {
+						float v[] = { M.x, m.y, m.z, M.x, M.y, m.z, M.x, M.y, M.z, M.x, m.y, M.z };
+						float n[] = { 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0 };
+						std::copy(v, v + 12, std::back_inserter(vertices));
+						std::copy(n, n + 12, std::back_inserter(normals));
+					}
+					if (pos.y == 0 || needsDrawing(block, data[pos - Y_STEP])) {
+						float v[] = { m.x, m.y, m.z, M.x, m.y, m.z, M.x, m.y, M.z, m.x, m.y, M.z };
+						float n[] = { 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0 };
+						std::copy(v, v + 12, std::back_inserter(vertices));
+						std::copy(n, n + 12, std::back_inserter(normals));
+					}
+					if (pos.y == (int)CHUNK_SIZE - 1 || needsDrawing(block, data[pos + Y_STEP])) {
+						float v[] = { m.x, M.y, m.z, m.x, M.y, M.z, M.x, M.y, M.z, M.x, M.y, m.z };
+						float n[] = { 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0 };
+						std::copy(v, v + 12, std::back_inserter(vertices));
+						std::copy(n, n + 12, std::back_inserter(normals));
+					}
+					if (pos.z == 0 || needsDrawing(block, data[pos - Z_STEP])) {
+						float v[] = { m.x, m.y, m.z, m.x, M.y, m.z, M.x, M.y, m.z, M.x, m.y, m.z };
+						float n[] = { 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1 };
+						std::copy(v, v + 12, std::back_inserter(vertices));
+						std::copy(n, n + 12, std::back_inserter(normals));
+					}
+					if (pos.z == (int)CHUNK_SIZE - 1 || needsDrawing(block, data[pos + Z_STEP])) {
+						float v[] = { m.x, m.y, M.z, M.x, m.y, M.z, M.x, M.y, M.z, m.x, M.y, M.z };
+						float n[] = { 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1 };
+						std::copy(v, v + 12, std::back_inserter(vertices));
+						std::copy(n, n + 12, std::back_inserter(normals));
+					}
+				}
+				++p;
+			}
 		}
 	}
 	vertexBuffer.putData(vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);

@@ -34,6 +34,8 @@ class ChunkData
 
 		CoordsBlock getCoordsBlock() const;
 
+		Block *raw();
+
 };
 
 #endif
