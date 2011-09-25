@@ -20,15 +20,14 @@ bool ChunkMap::contains(int3 const &index) const {
 	return map.find(index) != map.end();
 }
 
-void ChunkMap::request(int3 const &index, TerrainGenerator &terrainGenerator) {
-	if (!contains(index)) {
-		map[index] = Ptr(new Chunk(index, terrainGenerator));
-	}
+void ChunkMap::put(int3 const &index, Ptr chunk) {
+	map[index] = chunk;
 }
 
 Terrain::Terrain(TerrainGenerator *terrainGenerator)
 :
-	terrainGenerator(terrainGenerator)
+	terrainGenerator(terrainGenerator),
+	asyncTerrainGenerator(*terrainGenerator)
 {
 }
 
@@ -36,14 +35,24 @@ Terrain::~Terrain() {
 }
 
 void Terrain::render(Camera const &camera) {
+	// TODO should not be in render
+	int3 index;
+	ChunkData *chunkData;
+	while (asyncTerrainGenerator.reap(&index, &chunkData)) {
+		chunkMap.get(index)->setGenerated();
+	}
+
 	int3 center = chunkIndexFromPosition(camera.getPosition());
 	int radius = 4;
 	CoordsBlock coordsBlock(int3(1 + 2 * radius), center - radius);
 	for (CoordsBlock::const_iterator i = coordsBlock.begin(); i != coordsBlock.end(); ++i) {
 		if (Chunk *chunk = chunkMap.get(*i)) {
-			chunk->render();
+			if (chunk->isGenerated()) {
+				chunk->render();
+			}
 		} else {
-			chunkMap.request(*i, *terrainGenerator);
+			boost::shared_ptr<Chunk> newChunk(new Chunk(index));
+			asyncTerrainGenerator.sow(index, &newChunk->getData());
 		}
 	}
 }

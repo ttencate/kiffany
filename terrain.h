@@ -3,6 +3,7 @@
 
 #include "camera.h"
 #include "chunk.h"
+#include "terragen.h"
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -28,7 +29,7 @@ class ChunkMap
 
 		Chunk *get(int3 const &index) const;
 		bool contains(int3 const &index) const;
-		void request(int3 const &index, TerrainGenerator &terrainGenerator);
+		void put(int3 const &index, Ptr chunk);
 
 };
 
@@ -38,6 +39,7 @@ class Terrain
 {
 
 	boost::scoped_ptr<TerrainGenerator> terrainGenerator;
+	AsyncTerrainGenerator asyncTerrainGenerator;
 
 	ChunkMap chunkMap;
 

@@ -1,5 +1,7 @@
-#include "chunkdata.h"
 #include "terragen.h"
+
+#include "chunkdata.h"
+#include "stats.h"
 
 #include <boost/random.hpp>
 
@@ -79,4 +81,35 @@ void SineTerrainGenerator::generateChunk(ChunkData &data, int3 const &pos) const
 			data[*i] = STONE_BLOCK;
 		}
 	}
+}
+
+AsyncTerrainGenerator::AsyncTerrainGenerator(TerrainGenerator &terrainGenerator)
+:
+	terrainGenerator(terrainGenerator),
+	threadPool(&work, 32)
+{
+}
+
+void AsyncTerrainGenerator::sow(int3 const &pos, ChunkData *chunkData) {
+	WorkUnit workUnit;
+	workUnit.terrainGenerator = &terrainGenerator;
+	workUnit.chunkData = chunkData;
+	workUnit.pos = pos;
+	threadPool.enqueue(workUnit);
+}
+
+bool AsyncTerrainGenerator::reap(int3 *pos, ChunkData **chunkData) {
+	WorkUnit workUnit;
+	if (threadPool.dequeue(&workUnit)) {
+		*pos = workUnit.pos;
+		*chunkData = workUnit.chunkData;
+		stats.chunksGenerated.increment();
+		return true;
+	} else {
+		return false;
+	}
+}
+
+void AsyncTerrainGenerator::work(WorkUnit &workUnit) {
+	workUnit.terrainGenerator->generateChunk(*workUnit.chunkData, workUnit.pos);
 }

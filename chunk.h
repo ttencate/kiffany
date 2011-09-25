@@ -5,8 +5,6 @@
 
 #include "chunkdata.h"
 
-class TerrainGenerator;
-
 class Chunk
 :
 	boost::noncopyable
@@ -15,18 +13,26 @@ class Chunk
 	int3 const index;
 	int3 const position;
 
+	bool generated;
+	bool tesselated;
+
 	ChunkData data;
 
 	GLBuffer vertexBuffer;
 	GLBuffer normalBuffer;
 
-	void fillBuffers();
+	void tesselate();
 
 	public:
 
-		Chunk(int3 const &index, TerrainGenerator &terrainGenerator);
+		Chunk(int3 const &index);
 
-		void render() const;
+		bool isGenerated() const { return generated; }
+		void setGenerated() { generated = true; }
+
+		ChunkData &getData() { return data; }
+
+		void render();
 
 };
 

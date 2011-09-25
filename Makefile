@@ -12,6 +12,7 @@ CC_FILES=\
   stats.cc \
   terrain.cc \
   terragen.cc \
+  threadpool.cc \
   world.cc
 
 H_FILES=$(CC_FILES:.cc=.h)
@@ -19,4 +20,4 @@ H_FILES=$(CC_FILES:.cc=.h)
 .PHONY all: kiffany
 
 kiffany: $(CC_FILES) $(H_FILES)
-	$(CXX) -g -O2 -o$@ -lboost_program_options -lglfw -lGLEW -lGL $(CC_FILES)
+	$(CXX) -g -O2 -o$@ -lboost_thread -lboost_program_options -lglfw -lGLEW -lGL $(CC_FILES)

@@ -7,7 +7,7 @@
 #include <iterator>
 #include <vector>
 
-void Chunk::fillBuffers() {
+void Chunk::tesselate() {
 	std::vector<float> vertices;
 	std::vector<float> normals;
 	CoordsBlock coordsBlock = data.getCoordsBlock();
@@ -63,24 +63,27 @@ void Chunk::fillBuffers() {
 	stats.quadsGenerated.increment(vertices.size() / 4);
 }
 
-Chunk::Chunk(int3 const &index, TerrainGenerator &terrainGenerator)
+Chunk::Chunk(int3 const &index)
 :
 	index(index),
-	position(CHUNK_SIZE * index.x, CHUNK_SIZE * index.y, CHUNK_SIZE * index.z)
+	position(CHUNK_SIZE * index.x, CHUNK_SIZE * index.y, CHUNK_SIZE * index.z),
+	generated(false),
+	tesselated(false)
 {
-	stats.chunksGenerated.increment();
-	{
-		Timed t = stats.chunkGenerationTime.timed();
-		terrainGenerator.generateChunk(data, position);
-	}
-	stats.chunksTesselated.increment();
-	{
-		Timed t = stats.chunkTesselationTime.timed();
-		fillBuffers();
-	}
 }
 
-void Chunk::render() const {
+void Chunk::render() {
+	if (!generated) {
+		return;
+	}
+	if (!tesselated) {
+		{
+			Timed t = stats.chunkTesselationTime.timed();
+			tesselate();
+		}
+		stats.chunksTesselated.increment();
+	}
+
 	stats.chunksRendered.increment();
 
 	glEnableClientState(GL_VERTEX_ARRAY);
