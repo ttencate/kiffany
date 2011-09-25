@@ -131,7 +131,9 @@ int main(int argc, char **argv) {
 
 	glfwSetKeyCallback(keyCallback);
 	glfwSetMousePosCallback(mousePosCallback);
-	glfwDisable(GLFW_MOUSE_CURSOR);
+	if (!flags.autofly) {
+		glfwDisable(GLFW_MOUSE_CURSOR);
+	}
 	glfwGetMousePos(&mousePos[0], &mousePos[1]);
 
 	setup();
