@@ -62,7 +62,7 @@ void Chunk::tesselate() {
 			std::copy(v, v + 12, std::back_inserter(vertices));
 			std::copy(n, n + 12, std::back_inserter(normals));
 		}
-		if (pos.x == CHUNK_SIZE - 1 || needsDrawing(block, data[pos + X_STEP])) {
+		if (pos.x == (int)CHUNK_SIZE - 1 || needsDrawing(block, data[pos + X_STEP])) {
 			float v[] = { X, y, z, X, Y, z, X, Y, Z, X, y, Z, };
 			float n[] = { 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, };
 			std::copy(v, v + 12, std::back_inserter(vertices));
@@ -74,7 +74,7 @@ void Chunk::tesselate() {
 			std::copy(v, v + 12, std::back_inserter(vertices));
 			std::copy(n, n + 12, std::back_inserter(normals));
 		}
-		if (pos.y == CHUNK_SIZE - 1 || needsDrawing(block, data[pos + Y_STEP])) {
+		if (pos.y == (int)CHUNK_SIZE - 1 || needsDrawing(block, data[pos + Y_STEP])) {
 			float v[] = { x, Y, z, x, Y, Z, X, Y, Z, X, Y, z, };
 			float n[] = { 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, };
 			std::copy(v, v + 12, std::back_inserter(vertices));
@@ -86,7 +86,7 @@ void Chunk::tesselate() {
 			std::copy(v, v + 12, std::back_inserter(vertices));
 			std::copy(n, n + 12, std::back_inserter(normals));
 		}
-		if (pos.z == CHUNK_SIZE - 1 || needsDrawing(block, data[pos + Z_STEP])) {
+		if (pos.z == (int)CHUNK_SIZE - 1 || needsDrawing(block, data[pos + Z_STEP])) {
 			float v[] = { x, y, Z, X, y, Z, X, Y, Z, x, Y, Z, };
 			float n[] = { 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, };
 			std::copy(v, v + 12, std::back_inserter(vertices));

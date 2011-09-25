@@ -38,7 +38,6 @@ float PerlinTerrainGenerator::lookup(int x, int y, int z) const {
 
 float PerlinTerrainGenerator::perlin(int3 const &pos) const {
 	float amplitude = 1.0f;
-	float period = 1.0f;
 	float sum = 0.0f;
 	float max = 0.0f;
 	vec3 p(pos);

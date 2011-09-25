@@ -46,7 +46,7 @@ include_directories(
 if (EXISTS /usr/bin/colorgcc)
 	set(CMAKE_CXX_COMPILER /usr/bin/colorgcc)
 endif ()
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ansi -Wall -pedantic")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-strict-aliasing -ansi -pedantic -Wall -Wextra -Wno-long-long -Wno-unused-parameter -Wno-type-limits")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_FLAGS_DEBUG "-O2 -g -DASSERTIONS -DDEBUG=1")
 set(CMAKE_CXX_FLAGS_PROFILE "-O3 -pg")
