@@ -15,6 +15,7 @@ class World {
 
 		World(Camera *camera, TerrainGenerator *terrainGenerator);
 
+		void update(float dt);
 		void render();
 
 };

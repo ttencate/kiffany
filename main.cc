@@ -107,6 +107,8 @@ void update(float dt) {
 		}
 		camera->moveRelative(delta);
 	}
+
+	world->update(dt);
 }
 
 void render() {

@@ -34,14 +34,15 @@ Terrain::Terrain(TerrainGenerator *terrainGenerator)
 Terrain::~Terrain() {
 }
 
-void Terrain::render(Camera const &camera) {
-	// TODO should not be in render
+void Terrain::update(float dt) {
 	int3 index;
 	ChunkData *chunkData;
 	while (asyncTerrainGenerator.reap(&index, &chunkData)) {
 		chunkMap.get(index)->setGenerated();
 	}
+}
 
+void Terrain::render(Camera const &camera) {
 	int3 center = chunkIndexFromPosition(camera.getPosition());
 	int radius = 1; // TODO make a flag
 	CoordsBlock coordsBlock(int3(1 + 2 * radius), center - radius);

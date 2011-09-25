@@ -48,6 +48,7 @@ class Terrain
 		Terrain(TerrainGenerator *terrainGenerator);
 		~Terrain();
 
+		void update(float dt);
 		void render(Camera const &camera);
 
 };
