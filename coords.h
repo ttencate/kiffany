@@ -57,4 +57,5 @@ inline vec3 blockMax(int3 const &pos) {
 inline vec3 blockCenter(int3 const &pos) {
 	return vec3(pos.x + 0.5f, pos.y + 0.5f, pos.z + 0.5f);
 }
+
 #endif

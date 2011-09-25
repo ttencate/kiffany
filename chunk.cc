@@ -48,6 +48,7 @@ void Chunk::render() {
 void Chunk::tesselate() {
 	std::vector<float> vertices;
 	std::vector<float> normals;
+	unsigned s = 0;
 	Block const *p = data.raw();
 	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
 		for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
@@ -60,38 +61,56 @@ void Chunk::tesselate() {
 					if (x == 0 || needsDrawing(block, p[-1])) {
 						float v[] = { m.x, m.y, m.z, m.x, m.y, M.z, m.x, M.y, M.z, m.x, M.y, m.z };
 						float n[] = { -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0 };
-						std::copy(v, v + 12, std::back_inserter(vertices));
-						std::copy(n, n + 12, std::back_inserter(normals));
+						vertices.resize(s + 12);
+						normals.resize(s + 12);
+						memcpy(&vertices[s], v, 12 * sizeof(float));
+						memcpy(&normals[s], n, 12 * sizeof(float));
+						s += 12;
 					}
 					if (x == CHUNK_SIZE - 1 || needsDrawing(block, p[1])) {
 						float v[] = { M.x, m.y, m.z, M.x, M.y, m.z, M.x, M.y, M.z, M.x, m.y, M.z };
 						float n[] = { 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0 };
-						std::copy(v, v + 12, std::back_inserter(vertices));
-						std::copy(n, n + 12, std::back_inserter(normals));
+						vertices.resize(s + 12);
+						normals.resize(s + 12);
+						memcpy(&vertices[s], v, 12 * sizeof(float));
+						memcpy(&normals[s], n, 12 * sizeof(float));
+						s += 12;
 					}
 					if (y == 0 || needsDrawing(block, p[-(int)CHUNK_SIZE])) {
 						float v[] = { m.x, m.y, m.z, M.x, m.y, m.z, M.x, m.y, M.z, m.x, m.y, M.z };
 						float n[] = { 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0 };
-						std::copy(v, v + 12, std::back_inserter(vertices));
-						std::copy(n, n + 12, std::back_inserter(normals));
+						vertices.resize(s + 12);
+						normals.resize(s + 12);
+						memcpy(&vertices[s], v, 12 * sizeof(float));
+						memcpy(&normals[s], n, 12 * sizeof(float));
+						s += 12;
 					}
 					if (y == CHUNK_SIZE - 1 || needsDrawing(block, p[CHUNK_SIZE])) {
 						float v[] = { m.x, M.y, m.z, m.x, M.y, M.z, M.x, M.y, M.z, M.x, M.y, m.z };
 						float n[] = { 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0 };
-						std::copy(v, v + 12, std::back_inserter(vertices));
-						std::copy(n, n + 12, std::back_inserter(normals));
+						vertices.resize(s + 12);
+						normals.resize(s + 12);
+						memcpy(&vertices[s], v, 12 * sizeof(float));
+						memcpy(&normals[s], n, 12 * sizeof(float));
+						s += 12;
 					}
 					if (z == 0 || needsDrawing(block, p[-(int)CHUNK_SIZE * (int)CHUNK_SIZE])) {
 						float v[] = { m.x, m.y, m.z, m.x, M.y, m.z, M.x, M.y, m.z, M.x, m.y, m.z };
 						float n[] = { 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1 };
-						std::copy(v, v + 12, std::back_inserter(vertices));
-						std::copy(n, n + 12, std::back_inserter(normals));
+						vertices.resize(s + 12);
+						normals.resize(s + 12);
+						memcpy(&vertices[s], v, 12 * sizeof(float));
+						memcpy(&normals[s], n, 12 * sizeof(float));
+						s += 12;
 					}
 					if (z == CHUNK_SIZE - 1 || needsDrawing(block, p[CHUNK_SIZE * CHUNK_SIZE])) {
 						float v[] = { m.x, m.y, M.z, M.x, m.y, M.z, M.x, M.y, M.z, m.x, M.y, M.z };
 						float n[] = { 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1 };
-						std::copy(v, v + 12, std::back_inserter(vertices));
-						std::copy(n, n + 12, std::back_inserter(normals));
+						vertices.resize(s + 12);
+						normals.resize(s + 12);
+						memcpy(&vertices[s], v, 12 * sizeof(float));
+						memcpy(&normals[s], n, 12 * sizeof(float));
+						s += 12;
 					}
 				}
 				++p;
