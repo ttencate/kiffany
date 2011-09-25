@@ -107,9 +107,13 @@ void AsyncTerrainGenerator::gather() {
 }
 
 void AsyncTerrainGenerator::work(Chunk *chunk) {
+	// TODO move timing and counting into public nonvirtual method on TerrainGenerator
+	{
+		Timed t = stats.chunkGenerationTime.timed();
+		terrainGenerator.generateChunk(chunk->getData(), chunk->getPosition());
+	}
 	stats.chunksGenerated.increment();
-	Timed t = stats.chunkGenerationTime.timed();
-	terrainGenerator.generateChunk(chunk->getData(), chunk->getPosition());
+	chunk->tesselate();
 }
 
 void AsyncTerrainGenerator::finalize(Chunk *chunk) {

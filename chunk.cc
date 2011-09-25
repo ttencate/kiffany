@@ -3,16 +3,13 @@
 #include "stats.h"
 #include "terragen.h"
 
-#include <algorithm>
-#include <iterator>
-#include <vector>
-
 Chunk::Chunk(int3 const &index)
 :
 	index(index),
 	position(CHUNK_SIZE * index.x, CHUNK_SIZE * index.y, CHUNK_SIZE * index.z),
 	generated(false),
-	tesselated(false)
+	tesselated(false),
+	uploaded(false)
 {
 }
 
@@ -20,12 +17,8 @@ void Chunk::render() {
 	if (!generated) {
 		return;
 	}
-	if (!tesselated) {
-		{
-			Timed t = stats.chunkTesselationTime.timed();
-			tesselate();
-		}
-		stats.chunksTesselated.increment();
+	if (!uploaded) {
+		upload();
 	}
 	if (vertexBuffer.isEmpty()) {
 		return;
@@ -46,8 +39,13 @@ void Chunk::render() {
 }
 
 void Chunk::tesselate() {
-	std::vector<float> vertices;
-	std::vector<float> normals;
+	Timed t = stats.chunkTesselationTime.timed();
+
+	vertexData.reset(new std::vector<float>());
+	normalData.reset(new std::vector<float>());
+	std::vector<float> &vertices = *vertexData.get();
+	std::vector<float> &normals = *normalData.get();
+
 	unsigned s = 0;
 	Block const *p = data.raw();
 	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
@@ -117,9 +115,16 @@ void Chunk::tesselate() {
 			}
 		}
 	}
-	vertexBuffer.putData(vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
-	normalBuffer.putData(normals.size() * sizeof(float), &normals[0], GL_STATIC_DRAW);
 
+	stats.chunksTesselated.increment();
 	stats.quadsGenerated.increment(vertices.size() / 4);
 	tesselated = true;
+}
+
+void Chunk::upload() {
+	vertexBuffer.putData(vertexData->size() * sizeof(float), &(*vertexData)[0], GL_STATIC_DRAW);
+	normalBuffer.putData(normalData->size() * sizeof(float), &(*normalData)[0], GL_STATIC_DRAW);
+	vertexData.reset();
+	normalData.reset();
+	uploaded = true;
 }
