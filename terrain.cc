@@ -43,7 +43,7 @@ void Terrain::render(Camera const &camera) {
 	}
 
 	int3 center = chunkIndexFromPosition(camera.getPosition());
-	int radius = 4;
+	int radius = 1; // TODO make a flag
 	CoordsBlock coordsBlock(int3(1 + 2 * radius), center - radius);
 	for (CoordsBlock::const_iterator i = coordsBlock.begin(); i != coordsBlock.end(); ++i) {
 		if (Chunk *chunk = chunkMap.get(*i)) {
@@ -51,8 +51,9 @@ void Terrain::render(Camera const &camera) {
 				chunk->render();
 			}
 		} else {
-			boost::shared_ptr<Chunk> newChunk(new Chunk(index));
-			asyncTerrainGenerator.sow(index, &newChunk->getData());
+			boost::shared_ptr<Chunk> newChunk(new Chunk(*i));
+			chunkMap.put(*i, newChunk);
+			asyncTerrainGenerator.sow(*i, &newChunk->getData());
 		}
 	}
 }

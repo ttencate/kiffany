@@ -74,7 +74,7 @@ class AsyncTerrainGenerator
 
 	private:
 
-		static void work(WorkUnit &workUnit);
+		static void work(WorkUnit *workUnit);
 
 };
 

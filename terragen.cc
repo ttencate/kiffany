@@ -110,6 +110,6 @@ bool AsyncTerrainGenerator::reap(int3 *pos, ChunkData **chunkData) {
 	}
 }
 
-void AsyncTerrainGenerator::work(WorkUnit &workUnit) {
-	workUnit.terrainGenerator->generateChunk(*workUnit.chunkData, workUnit.pos);
+void AsyncTerrainGenerator::work(WorkUnit *workUnit) {
+	workUnit->terrainGenerator->generateChunk(*workUnit->chunkData, workUnit->pos);
 }
