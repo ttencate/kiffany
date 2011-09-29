@@ -3,6 +3,10 @@
 
 #include "maths.h"
 
+extern const unsigned CHUNK_SIZE;
+
+extern const unsigned BLOCKS_PER_CHUNK;
+
 class CoordsBlock {
 
 	int3 const size;
@@ -56,6 +60,22 @@ inline vec3 blockMax(int3 const &pos) {
 
 inline vec3 blockCenter(int3 const &pos) {
 	return vec3(pos.x + 0.5f, pos.y + 0.5f, pos.z + 0.5f);
+}
+
+inline int3 chunkIndexFromPosition(vec3 const &position) {
+	return int3(floor(position / (float)CHUNK_SIZE));
+}
+
+inline vec3 chunkMin(int3 const &index) {
+	return (float)CHUNK_SIZE * vec3(index);
+}
+
+inline vec3 chunkMax(int3 const &index) {
+	return (float)CHUNK_SIZE * vec3(index + 1);
+}
+
+inline vec3 chunkCenter(int3 const &index) {
+	return (float)CHUNK_SIZE * (vec3(index) + 0.5f);
 }
 
 #endif

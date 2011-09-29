@@ -1,9 +1,5 @@
 #include "chunkdata.h"
 
-const unsigned CHUNK_SIZE = 32;
-
-const unsigned BLOCKS_PER_CHUNK = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
-
 ChunkData::ChunkData() {
 	blocks.reset(new Block[BLOCKS_PER_CHUNK]);
 	for (iterator i = begin(); i != end(); ++i) {

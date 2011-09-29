@@ -6,6 +6,8 @@
 class Camera {
 
 	mat4 projectionMatrix;
+	mat4 viewMatrix;
+	mat4 viewProjectionMatrix;
 
 	vec3 position;
 	float azimuth;
@@ -15,7 +17,7 @@ class Camera {
 
 		Camera();
 
-		mat4 getProjectionMatrix() const { return projectionMatrix; }
+		mat4 const &getProjectionMatrix() const { return projectionMatrix; }
 		void setProjectionMatrix(mat4 const &projectionMatrix);
 
 		vec3 const &getPosition() const { return position; }
@@ -27,9 +29,16 @@ class Camera {
 		float getElevation() const { return elevation; }
 		void setElevation(float elevation);
 
-		mat4 getViewMatrix() const;
+		mat4 const &getViewMatrix() const { return viewMatrix; }
 
-		void moveRelative(vec3 delta);
+		void moveRelative(vec3 const &delta);
+
+		bool isInView(vec3 const &point) const;
+
+	private:
+
+		void updateViewMatrix();
+		void updateViewProjectionMatrix();
 
 };
 

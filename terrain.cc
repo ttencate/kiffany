@@ -46,28 +46,42 @@ void Terrain::render(Camera const &camera) {
 	for (int r = 0; r <= radius; ++r) {
 		for (int z = -r; z <= r; ++z) {
 			for (int y = -r; y <= r; ++y) {
-				renderChunk(center + int3(-r, y, z));
-				renderChunk(center + int3(r, y, z));
+				renderChunk(camera, center + int3(-r, y, z));
+				renderChunk(camera, center + int3(r, y, z));
 			}
 		}
 		for (int z = -r; z <= r; ++z) {
 			for (int x = -r + 1; x <= r - 1; ++x) {
-				renderChunk(center + int3(x, -r, z));
-				renderChunk(center + int3(x, r, z));
+				renderChunk(camera, center + int3(x, -r, z));
+				renderChunk(camera, center + int3(x, r, z));
 			}
 		}
 		for (int y = -r + 1; y <= r - 1; ++y) {
 			for (int x = -r + 1; x <= r - 1; ++x) {
-				renderChunk(center + int3(x, y, -r));
-				renderChunk(center + int3(x, y, r));
+				renderChunk(camera, center + int3(x, y, -r));
+				renderChunk(camera, center + int3(x, y, r));
 			}
 		}
 	}
 }
 
-void Terrain::renderChunk(int3 const &index) {
+bool isChunkInView(Camera const &camera, int3 const &index) {
+	vec3 m = chunkMin(index);
+	vec3 M = chunkMax(index);
+	return
+		camera.isInView(vec3(m.x, m.y, m.z)) ||
+		camera.isInView(vec3(M.x, m.y, m.z)) ||
+		camera.isInView(vec3(m.x, M.y, m.z)) ||
+		camera.isInView(vec3(M.x, M.y, m.z)) ||
+		camera.isInView(vec3(m.x, m.y, M.z)) ||
+		camera.isInView(vec3(M.x, m.y, M.z)) ||
+		camera.isInView(vec3(m.x, M.y, M.z)) ||
+		camera.isInView(vec3(M.x, M.y, M.z));
+}
+
+void Terrain::renderChunk(Camera const &camera, int3 const &index) {
 	if (Chunk *chunk = chunkMap.get(index)) {
-		if (chunk->isGenerated()) {
+		if (chunk->isGenerated() && isChunkInView(camera, index)) {
 			chunk->render();
 		}
 	} else {
@@ -75,8 +89,4 @@ void Terrain::renderChunk(int3 const &index) {
 		chunkMap.put(index, newChunk);
 		asyncTerrainGenerator.generate(newChunk.get());
 	}
-}
-
-int3 chunkIndexFromPosition(vec3 const &position) {
-	return int3(floor(position / (float)CHUNK_SIZE));
 }

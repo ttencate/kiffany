@@ -1,5 +1,9 @@
 #include "coords.h"
 
+const unsigned CHUNK_SIZE = 32;
+
+const unsigned BLOCKS_PER_CHUNK = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
+
 CoordsBlock::Iterator::Iterator(CoordsBlock const *parent, int3 relCoords)
 :
 	parent(parent),

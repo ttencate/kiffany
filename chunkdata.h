@@ -8,8 +8,6 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_array.hpp>
 
-extern const unsigned CHUNK_SIZE;
-
 class ChunkData
 :
 	boost::noncopyable

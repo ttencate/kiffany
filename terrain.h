@@ -53,10 +53,8 @@ class Terrain
 
 	private:
 
-		void renderChunk(int3 const &index);
+		void renderChunk(Camera const &camera, int3 const &index);
 
 };
-
-int3 chunkIndexFromPosition(vec3 const &position);
 
 #endif
