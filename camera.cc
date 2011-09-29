@@ -35,13 +35,33 @@ void Camera::moveRelative(vec3 const &delta) {
 	updateViewMatrix();
 }
 
-bool Camera::isInView(vec3 const &point) const {
-	vec4 clipPoint = viewProjectionMatrix * vec4(point, 1.0f);
-	vec3 p = vec3(clipPoint) / clipPoint.w;
+bool isTransformedPointInBox(vec3 const &point, mat4 const &transform, vec3 const &min, vec3 const &max) {
+	vec4 transformedPoint = transform * vec4(point, 1.0f);
+	vec3 p = vec3(transformedPoint) / transformedPoint.w;
+	return 
+		p.x >= min.x && p.x <= max.x &&
+		p.y >= min.y && p.y <= max.y &&
+		p.z >= min.z && p.z <= max.z;
+}
+
+bool isTransformedBoxInBox(vec3 const &minA, vec3 const &maxA, mat4 const &transform, vec3 const &minB, vec3 const &maxB) {
 	return
-		p.x >= -1 && p.x <= 1 &&
-		p.y >= -1 && p.y <= 1 &&
-		p.z >= 0 && p.z <= 1;
+		isTransformedPointInBox(vec3(minA.x, minA.y, minA.z), transform, minB, maxB) ||
+		isTransformedPointInBox(vec3(maxA.x, minA.y, minA.z), transform, minB, maxB) ||
+		isTransformedPointInBox(vec3(minA.x, maxA.y, minA.z), transform, minB, maxB) ||
+		isTransformedPointInBox(vec3(maxA.x, maxA.y, minA.z), transform, minB, maxB) ||
+		isTransformedPointInBox(vec3(minA.x, minA.y, maxA.z), transform, minB, maxB) ||
+		isTransformedPointInBox(vec3(maxA.x, minA.y, maxA.z), transform, minB, maxB) ||
+		isTransformedPointInBox(vec3(minA.x, maxA.y, maxA.z), transform, minB, maxB) ||
+		isTransformedPointInBox(vec3(maxA.x, maxA.y, maxA.z), transform, minB, maxB);
+}
+
+bool Camera::isBoxInView(vec3 const &min, vec3 const &max) const {
+	vec3 clipMin(-1, -1, 0);
+	vec3 clipMax( 1,  1, 1);
+	return
+		isTransformedBoxInBox(min, max, viewProjectionMatrix, clipMin, clipMax) ||
+		isTransformedBoxInBox(clipMin, clipMax, viewProjectionMatrixInverse, min, max);
 }
 
 void Camera::updateViewMatrix() {
@@ -55,4 +75,5 @@ void Camera::updateViewMatrix() {
 
 void Camera::updateViewProjectionMatrix() {
 	viewProjectionMatrix = projectionMatrix * viewMatrix;
+	viewProjectionMatrixInverse = inverse(viewProjectionMatrix);
 }

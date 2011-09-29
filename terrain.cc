@@ -65,24 +65,12 @@ void Terrain::render(Camera const &camera) {
 	}
 }
 
-bool isChunkInView(Camera const &camera, int3 const &index) {
-	vec3 m = chunkMin(index);
-	vec3 M = chunkMax(index);
-	return
-		camera.isInView(vec3(m.x, m.y, m.z)) ||
-		camera.isInView(vec3(M.x, m.y, m.z)) ||
-		camera.isInView(vec3(m.x, M.y, m.z)) ||
-		camera.isInView(vec3(M.x, M.y, m.z)) ||
-		camera.isInView(vec3(m.x, m.y, M.z)) ||
-		camera.isInView(vec3(M.x, m.y, M.z)) ||
-		camera.isInView(vec3(m.x, M.y, M.z)) ||
-		camera.isInView(vec3(M.x, M.y, M.z));
-}
-
 void Terrain::renderChunk(Camera const &camera, int3 const &index) {
 	if (Chunk *chunk = chunkMap.get(index)) {
-		if (chunk->isGenerated() && isChunkInView(camera, index)) {
+		if (chunk->isGenerated()) {
+		   if (camera.isBoxInView(chunkMin(index), chunkMax(index))) {
 			chunk->render();
+		   }
 		}
 	} else {
 		boost::shared_ptr<Chunk> newChunk(new Chunk(index));
