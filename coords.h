@@ -7,6 +7,8 @@ extern const unsigned CHUNK_SIZE;
 
 extern const unsigned BLOCKS_PER_CHUNK;
 
+extern const float CHUNK_RADIUS;
+
 class CoordsBlock {
 
 	int3 const size;

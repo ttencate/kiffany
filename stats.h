@@ -62,6 +62,7 @@ struct Stats {
 
 	CounterStat framesRendered;
 	CounterStat chunksRendered;
+	CounterStat chunksCulled;
 	CounterStat quadsRendered;
 
 	void print() const;

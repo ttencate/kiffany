@@ -1,6 +1,7 @@
 #include "terrain.h"
 
 #include "flags.h"
+#include "stats.h"
 #include "terragen.h"
 
 size_t CoordsHasher::operator()(int3 const &p) const {
@@ -68,8 +69,10 @@ void Terrain::render(Camera const &camera) {
 void Terrain::renderChunk(Camera const &camera, int3 const &index) {
 	if (Chunk *chunk = chunkMap.get(index)) {
 		if (chunk->isGenerated()) {
-		   if (camera.isBoxInView(chunkMin(index), chunkMax(index))) {
-			chunk->render();
+		   if (camera.isSphereInView(chunkCenter(index), CHUNK_RADIUS)) {
+			   chunk->render();
+		   } else {
+			   stats.chunksCulled.increment();
 		   }
 		}
 	} else {

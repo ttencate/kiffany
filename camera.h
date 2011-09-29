@@ -10,6 +10,7 @@ class Camera {
 
 	mat4 viewProjectionMatrix;
 	mat4 viewProjectionMatrixInverse;
+	vec4 frustum[6];
 
 	vec3 position;
 	float azimuth;
@@ -35,13 +36,11 @@ class Camera {
 		mat4 const &getProjectionMatrix() const { return projectionMatrix; }
 		mat4 const &getViewMatrix() const { return viewMatrix; }
 
-		bool isInView(vec3 const &point) const;
-		bool isBoxInView(vec3 const &min, vec3 const &max) const;
+		bool isSphereInView(vec3 const &center, float radius) const;
 
 	private:
 
-		void updateViewMatrix();
-		void updateViewProjectionMatrix();
+		void update();
 
 };
 

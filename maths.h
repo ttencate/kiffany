@@ -15,11 +15,15 @@ using glm::vec3;
 using glm::vec4;
 
 using glm::clamp;
+using glm::dot;
 using glm::floor;
 using glm::inverse;
 using glm::mix;
+using glm::length;
+using glm::normalize;
 using glm::perspective;
 using glm::translate;
+using glm::transpose;
 using glm::rotate;
 using glm::value_ptr;
 
