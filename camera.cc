@@ -7,6 +7,10 @@ Camera::Camera()
 {
 }
 
+void Camera::setProjectionMatrix(mat4 const &projectionMatrix) {
+	this->projectionMatrix = projectionMatrix;
+}
+
 void Camera::setPosition(vec3 const &position) {
 	this->position = position;
 }
@@ -19,11 +23,12 @@ void Camera::setElevation(float elevation) {
 	this->elevation = clamp(elevation, -90.0f, 90.0f);
 }
 
-mat4 Camera::getMatrix() const {
+mat4 Camera::getViewMatrix() const {
 	mat4 translation = translate(-position);
 	mat4 rotationZ = rotate(-azimuth, Z_AXIS);
 	mat4 rotationX = rotate(-elevation, X_AXIS);
-	return rotationX * rotationZ * translation;
+	mat4 rotateCoords = rotate(-90.0f, X_AXIS);
+	return rotateCoords * rotationX * rotationZ * translation;
 }
 
 void Camera::moveRelative(vec3 delta) {

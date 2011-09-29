@@ -42,6 +42,7 @@ void Terrain::update(float dt) {
 void Terrain::render(Camera const &camera) {
 	int3 center = chunkIndexFromPosition(camera.getPosition());
 	int radius = flags.viewDistance / CHUNK_SIZE;
+	// Render in roughly front-to-back order to make chunks generate in that order
 	for (int r = 0; r <= radius; ++r) {
 		for (int z = -r; z <= r; ++z) {
 			for (int y = -r; y <= r; ++y) {

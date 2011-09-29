@@ -37,6 +37,12 @@ void mousePosCallback(int x, int y) {
 	}
 }
 
+void windowSizeCallback(int width, int height) {
+	glViewport(0, 0, width, height);
+	mat4 projectionMatrix = perspective(45.0f, (float)width / height, 0.1f, 1000.0f);
+	camera->setProjectionMatrix(projectionMatrix);
+}
+
 void setup() {
 	glClearColor(0.7f, 0.8f, 1.0f, 1);
 	glEnable(GL_DEPTH_TEST);
@@ -80,19 +86,10 @@ void update(float dt) {
 void render() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	int width, height;
-	glfwGetWindowSize(&width, &height);
-	glViewport(0, 0, width, height);
-	mat4 projectionMatrix = perspective(45.0f, (float)width / height, 0.1f, 1000.0f);
-
-	mat4 rotateCoords = rotate(-90.0f, X_AXIS);
-	mat4 viewMatrix = rotateCoords * camera->getMatrix();
-
 	glMatrixMode(GL_PROJECTION);
-	glLoadMatrixf(value_ptr(projectionMatrix));
-
+	glLoadMatrixf(value_ptr(camera->getProjectionMatrix()));
 	glMatrixMode(GL_MODELVIEW);
-	glLoadMatrixf(value_ptr(viewMatrix));
+	glLoadMatrixf(value_ptr(camera->getViewMatrix()));
 
 	float lightPos[] = { 1, 2, 3, 0 };
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
@@ -129,6 +126,7 @@ int main(int argc, char **argv) {
 	World world(&camera, new SineTerrainGenerator()); //PerlinTerrainGenerator(32, flags.seed));
 	::world = &world;
 
+	glfwSetWindowSizeCallback(windowSizeCallback); // also calls it immediately
 	glfwSetKeyCallback(keyCallback);
 	glfwSetMousePosCallback(mousePosCallback);
 	if (!flags.autofly) {

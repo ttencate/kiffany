@@ -5,6 +5,8 @@
 
 class Camera {
 
+	mat4 projectionMatrix;
+
 	vec3 position;
 	float azimuth;
 	float elevation;
@@ -12,6 +14,9 @@ class Camera {
 	public:
 
 		Camera();
+
+		mat4 getProjectionMatrix() const { return projectionMatrix; }
+		void setProjectionMatrix(mat4 const &projectionMatrix);
 
 		vec3 const &getPosition() const { return position; }
 		void setPosition(vec3 const &position);
@@ -22,7 +27,7 @@ class Camera {
 		float getElevation() const { return elevation; }
 		void setElevation(float elevation);
 
-		mat4 getMatrix() const;
+		mat4 getViewMatrix() const;
 
 		void moveRelative(vec3 delta);
 
