@@ -43,7 +43,7 @@ void upload(ChunkGeometry const &geometry, ChunkBuffers *buffers) {
 			&(geometry.getVertexData()[0]),
 			GL_STATIC_DRAW);
 	buffers->getNormalBuffer().putData(
-			geometry.getNormalData().size() * sizeof(short),
+			geometry.getNormalData().size() * sizeof(char),
 			&(geometry.getNormalData()[0]),
 			GL_STATIC_DRAW);
 }
