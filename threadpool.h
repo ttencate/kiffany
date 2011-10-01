@@ -8,6 +8,44 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
 
+// A wrapper around io_service that keeps track of the queue size,
+// and allows new posts to block if the queue gets too large.
+class WorkQueue
+:
+	boost::noncopyable
+{
+	unsigned const maxSize;
+
+	boost::asio::io_service queue;
+
+	unsigned size;
+	boost::mutex mutex;
+	boost::condition_variable condVar;
+
+	public:
+
+		typedef boost::function<void(void)> Worker;
+
+		WorkQueue(unsigned maxSize);
+
+		boost::asio::io_service::work *createWork();
+
+		// Called on the worker thread
+		void run();
+
+		// Called on the main thread
+		void reset();
+		void stop();
+
+		// Called on either thread
+		void post(Worker worker);
+
+	private:
+
+		void runAndDecrementSize(Worker worker);
+
+};
+
 class ThreadPool
 :
 	boost::noncopyable
@@ -15,18 +53,18 @@ class ThreadPool
 
 	unsigned const numThreads;
 
-	boost::asio::io_service inputQueue;
-	boost::asio::io_service outputQueue;
+	WorkQueue inputQueue;
+	WorkQueue outputQueue;
 
 	boost::scoped_array<boost::scoped_ptr<boost::asio::io_service::work> > const works;
 	boost::scoped_array<boost::scoped_ptr<boost::thread> > const threads;
 
 	public:
 
-		typedef boost::function<void(void)> Worker;
-		typedef boost::function<void(void)> Finalizer;
+		typedef WorkQueue::Worker Worker;
+		typedef WorkQueue::Worker Finalizer;
 
-		ThreadPool(unsigned requestedNumThreads = 0);
+		ThreadPool(unsigned maxInputQueueSize, unsigned maxOutputQueueSize, unsigned requestedNumThreads = 0);
 		~ThreadPool();
 
 		void enqueue(Worker worker, Finalizer finalizer);
