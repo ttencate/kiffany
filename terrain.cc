@@ -67,17 +67,18 @@ void Terrain::render(Camera const &camera) {
 }
 
 void Terrain::renderChunk(Camera const &camera, int3 const &index) {
-	if (Chunk *chunk = chunkMap.get(index)) {
-		if (chunk->canRender()) {
-		   if (camera.isSphereInView(chunkCenter(index), CHUNK_RADIUS)) {
-			   chunk->render();
-		   } else {
-			   stats.chunksCulled.increment();
-		   }
-		}
+	Chunk *chunk = chunkMap.get(index);
+	if (!chunk) {
+		chunk = new Chunk(index);
+		chunkMap.put(index, boost::shared_ptr<Chunk>(chunk));
+	}
+	if (chunk->canRender()) {
+	   if (camera.isSphereInView(chunkCenter(index), CHUNK_RADIUS)) {
+		   chunk->render();
+	   } else {
+		   stats.chunksCulled.increment();
+	   }
 	} else {
-		boost::shared_ptr<Chunk> newChunk(new Chunk(index));
-		chunkMap.put(index, newChunk);
-		asyncTerrainGenerator.generate(newChunk.get());
+		asyncTerrainGenerator.tryGenerate(chunk);
 	}
 }

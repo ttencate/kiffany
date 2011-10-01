@@ -92,22 +92,31 @@ void SineTerrainGenerator::generateChunk(int3 const &pos, ChunkData *data) const
 AsyncTerrainGenerator::AsyncTerrainGenerator(TerrainGenerator &terrainGenerator)
 :
 	terrainGenerator(terrainGenerator),
-	threadPool(0, 32)
+	threadPool(32, 32)
 {
 }
 
-void AsyncTerrainGenerator::generate(Chunk *chunk) {
-	ChunkGeometry *chunkGeometry = new ChunkGeometry();
-	threadPool.enqueue(
+bool AsyncTerrainGenerator::tryGenerate(Chunk *chunk) {
+	if (inProgress.find(chunk) != inProgress.end()) {
+		return true;
+	}
+	ChunkGeometry* chunkGeometry = new ChunkGeometry();
+	if (!threadPool.tryEnqueue(
 		boost::bind(&AsyncTerrainGenerator::work, this, chunk->getPosition(), chunkGeometry),
-		boost::bind(&AsyncTerrainGenerator::finalize, this, chunk, chunkGeometry));
+		boost::bind(&AsyncTerrainGenerator::finalize, this, chunk, chunkGeometry))) {
+		delete chunkGeometry;
+		return false;
+	} else {
+		inProgress.insert(chunk);
+		return true;
+	}
 }
 
 void AsyncTerrainGenerator::gather() {
 	threadPool.runFinalizers();
 }
 
-void AsyncTerrainGenerator::work(int3 position, ChunkGeometry *chunkGeometry) {
+void AsyncTerrainGenerator::work(int3 position, ChunkGeometry* chunkGeometry) {
 	ChunkData chunkData;
 	// TODO move timing and counting into public nonvirtual method on TerrainGenerator
 	{
@@ -119,6 +128,7 @@ void AsyncTerrainGenerator::work(int3 position, ChunkGeometry *chunkGeometry) {
 	tesselate(chunkData, position, chunkGeometry);
 }
 
-void AsyncTerrainGenerator::finalize(Chunk *chunk, ChunkGeometry *chunkGeometry) {
+void AsyncTerrainGenerator::finalize(Chunk *chunk, ChunkGeometry* chunkGeometry) {
 	chunk->setGeometry(chunkGeometry);
+	inProgress.erase(chunk);
 }

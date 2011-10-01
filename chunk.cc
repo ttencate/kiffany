@@ -27,8 +27,8 @@ void Chunk::render() {
 		if (!geometry->isEmpty()) {
 			buffers.reset(new ChunkBuffers());
 			upload(*geometry, buffers.get());
+			geometry.reset();
 		}
-		geometry.reset();
 	}
 	if (!buffers) {
 		return;

@@ -98,29 +98,7 @@ void render() {
 	world->render();
 }
 
-int main(int argc, char **argv) {
-	if (!parseCommandLine(argc, argv)) {
-		return EXIT_FAILURE;
-	}
-
-	if (!glfwInit()) {
-		return EXIT_FAILURE;
-	}
-
-	glfwOpenWindow(1024, 768, 8, 8, 8, 8, 16, 0, GLFW_WINDOW);
-	glfwSwapInterval(flags.vsync ? 1 : 0);
-	glfwSetWindowTitle("Kiffany");
-
-	GLenum err = glewInit();
-	if (err != GLEW_OK) {
-		std::cerr << "Error: " << glewGetErrorString(err) << "\n";
-		return EXIT_FAILURE;
-	}
-	if (!GLEW_VERSION_2_1) {
-		std::cerr << "Error: OpenGL 2.1 not supported\n";
-		return EXIT_FAILURE;
-	}
-
+void run() {
 	Camera camera;
 	camera.setPosition(vec3(0.0f, 0.0f, 16.0f));
 	::camera = &camera;
@@ -165,6 +143,32 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
+}
+
+int main(int argc, char **argv) {
+	if (!parseCommandLine(argc, argv)) {
+		return EXIT_FAILURE;
+	}
+
+	if (!glfwInit()) {
+		return EXIT_FAILURE;
+	}
+
+	glfwOpenWindow(1024, 768, 8, 8, 8, 8, 16, 0, GLFW_WINDOW);
+	glfwSwapInterval(flags.vsync ? 1 : 0);
+	glfwSetWindowTitle("Kiffany");
+
+	GLenum err = glewInit();
+	if (err != GLEW_OK) {
+		std::cerr << "Error: " << glewGetErrorString(err) << "\n";
+		return EXIT_FAILURE;
+	}
+	if (!GLEW_VERSION_2_1) {
+		std::cerr << "Error: OpenGL 2.1 not supported\n";
+		return EXIT_FAILURE;
+	}
+
+	run();
 
 	stats.print();
 	glfwTerminate();

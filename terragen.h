@@ -6,6 +6,7 @@
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_array.hpp>
+#include <boost/unordered_set.hpp>
 
 class Chunk;
 class ChunkData;
@@ -59,18 +60,19 @@ class AsyncTerrainGenerator
 
 	TerrainGenerator &terrainGenerator;
 	ThreadPool threadPool;
+	boost::unordered_set<Chunk const *> inProgress;
 
 	public:
 
 		AsyncTerrainGenerator(TerrainGenerator &terrainGenerator);
 
-		void generate(Chunk *chunk);
+		bool tryGenerate(Chunk *chunk);
 		void gather();
 
 	private:
 
-		void work(int3 position, ChunkGeometry *chunkGeometry);
-		void finalize(Chunk *chunk, ChunkGeometry *chunkGeometry);
+		void work(int3 position, ChunkGeometry* chunkGeometry);
+		void finalize(Chunk *chunk, ChunkGeometry* chunkGeometry);
 
 };
 
