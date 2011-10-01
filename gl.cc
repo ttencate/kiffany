@@ -1,14 +1,18 @@
 #include "gl.h"
 
+#include "stats.h"
+
 GLBuffer::GLBuffer()
 :
 	sizeInBytes(0)
 {
 	glGenBuffers(1, &name);
+	stats.buffersCreated.increment();
 }
 
 GLBuffer::~GLBuffer() {
 	glDeleteBuffers(1, &name);
+	stats.buffersDeleted.increment();
 }
 
 void GLBuffer::putData(unsigned size, void const *data, GLenum usage) {

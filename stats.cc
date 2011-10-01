@@ -57,6 +57,8 @@ void Stats::print() const {
 		<< '\n'
 		<< "Quads generated: " << quadsGenerated.get() << '\n'
 		<< "Quads per chunk: " << ((float)quadsGenerated.get() / chunksGenerated.get()) << '\n'
+		<< "Buffers created: " << buffersCreated.get() << '\n'
+		<< "Buffers deleted: " << buffersDeleted.get() << '\n'
 		<< '\n'
 		<< "Running time: " << runningTime.get() << '\n'
 		<< "Frames rendered: " << framesRendered.get() << '\n'

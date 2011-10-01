@@ -53,6 +53,9 @@ class TimerStat {
 struct Stats {
 	TimerStat runningTime;
 
+	CounterStat buffersCreated;
+	CounterStat buffersDeleted;
+
 	CounterStat chunksGenerated;
 	CounterStat quadsGenerated;
 	TimerStat chunkGenerationTime;

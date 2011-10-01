@@ -20,6 +20,9 @@ void keyCallback(int key, int state) {
 			case 'Q':
 				running = false;
 				break;
+			case 'S':
+				stats.print();
+				break;
 		}
 	}
 }
@@ -116,10 +119,11 @@ void run() {
 	setup();
 
 	{
-		Timed t = stats.runningTime.timed();
 		timespec lastUpdate;
 		clock_gettime(CLOCK_MONOTONIC, &lastUpdate);
 		while (running && glfwGetWindowParam(GLFW_OPENED)) {
+			Timed t = stats.runningTime.timed();
+
 			float dt;
 			if (flags.fixedTimestep) {
 				dt = 1e-3f * flags.fixedTimestep;
