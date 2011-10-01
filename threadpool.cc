@@ -1,9 +1,41 @@
 #include "threadpool.h"
 
+#include <iostream>
+
+Semaphore::Semaphore(unsigned initialCount)
+:
+	count(initialCount)
+{
+}
+
+void Semaphore::wait() {
+	boost::unique_lock<boost::mutex> lock(mutex);
+	while (count == 0) {
+		condition_variable.wait(lock);
+	}
+	--count;
+}
+
+bool Semaphore::tryWait() {
+	boost::unique_lock<boost::mutex> lock(mutex);
+	if (count > 0) {
+		--count;
+		return true;
+	} else {
+		return false;
+	}
+}
+
+void Semaphore::signal() {
+	boost::unique_lock<boost::mutex> lock(mutex);
+	++count;
+	condition_variable.notify_one();
+}
+
 WorkQueue::WorkQueue(unsigned maxSize)
 :
 	maxSize(maxSize),
-	size(0)
+	semaphore(maxSize == 0 ? std::numeric_limits<unsigned>::max() : maxSize)
 {
 }
 
@@ -24,10 +56,21 @@ void WorkQueue::stop() {
 }
 
 void WorkQueue::post(Worker worker) {
-	queue.post(boost::bind(&WorkQueue::runAndDecrementSize, this, worker));
+	semaphore.wait();
+	queue.post(boost::bind(&WorkQueue::runAndSignal, this, worker));
 }
 
-void WorkQueue::runAndDecrementSize(Worker worker) {
+bool WorkQueue::tryPost(Worker worker) {
+	if (semaphore.tryWait()) {
+		queue.post(boost::bind(&WorkQueue::runAndSignal, this, worker));
+		return true;
+	} else {
+		return false;
+	}
+}
+
+void WorkQueue::runAndSignal(Worker worker) {
+	semaphore.signal();
 	worker();
 }
 
@@ -68,6 +111,10 @@ ThreadPool::~ThreadPool() {
 
 void ThreadPool::enqueue(Worker worker, Finalizer finalizer) {
 	inputQueue.post(boost::bind(&ThreadPool::work, this, worker, finalizer));
+}
+
+bool ThreadPool::tryEnqueue(Worker worker, Finalizer finalizer) {
+	return inputQueue.tryPost(boost::bind(&ThreadPool::work, this, worker, finalizer));
 }
 
 void ThreadPool::runFinalizers() {

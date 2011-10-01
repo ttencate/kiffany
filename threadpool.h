@@ -8,6 +8,24 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
 
+class Semaphore
+:
+	boost::noncopyable
+{
+	unsigned count;
+	boost::mutex mutex;
+	boost::condition_variable condition_variable;
+
+	public:
+
+		Semaphore(unsigned initialCount);
+
+		void wait();
+		bool tryWait();
+		void signal();
+
+};
+
 // A wrapper around io_service that keeps track of the queue size,
 // and allows new posts to block if the queue gets too large.
 class WorkQueue
@@ -17,10 +35,7 @@ class WorkQueue
 	unsigned const maxSize;
 
 	boost::asio::io_service queue;
-
-	unsigned size;
-	boost::mutex mutex;
-	boost::condition_variable condVar;
+	Semaphore semaphore;
 
 	public:
 
@@ -30,19 +45,17 @@ class WorkQueue
 
 		boost::asio::io_service::work *createWork();
 
-		// Called on the worker thread
 		void run();
 
-		// Called on the main thread
 		void reset();
 		void stop();
 
-		// Called on either thread
 		void post(Worker worker);
+		bool tryPost(Worker worker);
 
 	private:
 
-		void runAndDecrementSize(Worker worker);
+		void runAndSignal(Worker worker);
 
 };
 
@@ -68,6 +81,7 @@ class ThreadPool
 		~ThreadPool();
 
 		void enqueue(Worker worker, Finalizer finalizer);
+		bool tryEnqueue(Worker worker, Finalizer finalizer);
 		void runFinalizers();
 
 	private:

@@ -92,7 +92,7 @@ void SineTerrainGenerator::generateChunk(int3 const &pos, ChunkData *data) const
 AsyncTerrainGenerator::AsyncTerrainGenerator(TerrainGenerator &terrainGenerator)
 :
 	terrainGenerator(terrainGenerator),
-	threadPool(32, 32)
+	threadPool(0, 32)
 {
 }
 
