@@ -13,20 +13,20 @@ class ThreadPool
 	boost::noncopyable
 {
 
-	unsigned const size;
+	unsigned const numThreads;
 
 	boost::asio::io_service inputQueue;
 	boost::asio::io_service outputQueue;
 
-	boost::scoped_array<boost::scoped_ptr<boost::asio::io_service::work> > works;
-	boost::scoped_array<boost::scoped_ptr<boost::thread> > threads;
+	boost::scoped_array<boost::scoped_ptr<boost::asio::io_service::work> > const works;
+	boost::scoped_array<boost::scoped_ptr<boost::thread> > const threads;
 
 	public:
 
 		typedef boost::function<void(void)> Worker;
 		typedef boost::function<void(void)> Finalizer;
 
-		ThreadPool(unsigned requestedSize = 0);
+		ThreadPool(unsigned requestedNumThreads = 0);
 		~ThreadPool();
 
 		void enqueue(Worker worker, Finalizer finalizer);

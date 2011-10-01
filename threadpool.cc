@@ -1,25 +1,25 @@
 #include "threadpool.h"
 
-unsigned computeSize(int requestedSize) {
-	int size;
-	if (requestedSize == 0) {
-		size = boost::thread::hardware_concurrency() - 1;
-		if (size == 0) {
-			size = 1;
+unsigned computeNumThreads(int requestedNumThreads) {
+	int numThreads;
+	if (requestedNumThreads == 0) {
+		numThreads = boost::thread::hardware_concurrency() - 1;
+		if (numThreads == 0) {
+			numThreads = 1;
 		}
 	} else {
-		size = requestedSize;
+		numThreads = requestedNumThreads;
 	}
-	return size;
+	return numThreads;
 }
 
-ThreadPool::ThreadPool(unsigned requestedSize)
+ThreadPool::ThreadPool(unsigned requestedNumThreads)
 :
-	size(computeSize(requestedSize))
+	numThreads(computeNumThreads(requestedNumThreads)),
+	works(new boost::scoped_ptr<boost::asio::io_service::work>[numThreads]),
+	threads(new boost::scoped_ptr<boost::thread>[numThreads])
 {
-	works.reset(new boost::scoped_ptr<boost::asio::io_service::work>[size]);
-	threads.reset(new boost::scoped_ptr<boost::thread>[size]);
-	for (unsigned i = 0; i < size; ++i) {
+	for (unsigned i = 0; i < numThreads; ++i) {
 		works[i].reset(new boost::asio::io_service::work(inputQueue));
 		threads[i].reset(new boost::thread(boost::bind(&boost::asio::io_service::run, &inputQueue)));
 	}
@@ -28,7 +28,7 @@ ThreadPool::ThreadPool(unsigned requestedSize)
 ThreadPool::~ThreadPool() {
 	inputQueue.stop();
 	// Do not delete the queues until all threads have finished.
-	for (unsigned i = 0; i < size; ++i) {
+	for (unsigned i = 0; i < numThreads; ++i) {
 		threads[i]->join();
 	}
 }
