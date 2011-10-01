@@ -103,9 +103,11 @@ ThreadPool::ThreadPool(unsigned maxInputQueueSize, unsigned maxOutputQueueSize, 
 
 ThreadPool::~ThreadPool() {
 	inputQueue.stop();
+	runFinalizers();
 	// Do not delete the queues until all threads have finished.
 	for (unsigned i = 0; i < numThreads; ++i) {
 		threads[i]->join();
+		runFinalizers();
 	}
 }
 

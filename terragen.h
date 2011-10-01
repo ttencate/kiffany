@@ -59,8 +59,8 @@ class AsyncTerrainGenerator
 {
 
 	TerrainGenerator &terrainGenerator;
-	ThreadPool threadPool;
 	boost::unordered_set<Chunk const *> inProgress;
+	ThreadPool threadPool; // Must be after everything that it uses!
 
 	public:
 
