@@ -49,7 +49,6 @@ class Chunk
 	
 };
 
-void tesselate(ChunkData const &data, int3 const &position, ChunkGeometry *geometry);
 void upload(ChunkGeometry const &geometry, ChunkBuffers *buffers);
 void render(ChunkBuffers const &buffers);
 

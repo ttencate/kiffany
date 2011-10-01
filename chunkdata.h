@@ -43,18 +43,20 @@ class ChunkGeometry
 :
 	boost::noncopyable
 {
-	std::vector<float> vertexData;
-	std::vector<float> normalData;
+	std::vector<short> vertexData;
+	std::vector<char> normalData;
 
 	public:
 
-		std::vector<float> const &getVertexData() const { return vertexData; }
-		std::vector<float> &getVertexData() { return vertexData; }
-		std::vector<float> const &getNormalData() const { return normalData; }
-		std::vector<float> &getNormalData() { return normalData; }
+		std::vector<short> const &getVertexData() const { return vertexData; }
+		std::vector<short> &getVertexData() { return vertexData; }
+		std::vector<char> const &getNormalData() const { return normalData; }
+		std::vector<char> &getNormalData() { return normalData; }
 
 		bool isEmpty() const;
 
 };
+
+void tesselate(ChunkData const &data, int3 const &position, ChunkGeometry *geometry);
 
 #endif
