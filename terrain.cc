@@ -5,7 +5,7 @@
 #include "terragen.h"
 
 size_t CoordsHasher::operator()(int3 const &p) const {
-	static std::tr1::hash<float> hasher;
+	static boost::hash<float> hasher;
 	return hasher(p.x) ^ hasher(p.y) ^ hasher(p.z);
 }
 

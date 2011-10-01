@@ -8,8 +8,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
-
-#include <tr1/unordered_map>
+#include <boost/unordered_map.hpp>
 
 struct CoordsHasher {
 	size_t operator()(int3 const &p) const;
@@ -21,7 +20,7 @@ class ChunkMap
 {
 
 	typedef boost::shared_ptr<Chunk> Ptr;
-	typedef std::tr1::unordered_map<int3, Ptr, CoordsHasher> Map;
+	typedef boost::unordered_map<int3, Ptr, CoordsHasher> Map;
 
 	Map map;
 
