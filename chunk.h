@@ -6,7 +6,20 @@
 
 #include <boost/scoped_ptr.hpp>
 
-#include <vector>
+class ChunkBuffers
+:
+	boost::noncopyable
+{
+	GLBuffer vertexBuffer;
+	GLBuffer normalBuffer;
+
+	public:
+
+		GLBuffer const &getVertexBuffer() const { return vertexBuffer; }
+		GLBuffer &getVertexBuffer() { return vertexBuffer; }
+		GLBuffer const &getNormalBuffer() const { return normalBuffer; }
+		GLBuffer &getNormalBuffer() { return normalBuffer; }
+};
 
 class Chunk
 :
@@ -16,17 +29,9 @@ class Chunk
 	int3 const index;
 	int3 const position;
 
-	bool generated;
-	bool tesselated;
-	bool uploaded;
-
-	ChunkData data;
-
-	boost::scoped_ptr<std::vector<float> > vertexData;
-	boost::scoped_ptr<std::vector<float> > normalData;
-
-	GLBuffer vertexBuffer;
-	GLBuffer normalBuffer;
+	boost::scoped_ptr<ChunkData> data;
+	boost::scoped_ptr<ChunkGeometry> geometry;
+	boost::scoped_ptr<ChunkBuffers> buffers;
 
 	public:
 
@@ -35,19 +40,17 @@ class Chunk
 		int3 const &getIndex() { return index; }
 		int3 const &getPosition() { return position; }
 
-		bool isGenerated() const { return generated; }
-		void setGenerated() { generated = true; }
+		void setData(ChunkData *data);
+		void setGeometry(ChunkGeometry *geometry);
+		void setBuffers(ChunkBuffers *buffers);
 
-		void tesselate();
-
-		ChunkData &getData() { return data; }
-
+		bool canRender() const;
 		void render();
 	
-	private:
-
-		void upload();
-
 };
+
+void tesselate(ChunkData const &data, int3 const &position, ChunkGeometry *geometry);
+void upload(ChunkGeometry const &geometry, ChunkBuffers *buffers);
+void render(ChunkBuffers const &buffers);
 
 #endif

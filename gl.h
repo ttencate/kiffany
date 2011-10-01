@@ -19,12 +19,12 @@ class GLBuffer
 		GLBuffer();
 		~GLBuffer();
 
-		void putData(unsigned size, void *data, GLenum usage);
+		void putData(unsigned size, void const *data, GLenum usage);
 
 		bool isEmpty() const;
 		unsigned getSizeInBytes() const;
 
-		operator unsigned() const; // TODO stop being lazy and make into a function
+		unsigned getName() const;
 
 };
 

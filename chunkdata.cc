@@ -35,6 +35,14 @@ CoordsBlock ChunkData::getCoordsBlock() const {
 	return CoordsBlock(int3(CHUNK_SIZE));
 }
 
+Block const *ChunkData::raw() const {
+	return &blocks[0];
+}
+
 Block *ChunkData::raw() {
 	return &blocks[0];
+}
+
+bool ChunkGeometry::isEmpty() const {
+	return vertexData.size() == 0;
 }

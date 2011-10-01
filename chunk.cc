@@ -6,45 +6,44 @@
 Chunk::Chunk(int3 const &index)
 :
 	index(index),
-	position(CHUNK_SIZE * index.x, CHUNK_SIZE * index.y, CHUNK_SIZE * index.z),
-	generated(false),
-	tesselated(false),
-	uploaded(false)
+	position(CHUNK_SIZE * index.x, CHUNK_SIZE * index.y, CHUNK_SIZE * index.z)
 {
 }
 
-void Chunk::render() {
-	if (!generated) {
-		return;
-	}
-	if (!uploaded) {
-		upload();
-	}
-	if (vertexBuffer.isEmpty()) {
-		return;
-	}
-
-	stats.chunksRendered.increment();
-
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-	glVertexPointer(3, GL_FLOAT, 0, 0);
-
-	glEnableClientState(GL_NORMAL_ARRAY);
-	glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
-	glNormalPointer(GL_FLOAT, 0, 0);
-
-	glDrawArrays(GL_QUADS, 0, vertexBuffer.getSizeInBytes() / sizeof(float) / 3);
-	stats.quadsRendered.increment(vertexBuffer.getSizeInBytes() / sizeof(float) / 3 / 4);
+void Chunk::setData(ChunkData *data) {
+	this->data.reset(data);
 }
 
-void Chunk::tesselate() {
+void Chunk::setGeometry(ChunkGeometry *geometry) {
+	this->geometry.reset(geometry);
+}
+
+bool Chunk::canRender() const {
+	return geometry || buffers;
+}
+
+void Chunk::render() {
+	if (geometry && !buffers) {
+		if (!geometry->isEmpty()) {
+			buffers.reset(new ChunkBuffers());
+			upload(*geometry, buffers.get());
+		}
+		geometry.reset();
+	}
+	if (!buffers) {
+		return;
+	}
+
+	::render(*buffers);
+}
+
+void tesselate(ChunkData const &data, int3 const &position, ChunkGeometry *geometry) {
 	Timed t = stats.chunkTesselationTime.timed();
 
-	vertexData.reset(new std::vector<float>());
-	normalData.reset(new std::vector<float>());
-	std::vector<float> &vertices = *vertexData.get();
-	std::vector<float> &normals = *normalData.get();
+	std::vector<float> &vertices = geometry->getVertexData();
+	std::vector<float> &normals = geometry->getNormalData();
+	vertices.clear();
+	normals.clear();
 
 	unsigned s = 0;
 	Block const *p = data.raw();
@@ -118,13 +117,29 @@ void Chunk::tesselate() {
 
 	stats.chunksTesselated.increment();
 	stats.quadsGenerated.increment(vertices.size() / 4);
-	tesselated = true;
 }
 
-void Chunk::upload() {
-	vertexBuffer.putData(vertexData->size() * sizeof(float), &(*vertexData)[0], GL_STATIC_DRAW);
-	normalBuffer.putData(normalData->size() * sizeof(float), &(*normalData)[0], GL_STATIC_DRAW);
-	vertexData.reset();
-	normalData.reset();
-	uploaded = true;
+void upload(ChunkGeometry const &geometry, ChunkBuffers *buffers) {
+	buffers->getVertexBuffer().putData(
+			geometry.getVertexData().size() * sizeof(float),
+			&(geometry.getVertexData()[0]),
+			GL_STATIC_DRAW);
+	buffers->getNormalBuffer().putData(
+			geometry.getNormalData().size() * sizeof(float),
+			&(geometry.getNormalData()[0]),
+			GL_STATIC_DRAW);
+}
+
+void render(ChunkBuffers const &buffers) {
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glBindBuffer(GL_ARRAY_BUFFER, buffers.getVertexBuffer().getName());
+	glVertexPointer(3, GL_FLOAT, 0, 0);
+
+	glEnableClientState(GL_NORMAL_ARRAY);
+	glBindBuffer(GL_ARRAY_BUFFER, buffers.getNormalBuffer().getName());
+	glNormalPointer(GL_FLOAT, 0, 0);
+
+	glDrawArrays(GL_QUADS, 0, buffers.getVertexBuffer().getSizeInBytes() / sizeof(float) / 3);
+	stats.quadsRendered.increment(buffers.getVertexBuffer().getSizeInBytes() / sizeof(float) / 3 / 4);
+	stats.chunksRendered.increment();
 }

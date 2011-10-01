@@ -21,13 +21,13 @@ PerlinTerrainGenerator::PerlinTerrainGenerator(unsigned size, unsigned seed)
 	}
 }
 
-void PerlinTerrainGenerator::generateChunk(ChunkData &data, int3 const &pos) const {
-	CoordsBlock coordsBlock = data.getCoordsBlock();
+void PerlinTerrainGenerator::generateChunk(int3 const &pos, ChunkData *data) const {
+	CoordsBlock coordsBlock = data->getCoordsBlock();
 	for (CoordsBlock::const_iterator i = coordsBlock.begin(); i != coordsBlock.end(); ++i) {
 		if (perlin(*i) > 0.5f) {
-			data[*i] = STONE_BLOCK;
+			(*data)[*i] = STONE_BLOCK;
 		} else {
-			data[*i] = AIR_BLOCK;
+			(*data)[*i] = AIR_BLOCK;
 		}
 	}
 }
@@ -69,11 +69,11 @@ float PerlinTerrainGenerator::perlin(int3 const &pos) const {
 	return sum / max;
 }
 
-void SineTerrainGenerator::generateChunk(ChunkData &data, int3 const &pos) const {
+void SineTerrainGenerator::generateChunk(int3 const &pos, ChunkData *data) const {
 	float const amplitude = 32.0f;
 	float const period = 256.0f;
 	float const omega = 2 * M_PI / period;
-	Block *p = data.raw();
+	Block *p = data->raw();
 	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
 		for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
 			for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
@@ -97,25 +97,28 @@ AsyncTerrainGenerator::AsyncTerrainGenerator(TerrainGenerator &terrainGenerator)
 }
 
 void AsyncTerrainGenerator::generate(Chunk *chunk) {
+	ChunkGeometry *chunkGeometry = new ChunkGeometry();
 	threadPool.enqueue(
-		boost::bind(&AsyncTerrainGenerator::work, this, chunk),
-		boost::bind(&AsyncTerrainGenerator::finalize, this, chunk));
+		boost::bind(&AsyncTerrainGenerator::work, this, chunk->getPosition(), chunkGeometry),
+		boost::bind(&AsyncTerrainGenerator::finalize, this, chunk, chunkGeometry));
 }
 
 void AsyncTerrainGenerator::gather() {
 	threadPool.runFinalizers();
 }
 
-void AsyncTerrainGenerator::work(Chunk *chunk) {
+void AsyncTerrainGenerator::work(int3 position, ChunkGeometry *chunkGeometry) {
+	ChunkData chunkData;
 	// TODO move timing and counting into public nonvirtual method on TerrainGenerator
 	{
 		Timed t = stats.chunkGenerationTime.timed();
-		terrainGenerator.generateChunk(chunk->getData(), chunk->getPosition());
+		terrainGenerator.generateChunk(position, &chunkData);
 	}
 	stats.chunksGenerated.increment();
-	chunk->tesselate();
+
+	tesselate(chunkData, position, chunkGeometry);
 }
 
-void AsyncTerrainGenerator::finalize(Chunk *chunk) {
-	chunk->setGenerated();
+void AsyncTerrainGenerator::finalize(Chunk *chunk, ChunkGeometry *chunkGeometry) {
+	chunk->setGeometry(chunkGeometry);
 }

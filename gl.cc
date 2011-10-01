@@ -11,7 +11,7 @@ GLBuffer::~GLBuffer() {
 	glDeleteBuffers(1, &name);
 }
 
-void GLBuffer::putData(unsigned size, void *data, GLenum usage) {
+void GLBuffer::putData(unsigned size, void const *data, GLenum usage) {
 	this->sizeInBytes = size;
 	glBindBuffer(GL_ARRAY_BUFFER, name);
 	glBufferData(GL_ARRAY_BUFFER, size, data, usage);
@@ -25,6 +25,6 @@ unsigned GLBuffer::getSizeInBytes() const {
 	return sizeInBytes;
 }
 
-GLBuffer::operator unsigned() const {
+unsigned GLBuffer::getName() const {
 	return name;
 }

@@ -68,7 +68,7 @@ void Terrain::render(Camera const &camera) {
 
 void Terrain::renderChunk(Camera const &camera, int3 const &index) {
 	if (Chunk *chunk = chunkMap.get(index)) {
-		if (chunk->isGenerated()) {
+		if (chunk->canRender()) {
 		   if (camera.isSphereInView(chunkCenter(index), CHUNK_RADIUS)) {
 			   chunk->render();
 		   } else {

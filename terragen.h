@@ -9,12 +9,13 @@
 
 class Chunk;
 class ChunkData;
+class ChunkGeometry;
 
 class TerrainGenerator {
 
 	public:
 
-		virtual void generateChunk(ChunkData &data, int3 const &pos) const = 0;
+		virtual void generateChunk(int3 const &pos, ChunkData *data) const = 0;
 
 };
 
@@ -31,7 +32,7 @@ class PerlinTerrainGenerator
 
 		PerlinTerrainGenerator(unsigned size, unsigned seed);
 
-		virtual void generateChunk(ChunkData &data, int3 const &pos) const;
+		virtual void generateChunk(int3 const &pos, ChunkData *data) const;
 
 	private:
 
@@ -47,7 +48,7 @@ class SineTerrainGenerator
 
 	public:
 
-		virtual void generateChunk(ChunkData &data, int3 const &pos) const;
+		virtual void generateChunk(int3 const &pos, ChunkData *data) const;
 
 };
 
@@ -68,8 +69,8 @@ class AsyncTerrainGenerator
 
 	private:
 
-		void work(Chunk *chunk);
-		void finalize(Chunk *chunk);
+		void work(int3 position, ChunkGeometry *chunkGeometry);
+		void finalize(Chunk *chunk, ChunkGeometry *chunkGeometry);
 
 };
 

@@ -8,6 +8,8 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_array.hpp>
 
+#include <vector>
+
 class ChunkData
 :
 	boost::noncopyable
@@ -32,7 +34,26 @@ class ChunkData
 
 		CoordsBlock getCoordsBlock() const;
 
+		Block const *raw() const;
 		Block *raw();
+
+};
+
+class ChunkGeometry
+:
+	boost::noncopyable
+{
+	std::vector<float> vertexData;
+	std::vector<float> normalData;
+
+	public:
+
+		std::vector<float> const &getVertexData() const { return vertexData; }
+		std::vector<float> &getVertexData() { return vertexData; }
+		std::vector<float> const &getNormalData() const { return normalData; }
+		std::vector<float> &getNormalData() { return normalData; }
+
+		bool isEmpty() const;
 
 };
 
