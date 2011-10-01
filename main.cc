@@ -71,13 +71,14 @@ void update(float dt) {
 		if (glfwGetKey('.')) {
 			delta += s * Y_AXIS;
 		}
+		camera->moveRelative(delta);
+
 		if (glfwGetKey(GLFW_KEY_LSHIFT)) {
-			delta += s * -Z_AXIS;
+			camera->setPosition(camera->getPosition() + s * -Z_AXIS);
 		}
 		if (glfwGetKey(' ')) {
-			delta += s * Z_AXIS;
+			camera->setPosition(camera->getPosition() + s * Z_AXIS);
 		}
-		camera->moveRelative(delta);
 	}
 
 	world->update(dt);
