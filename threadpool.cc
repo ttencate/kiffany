@@ -1,16 +1,22 @@
 #include "threadpool.h"
 
-ThreadPool::ThreadPool(unsigned queueSize, unsigned size)
-:
-	size(size)
-{
-	if (size == 0) {
+unsigned computeSize(int requestedSize) {
+	int size;
+	if (requestedSize == 0) {
 		size = boost::thread::hardware_concurrency() - 1;
 		if (size == 0) {
 			size = 1;
 		}
+	} else {
+		size = requestedSize;
 	}
+	return size;
+}
 
+ThreadPool::ThreadPool(unsigned requestedSize)
+:
+	size(computeSize(requestedSize))
+{
 	works.reset(new boost::scoped_ptr<boost::asio::io_service::work>[size]);
 	threads.reset(new boost::scoped_ptr<boost::thread>[size]);
 	for (unsigned i = 0; i < size; ++i) {
@@ -21,6 +27,10 @@ ThreadPool::ThreadPool(unsigned queueSize, unsigned size)
 
 ThreadPool::~ThreadPool() {
 	inputQueue.stop();
+	// Do not delete the queues until all threads have finished.
+	for (unsigned i = 0; i < size; ++i) {
+		threads[i]->join();
+	}
 }
 
 void ThreadPool::enqueue(Worker worker, Finalizer finalizer) {

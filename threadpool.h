@@ -26,7 +26,7 @@ class ThreadPool
 		typedef boost::function<void(void)> Worker;
 		typedef boost::function<void(void)> Finalizer;
 
-		ThreadPool(unsigned queueSize, unsigned size = 0);
+		ThreadPool(unsigned requestedSize = 0);
 		~ThreadPool();
 
 		void enqueue(Worker worker, Finalizer finalizer);
