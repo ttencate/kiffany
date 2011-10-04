@@ -5,6 +5,7 @@
 #include "gl.h"
 
 #include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 class ChunkBuffers
 :
@@ -51,5 +52,7 @@ class Chunk
 
 void upload(ChunkGeometry const &geometry, ChunkBuffers *buffers);
 void render(ChunkBuffers const &buffers);
+
+typedef boost::shared_ptr<Chunk> ChunkPtr;
 
 #endif

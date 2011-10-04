@@ -57,6 +57,7 @@ struct Stats {
 	CounterStat buffersDeleted;
 
 	CounterStat chunksGenerated;
+	CounterStat chunksEvicted;
 	CounterStat quadsGenerated;
 	TimerStat chunkGenerationTime;
 

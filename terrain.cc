@@ -9,27 +9,35 @@ size_t CoordsHasher::operator()(int3 const &p) const {
 	return hasher(p.x) ^ hasher(p.y) ^ hasher(p.z);
 }
 
-Chunk *ChunkMap::get(int3 const &index) const {
-	Map::const_iterator i = map.find(index);
-	if (i == map.end()) {
-		return 0;
-	} else {
-		return &*i->second;
+ChunkMap::ChunkMap(unsigned maxSize)
+:
+	maxSize(maxSize)
+{
+}
+
+ChunkPtr ChunkMap::get(int3 const &index) {
+	ChunkPtr &chunkPtr = map[index];
+	if (!chunkPtr) {
+		chunkPtr.reset(new Chunk(index));
 	}
+	trimToSize();
+	return chunkPtr;
 }
 
-bool ChunkMap::contains(int3 const &index) const {
-	return map.find(index) != map.end();
-}
-
-void ChunkMap::put(int3 const &index, Ptr chunk) {
-	map[index] = chunk;
+void ChunkMap::trimToSize() {
+	if (maxSize > 0) {
+		while (map.size() > maxSize) {
+			stats.chunksEvicted.increment();
+			map.pop_back();
+		}
+	}
 }
 
 Terrain::Terrain(TerrainGenerator *terrainGenerator)
 :
 	terrainGenerator(terrainGenerator),
-	asyncTerrainGenerator(*terrainGenerator)
+	asyncTerrainGenerator(*terrainGenerator),
+	chunkMap(computeMaxNumChunks())
 {
 }
 
@@ -66,12 +74,17 @@ void Terrain::render(Camera const &camera) {
 	}
 }
 
-void Terrain::renderChunk(Camera const &camera, int3 const &index) {
-	Chunk *chunk = chunkMap.get(index);
-	if (!chunk) {
-		chunk = new Chunk(index);
-		chunkMap.put(index, boost::shared_ptr<Chunk>(chunk));
+unsigned Terrain::computeMaxNumChunks() const {
+	if (flags.maxNumChunks != 0) {
+		return flags.maxNumChunks;
 	}
+	unsigned radius = flags.viewDistance / CHUNK_SIZE;
+	unsigned size = 2 * radius + 1;
+	return size * size * size;
+}
+
+void Terrain::renderChunk(Camera const &camera, int3 const &index) {
+	ChunkPtr chunk = chunkMap.get(index);
 	if (chunk->canRender()) {
 	   if (camera.isSphereInView(chunkCenter(index), CHUNK_RADIUS)) {
 		   chunk->render();

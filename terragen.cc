@@ -96,7 +96,7 @@ AsyncTerrainGenerator::AsyncTerrainGenerator(TerrainGenerator &terrainGenerator)
 {
 }
 
-bool AsyncTerrainGenerator::tryGenerate(Chunk *chunk) {
+bool AsyncTerrainGenerator::tryGenerate(ChunkPtr chunk) {
 	if (inProgress.find(chunk) != inProgress.end()) {
 		return true;
 	}
@@ -128,7 +128,7 @@ void AsyncTerrainGenerator::work(int3 position, ChunkGeometry* chunkGeometry) {
 	tesselate(chunkData, position, chunkGeometry);
 }
 
-void AsyncTerrainGenerator::finalize(Chunk *chunk, ChunkGeometry* chunkGeometry) {
+void AsyncTerrainGenerator::finalize(ChunkPtr chunk, ChunkGeometry* chunkGeometry) {
 	chunk->setGeometry(chunkGeometry);
 	inProgress.erase(chunk);
 }

@@ -54,6 +54,7 @@ void Stats::print() const {
 		<< "Time per chunk: " << (chunkGenerationTime.get() / chunksGenerated.get()) << '\n'
 		<< "Tesselations done: " << chunksTesselated.get() << '\n'
 		<< "Time per chunk: " << (chunkTesselationTime.get() / chunksTesselated.get()) << '\n'
+		<< "Chunks evicted: " << chunksEvicted.get() << '\n'
 		<< '\n'
 		<< "Quads generated: " << quadsGenerated.get() << '\n'
 		<< "Quads per chunk: " << ((float)quadsGenerated.get() / chunksGenerated.get()) << '\n'

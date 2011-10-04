@@ -28,7 +28,7 @@ void keyCallback(int key, int state) {
 }
 
 void mousePosCallback(int x, int y) {
-	if (!flags.autofly) {
+	if (flags.autoflySpeed == 0) {
 		int2 newMousePos(x, y);
 		int2 delta = newMousePos - mousePos;
 
@@ -56,8 +56,8 @@ void setup() {
 }
 
 void update(float dt) {
-	if (flags.autofly) {
-		float const s = 30.0f * dt;
+	if (flags.autoflySpeed != 0) {
+		float const s = flags.autoflySpeed * dt;
 		camera->moveRelative(s * Y_AXIS);
 	} else {
 		float const s = 30.0f * dt;
@@ -111,7 +111,7 @@ void run() {
 	glfwSetWindowSizeCallback(windowSizeCallback); // also calls it immediately
 	glfwSetKeyCallback(keyCallback);
 	glfwSetMousePosCallback(mousePosCallback);
-	if (!flags.autofly) {
+	if (flags.autoflySpeed > 0) {
 		glfwDisable(GLFW_MOUSE_CURSOR);
 	}
 	glfwGetMousePos(&mousePos[0], &mousePos[1]);

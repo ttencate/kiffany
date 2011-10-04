@@ -1,6 +1,7 @@
 #ifndef TERRAGEN_H
 #define TERRAGEN_H
 
+#include "chunk.h"
 #include "maths.h"
 #include "threadpool.h"
 
@@ -8,7 +9,6 @@
 #include <boost/scoped_array.hpp>
 #include <boost/unordered_set.hpp>
 
-class Chunk;
 class ChunkData;
 class ChunkGeometry;
 
@@ -59,20 +59,20 @@ class AsyncTerrainGenerator
 {
 
 	TerrainGenerator &terrainGenerator;
-	boost::unordered_set<Chunk const *> inProgress;
+	boost::unordered_set<ChunkPtr> inProgress;
 	ThreadPool threadPool; // Must be after everything that it uses!
 
 	public:
 
 		AsyncTerrainGenerator(TerrainGenerator &terrainGenerator);
 
-		bool tryGenerate(Chunk *chunk);
+		bool tryGenerate(ChunkPtr chunk);
 		void gather();
 
 	private:
 
 		void work(int3 position, ChunkGeometry* chunkGeometry);
-		void finalize(Chunk *chunk, ChunkGeometry* chunkGeometry);
+		void finalize(ChunkPtr chunk, ChunkGeometry* chunkGeometry);
 
 };
 

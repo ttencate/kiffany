@@ -3,12 +3,13 @@
 
 struct Flags {
 	bool help;
-	bool autofly;
+	float autoflySpeed;
 	bool vsync;
 	unsigned fixedTimestep;
 	unsigned exitAfter;
 	unsigned seed;
 	unsigned viewDistance;
+	unsigned maxNumChunks;
 };
 
 extern Flags flags;
