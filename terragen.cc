@@ -129,6 +129,8 @@ void AsyncTerrainGenerator::work(int3 position, ChunkGeometry* chunkGeometry) {
 }
 
 void AsyncTerrainGenerator::finalize(ChunkPtr chunk, ChunkGeometry* chunkGeometry) {
-	chunk->setGeometry(chunkGeometry);
+	ChunkSlice *slice = new ChunkSlice();
+	slice->setGeometry(chunkGeometry);
+	chunk->setSlice(0, slice);
 	inProgress.erase(chunk);
 }

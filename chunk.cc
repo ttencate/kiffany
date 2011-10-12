@@ -91,40 +91,6 @@ void tesselate(ChunkData const &data, int3 const &position, ChunkGeometry *geome
 	stats.quadsGenerated.increment(vertices.size() / 4);
 }
 
-Chunk::Chunk(int3 const &index)
-:
-	index(index),
-	position(CHUNK_SIZE * index.x, CHUNK_SIZE * index.y, CHUNK_SIZE * index.z)
-{
-}
-
-void Chunk::setData(ChunkData *data) {
-	this->data.reset(data);
-}
-
-void Chunk::setGeometry(ChunkGeometry *geometry) {
-	this->geometry.reset(geometry);
-}
-
-bool Chunk::canRender() const {
-	return geometry || buffers;
-}
-
-void Chunk::render() {
-	if (geometry && !buffers) {
-		if (!geometry->isEmpty()) {
-			buffers.reset(new ChunkBuffers());
-			upload(*geometry, buffers.get());
-			geometry.reset();
-		}
-	}
-	if (!buffers) {
-		return;
-	}
-
-	::render(*buffers);
-}
-
 void upload(ChunkGeometry const &geometry, ChunkBuffers *buffers) {
 	buffers->getVertexBuffer().putData(
 			geometry.getVertexData().size() * sizeof(short),
@@ -148,4 +114,59 @@ void render(ChunkBuffers const &buffers) {
 	glDrawArrays(GL_QUADS, 0, buffers.getVertexBuffer().getSizeInBytes() / sizeof(short) / 3);
 	stats.quadsRendered.increment(buffers.getVertexBuffer().getSizeInBytes() / sizeof(short) / 3 / 4);
 	stats.chunksRendered.increment();
+}
+
+void ChunkSlice::setGeometry(ChunkGeometry *geometry) {
+	this->geometry.reset(geometry);
+}
+
+bool ChunkSlice::canRender() const {
+	return geometry || buffers;
+}
+
+void ChunkSlice::render() {
+	if (geometry && !buffers) {
+		if (!geometry->isEmpty()) {
+			buffers.reset(new ChunkBuffers());
+			upload(*geometry, buffers.get());
+			geometry.reset();
+		}
+	}
+	if (!buffers) {
+		return;
+	}
+
+	::render(*buffers);
+}
+
+Chunk::Chunk(int3 const &index)
+:
+	index(index),
+	position(CHUNK_SIZE * index.x, CHUNK_SIZE * index.y, CHUNK_SIZE * index.z)
+{
+}
+
+void Chunk::setData(ChunkData *data) {
+	this->data.reset(data);
+}
+
+void Chunk::setSlice(unsigned index, ChunkSlice *slice) {
+	slices[index].reset(slice);
+}
+
+bool Chunk::canRender() const {
+	for (unsigned i = 0; i < 6; ++i) {
+		if (slices[i] && slices[i]->canRender()) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void Chunk::render() {
+	for (unsigned i = 0; i < 6; ++i) {
+		if (slices[i]) {
+			slices[i]->render();
+		}
+	}
 }

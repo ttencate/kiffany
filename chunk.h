@@ -42,6 +42,24 @@ class ChunkBuffers
 		GLBuffer &getNormalBuffer() { return normalBuffer; }
 };
 
+void upload(ChunkGeometry const &geometry, ChunkBuffers *buffers);
+void render(ChunkBuffers const &buffers);
+
+class ChunkSlice
+:
+	boost::noncopyable
+{
+	boost::scoped_ptr<ChunkGeometry> geometry;
+	boost::scoped_ptr<ChunkBuffers> buffers;
+
+	public:
+
+		void setGeometry(ChunkGeometry *geometry);
+
+		bool canRender() const;
+		void render();
+};
+
 class Chunk
 :
 	boost::noncopyable
@@ -51,8 +69,7 @@ class Chunk
 	int3 const position;
 
 	boost::scoped_ptr<ChunkData> data;
-	boost::scoped_ptr<ChunkGeometry> geometry;
-	boost::scoped_ptr<ChunkBuffers> buffers;
+	boost::scoped_ptr<ChunkSlice> slices[6];
 
 	public:
 
@@ -62,16 +79,12 @@ class Chunk
 		int3 const &getPosition() { return position; }
 
 		void setData(ChunkData *data);
-		void setGeometry(ChunkGeometry *geometry);
-		void setBuffers(ChunkBuffers *buffers);
+		void setSlice(unsigned index, ChunkSlice *slice);
 
 		bool canRender() const;
 		void render();
 	
 };
-
-void upload(ChunkGeometry const &geometry, ChunkBuffers *buffers);
-void render(ChunkBuffers const &buffers);
 
 typedef boost::shared_ptr<Chunk> ChunkPtr;
 
