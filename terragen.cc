@@ -107,6 +107,7 @@ bool AsyncTerrainGenerator::tryGenerate(ChunkPtr chunk) {
 		delete chunkData;
 		return false;
 	} else {
+		chunk->generating();
 		inProgress.insert(chunk);
 		return true;
 	}

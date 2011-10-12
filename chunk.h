@@ -51,6 +51,15 @@ class Chunk
 	int3 const index;
 	int3 const position;
 
+	enum State {
+		NEW,
+		GENERATING,
+		GENERATED,
+		TESSELATED,
+		UPLOADED
+	};
+	State state;
+
 	boost::scoped_ptr<ChunkData> data;
 	boost::scoped_ptr<ChunkGeometry> geometry[6];
 	boost::scoped_ptr<ChunkBuffers> buffers[6];
@@ -62,14 +71,16 @@ class Chunk
 		int3 const &getIndex() { return index; }
 		int3 const &getPosition() { return position; }
 
+		void generating() { state = GENERATING; }
 		void setData(ChunkData *data);
 
-		bool canRender() const;
+		bool needsGenerating() const;
 		void render();
 
 	private:
 
 		void tesselate();
+		void upload();
 	
 };
 
