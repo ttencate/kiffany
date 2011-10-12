@@ -111,7 +111,7 @@ void run() {
 	glfwSetWindowSizeCallback(windowSizeCallback); // also calls it immediately
 	glfwSetKeyCallback(keyCallback);
 	glfwSetMousePosCallback(mousePosCallback);
-	if (flags.autoflySpeed > 0) {
+	if (flags.autoflySpeed == 0) {
 		glfwDisable(GLFW_MOUSE_CURSOR);
 	}
 	glfwGetMousePos(&mousePos[0], &mousePos[1]);
