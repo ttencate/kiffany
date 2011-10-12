@@ -25,8 +25,6 @@ class ChunkGeometry
 
 };
 
-void tesselate(ChunkData const &data, int3 const &position, ChunkGeometry *geometry);
-
 class ChunkBuffers
 :
 	boost::noncopyable
@@ -45,21 +43,6 @@ class ChunkBuffers
 void upload(ChunkGeometry const &geometry, ChunkBuffers *buffers);
 void render(ChunkBuffers const &buffers);
 
-class ChunkSlice
-:
-	boost::noncopyable
-{
-	boost::scoped_ptr<ChunkGeometry> geometry;
-	boost::scoped_ptr<ChunkBuffers> buffers;
-
-	public:
-
-		void setGeometry(ChunkGeometry *geometry);
-
-		bool canRender() const;
-		void render();
-};
-
 class Chunk
 :
 	boost::noncopyable
@@ -69,7 +52,8 @@ class Chunk
 	int3 const position;
 
 	boost::scoped_ptr<ChunkData> data;
-	boost::scoped_ptr<ChunkSlice> slices[6];
+	boost::scoped_ptr<ChunkGeometry> geometry[6];
+	boost::scoped_ptr<ChunkBuffers> buffers[6];
 
 	public:
 
@@ -79,10 +63,13 @@ class Chunk
 		int3 const &getPosition() { return position; }
 
 		void setData(ChunkData *data);
-		void setSlice(unsigned index, ChunkSlice *slice);
 
 		bool canRender() const;
 		void render();
+
+	private:
+
+		void tesselate();
 	
 };
 

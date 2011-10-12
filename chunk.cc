@@ -7,90 +7,6 @@ bool ChunkGeometry::isEmpty() const {
 	return vertexData.size() == 0;
 }
 
-void tesselate(ChunkData const &data, int3 const &position, ChunkGeometry *geometry) {
-	char const N = 0x7F;
-
-	Timed t = stats.chunkTesselationTime.timed();
-
-	std::vector<short> &vertices = geometry->getVertexData();
-	std::vector<char> &normals = geometry->getNormalData();
-	vertices.clear();
-	normals.clear();
-
-	unsigned s = 0;
-	Block const *p = data.raw();
-	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
-		for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
-			for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
-				Block const block = *p;
-				if (needsDrawing(block)) {
-					int3 const pos(x, y, z);
-					int3 m = (int3)blockMin(position + pos); // TODO make relative, use matrix
-					int3 M = (int3)blockMax(position + pos);
-					if (x == 0 || needsDrawing(block, p[-1])) {
-						short v[] = { m.x, m.y, m.z, m.x, m.y, M.z, m.x, M.y, M.z, m.x, M.y, m.z };
-						char n[] = { -N, 0, 0, -N, 0, 0, -N, 0, 0, -N, 0, 0 };
-						vertices.resize(s + 12);
-						normals.resize(s + 12);
-						memcpy(&vertices[s], v, 12 * sizeof(short));
-						memcpy(&normals[s], n, 12 * sizeof(char));
-						s += 12;
-					}
-					if (x == CHUNK_SIZE - 1 || needsDrawing(block, p[1])) {
-						short v[] = { M.x, m.y, m.z, M.x, M.y, m.z, M.x, M.y, M.z, M.x, m.y, M.z };
-						char n[] = { N, 0, 0, N, 0, 0, N, 0, 0, N, 0, 0 };
-						vertices.resize(s + 12);
-						normals.resize(s + 12);
-						memcpy(&vertices[s], v, 12 * sizeof(short));
-						memcpy(&normals[s], n, 12 * sizeof(char));
-						s += 12;
-					}
-					if (y == 0 || needsDrawing(block, p[-(int)CHUNK_SIZE])) {
-						short v[] = { m.x, m.y, m.z, M.x, m.y, m.z, M.x, m.y, M.z, m.x, m.y, M.z };
-						char n[] = { 0, -N, 0, 0, -N, 0, 0, -N, 0, 0, -N, 0 };
-						vertices.resize(s + 12);
-						normals.resize(s + 12);
-						memcpy(&vertices[s], v, 12 * sizeof(short));
-						memcpy(&normals[s], n, 12 * sizeof(char));
-						s += 12;
-					}
-					if (y == CHUNK_SIZE - 1 || needsDrawing(block, p[CHUNK_SIZE])) {
-						short v[] = { m.x, M.y, m.z, m.x, M.y, M.z, M.x, M.y, M.z, M.x, M.y, m.z };
-						char n[] = { 0, N, 0, 0, N, 0, 0, N, 0, 0, N, 0 };
-						vertices.resize(s + 12);
-						normals.resize(s + 12);
-						memcpy(&vertices[s], v, 12 * sizeof(short));
-						memcpy(&normals[s], n, 12 * sizeof(char));
-						s += 12;
-					}
-					if (z == 0 || needsDrawing(block, p[-(int)CHUNK_SIZE * (int)CHUNK_SIZE])) {
-						short v[] = { m.x, m.y, m.z, m.x, M.y, m.z, M.x, M.y, m.z, M.x, m.y, m.z };
-						char n[] = { 0, 0, -N, 0, 0, -N, 0, 0, -N, 0, 0, -N };
-						vertices.resize(s + 12);
-						normals.resize(s + 12);
-						memcpy(&vertices[s], v, 12 * sizeof(short));
-						memcpy(&normals[s], n, 12 * sizeof(char));
-						s += 12;
-					}
-					if (z == CHUNK_SIZE - 1 || needsDrawing(block, p[CHUNK_SIZE * CHUNK_SIZE])) {
-						short v[] = { m.x, m.y, M.z, M.x, m.y, M.z, M.x, M.y, M.z, m.x, M.y, M.z };
-						char n[] = { 0, 0, N, 0, 0, N, 0, 0, N, 0, 0, N };
-						vertices.resize(s + 12);
-						normals.resize(s + 12);
-						memcpy(&vertices[s], v, 12 * sizeof(short));
-						memcpy(&normals[s], n, 12 * sizeof(char));
-						s += 12;
-					}
-				}
-				++p;
-			}
-		}
-	}
-
-	stats.chunksTesselated.increment();
-	stats.quadsGenerated.increment(vertices.size() / 4);
-}
-
 void upload(ChunkGeometry const &geometry, ChunkBuffers *buffers) {
 	buffers->getVertexBuffer().putData(
 			geometry.getVertexData().size() * sizeof(short),
@@ -116,29 +32,6 @@ void render(ChunkBuffers const &buffers) {
 	stats.chunksRendered.increment();
 }
 
-void ChunkSlice::setGeometry(ChunkGeometry *geometry) {
-	this->geometry.reset(geometry);
-}
-
-bool ChunkSlice::canRender() const {
-	return geometry || buffers;
-}
-
-void ChunkSlice::render() {
-	if (geometry && !buffers) {
-		if (!geometry->isEmpty()) {
-			buffers.reset(new ChunkBuffers());
-			upload(*geometry, buffers.get());
-			geometry.reset();
-		}
-	}
-	if (!buffers) {
-		return;
-	}
-
-	::render(*buffers);
-}
-
 Chunk::Chunk(int3 const &index)
 :
 	index(index),
@@ -150,13 +43,12 @@ void Chunk::setData(ChunkData *data) {
 	this->data.reset(data);
 }
 
-void Chunk::setSlice(unsigned index, ChunkSlice *slice) {
-	slices[index].reset(slice);
-}
-
 bool Chunk::canRender() const {
+	if (data) {
+		return true;
+	}
 	for (unsigned i = 0; i < 6; ++i) {
-		if (slices[i] && slices[i]->canRender()) {
+		if (geometry[i] || buffers[i]) {
 			return true;
 		}
 	}
@@ -164,9 +56,79 @@ bool Chunk::canRender() const {
 }
 
 void Chunk::render() {
+	if (data) {
+		tesselate();
+	}
 	for (unsigned i = 0; i < 6; ++i) {
-		if (slices[i]) {
-			slices[i]->render();
+		if (geometry[i] && !buffers[i]) {
+			if (!geometry[i]->isEmpty()) {
+				buffers[i].reset(new ChunkBuffers());
+				upload(*geometry[i], buffers[i].get());
+				geometry[i].reset();
+			}
+		}
+		if (buffers[i]) {
+			::render(*buffers[i]);
 		}
 	}
+}
+
+template<int dx, int dy, int dz>
+void tesselate(ChunkData const &data, int3 const &position, ChunkGeometry *geometry) {
+	char const N = 0x7F;
+	char const n[12] = {
+		dx * N, dy * N, dz * N,
+		dx * N, dy * N, dz * N,
+		dx * N, dy * N, dz * N,
+		dx * N, dy * N, dz * N,
+	};
+	int const neighOffset = dx + (int)CHUNK_SIZE * dy + (int)CHUNK_SIZE * (int)CHUNK_SIZE * dz;
+
+	Timed t = stats.chunkTesselationTime.timed();
+
+	std::vector<short> &vertices = geometry->getVertexData();
+	std::vector<char> &normals = geometry->getNormalData();
+	vertices.clear();
+	normals.clear();
+
+	unsigned s = 0;
+	Block const *p = data.raw() + 1;
+	for (unsigned z = 1; z < CHUNK_SIZE - 1; ++z) {
+		for (unsigned y = 1; y < CHUNK_SIZE - 1; ++y) {
+			for (unsigned x = 1; x < CHUNK_SIZE - 1; ++x) {
+				Block const block = *p;
+				if (needsDrawing(block) && needsDrawing(block, p[neighOffset])) {
+					int3 const pos(x, y, z);
+					int3 m = (int3)blockMin(position + pos); // TODO make relative, use matrix
+					int3 M = (int3)blockMax(position + pos);
+					short v[] = { m.x, m.y, m.z, m.x, m.y, M.z, m.x, M.y, M.z, m.x, M.y, m.z };
+					vertices.resize(s + 12);
+					normals.resize(s + 12);
+					memcpy(&vertices[s], v, 12 * sizeof(short));
+					memcpy(&normals[s], n, 12 * sizeof(char));
+					s += 12;
+				}
+				++p;
+			}
+			p += 2;
+		}
+		p += 2 * CHUNK_SIZE;
+	}
+
+	stats.chunksTesselated.increment();
+	stats.quadsGenerated.increment(vertices.size() / 4);
+}
+
+void Chunk::tesselate() {
+	for (unsigned i = 0; i < 6; ++i) {
+		geometry[i].reset(new ChunkGeometry());
+	}
+	::tesselate<-1,  0,  0>(*data, position, geometry[0].get());
+	::tesselate< 1,  0,  0>(*data, position, geometry[1].get());
+	::tesselate< 0, -1,  0>(*data, position, geometry[2].get());
+	::tesselate< 0,  1,  0>(*data, position, geometry[3].get());
+	::tesselate< 0,  0, -1>(*data, position, geometry[4].get());
+	::tesselate< 0,  0,  1>(*data, position, geometry[5].get());
+
+	data.reset(); // No more use for this.
 }
