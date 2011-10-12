@@ -121,7 +121,6 @@ void tesselateFace(ChunkData const &data, int3 const &position, ChunkGeometry *g
 		p += 2 * CHUNK_SIZE;
 	}
 
-	stats.chunksTesselated.increment();
 	stats.quadsGenerated.increment(vertices.size() / 4);
 }
 
@@ -130,17 +129,21 @@ void Chunk::tesselate() {
 		geometry[i].reset(new ChunkGeometry());
 	}
 
-	Timed t = stats.chunkTesselationTime.timed();
+	{
+		Timed t = stats.chunkTesselationTime.timed();
 
-	tesselateFace<-1,  0,  0, 0>(*data, position, geometry[0].get());
-	tesselateFace< 1,  0,  0, 1>(*data, position, geometry[1].get());
-	tesselateFace< 0, -1,  0, 2>(*data, position, geometry[2].get());
-	tesselateFace< 0,  1,  0, 3>(*data, position, geometry[3].get());
-	tesselateFace< 0,  0, -1, 4>(*data, position, geometry[4].get());
-	tesselateFace< 0,  0,  1, 5>(*data, position, geometry[5].get());
+		tesselateFace<-1,  0,  0, 0>(*data, position, geometry[0].get());
+		tesselateFace< 1,  0,  0, 1>(*data, position, geometry[1].get());
+		tesselateFace< 0, -1,  0, 2>(*data, position, geometry[2].get());
+		tesselateFace< 0,  1,  0, 3>(*data, position, geometry[3].get());
+		tesselateFace< 0,  0, -1, 4>(*data, position, geometry[4].get());
+		tesselateFace< 0,  0,  1, 5>(*data, position, geometry[5].get());
+	}
 
 	data.reset(); // No more use for this.
 	state = TESSELATED;
+
+	stats.chunksTesselated.increment();
 }
 
 void Chunk::upload() { 
