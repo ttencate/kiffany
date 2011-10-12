@@ -7,6 +7,26 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
+class ChunkGeometry
+:
+	boost::noncopyable
+{
+	std::vector<short> vertexData;
+	std::vector<char> normalData;
+
+	public:
+
+		std::vector<short> const &getVertexData() const { return vertexData; }
+		std::vector<short> &getVertexData() { return vertexData; }
+		std::vector<char> const &getNormalData() const { return normalData; }
+		std::vector<char> &getNormalData() { return normalData; }
+
+		bool isEmpty() const;
+
+};
+
+void tesselate(ChunkData const &data, int3 const &position, ChunkGeometry *geometry);
+
 class ChunkBuffers
 :
 	boost::noncopyable
