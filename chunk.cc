@@ -73,16 +73,25 @@ void Chunk::render() {
 	}
 }
 
-template<int dx, int dy, int dz>
+template<int dx, int dy, int dz, int faceIndex>
 void tesselate(ChunkData const &data, int3 const &position, ChunkGeometry *geometry) {
-	char const N = 0x7F;
-	char const n[12] = {
+	static char const N = 0x7F;
+	static char const n[12] = {
 		dx * N, dy * N, dz * N,
 		dx * N, dy * N, dz * N,
 		dx * N, dy * N, dz * N,
 		dx * N, dy * N, dz * N,
 	};
-	int const neighOffset = dx + (int)CHUNK_SIZE * dy + (int)CHUNK_SIZE * (int)CHUNK_SIZE * dz;
+	static short const faces[6][12] = {
+		{ 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0 },
+		{ 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1 },
+		{ 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1 },
+		{ 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0 },
+		{ 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0 },
+		{ 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1 }
+	};
+	static short const *face = faces[faceIndex];
+	static int const neighOffset = dx + (int)CHUNK_SIZE * dy + (int)CHUNK_SIZE * (int)CHUNK_SIZE * dz;
 
 	Timed t = stats.chunkTesselationTime.timed();
 
@@ -100,8 +109,12 @@ void tesselate(ChunkData const &data, int3 const &position, ChunkGeometry *geome
 				if (needsDrawing(block) && needsDrawing(block, p[neighOffset])) {
 					int3 const pos(x, y, z);
 					int3 m = (int3)blockMin(position + pos); // TODO make relative, use matrix
-					int3 M = (int3)blockMax(position + pos);
-					short v[] = { m.x, m.y, m.z, m.x, m.y, M.z, m.x, M.y, M.z, m.x, M.y, m.z };
+					short v[12] = {
+						face[0] + m.x, face[ 1] + m.y, face[ 2] + m.z,
+						face[3] + m.x, face[ 4] + m.y, face[ 5] + m.z,
+						face[6] + m.x, face[ 7] + m.y, face[ 8] + m.z,
+						face[9] + m.x, face[10] + m.y, face[11] + m.z
+					};
 					vertices.resize(s + 12);
 					normals.resize(s + 12);
 					memcpy(&vertices[s], v, 12 * sizeof(short));
@@ -123,12 +136,12 @@ void Chunk::tesselate() {
 	for (unsigned i = 0; i < 6; ++i) {
 		geometry[i].reset(new ChunkGeometry());
 	}
-	::tesselate<-1,  0,  0>(*data, position, geometry[0].get());
-	::tesselate< 1,  0,  0>(*data, position, geometry[1].get());
-	::tesselate< 0, -1,  0>(*data, position, geometry[2].get());
-	::tesselate< 0,  1,  0>(*data, position, geometry[3].get());
-	::tesselate< 0,  0, -1>(*data, position, geometry[4].get());
-	::tesselate< 0,  0,  1>(*data, position, geometry[5].get());
+	::tesselate<-1,  0,  0, 0>(*data, position, geometry[0].get());
+	::tesselate< 1,  0,  0, 1>(*data, position, geometry[1].get());
+	::tesselate< 0, -1,  0, 2>(*data, position, geometry[2].get());
+	::tesselate< 0,  1,  0, 3>(*data, position, geometry[3].get());
+	::tesselate< 0,  0, -1, 4>(*data, position, geometry[4].get());
+	::tesselate< 0,  0,  1, 5>(*data, position, geometry[5].get());
 
 	data.reset(); // No more use for this.
 }
