@@ -72,8 +72,8 @@ class AsyncTerrainGenerator
 
 	private:
 
-		void work(int3 position, ChunkData* chunkData);
-		void finalize(ChunkPtr chunk, ChunkData* chunkData);
+		void work(int3 position, ChunkGeometry* chunkGeometry);
+		void finalize(ChunkPtr chunk, ChunkGeometry* chunkGeometry);
 
 };
 

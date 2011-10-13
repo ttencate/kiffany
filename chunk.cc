@@ -3,70 +3,6 @@
 #include "stats.h"
 #include "terragen.h"
 
-bool ChunkGeometry::isEmpty() const {
-	return vertexData.size() == 0;
-}
-
-void upload(ChunkGeometry const &geometry, ChunkBuffers *buffers) {
-	buffers->getVertexBuffer().putData(
-			geometry.getVertexData().size() * sizeof(short),
-			&(geometry.getVertexData()[0]),
-			GL_STATIC_DRAW);
-	buffers->getNormalBuffer().putData(
-			geometry.getNormalData().size() * sizeof(char),
-			&(geometry.getNormalData()[0]),
-			GL_STATIC_DRAW);
-	buffers->setRanges(geometry.getRanges());
-}
-
-void render(ChunkBuffers const &buffers) {
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glBindBuffer(GL_ARRAY_BUFFER, buffers.getVertexBuffer().getName());
-	glVertexPointer(3, GL_SHORT, 0, 0);
-
-	glEnableClientState(GL_NORMAL_ARRAY);
-	glBindBuffer(GL_ARRAY_BUFFER, buffers.getNormalBuffer().getName());
-	glNormalPointer(GL_BYTE, 0, 0);
-
-	glDrawArrays(GL_QUADS, 0, buffers.getVertexBuffer().getSizeInBytes() / sizeof(short) / 3);
-	stats.quadsRendered.increment(buffers.getVertexBuffer().getSizeInBytes() / sizeof(short) / 3 / 4);
-	stats.chunksRendered.increment();
-}
-
-Chunk::Chunk(int3 const &index)
-:
-	index(index),
-	position(CHUNK_SIZE * index.x, CHUNK_SIZE * index.y, CHUNK_SIZE * index.z),
-	state(NEW)
-{
-}
-
-void Chunk::setData(ChunkData *data) {
-	this->data.reset(data);
-	state = data ? GENERATED : NEW;
-}
-
-bool Chunk::needsGenerating() const {
-	return state == NEW;
-}
-
-void Chunk::render() {
-	if (state < GENERATED) {
-		return;
-	}
-	if (state == GENERATED) {
-		tesselate();
-	}
-	if (state == TESSELATED) {
-		upload();
-	}
-	if (state == UPLOADED) {
-		if (buffers) {
-			::render(*buffers);
-		}
-	}
-}
-
 template<int dx, int dy, int dz, int faceIndex>
 void tesselateFace(ChunkData const &data, int3 const &position, ChunkGeometry *geometry) {
 	static char const N = 0x7F;
@@ -125,24 +61,80 @@ void tesselateFace(ChunkData const &data, int3 const &position, ChunkGeometry *g
 	geometry->setRange(faceIndex, Range(begin, end));
 }
 
-void Chunk::tesselate() {
-	geometry.reset(new ChunkGeometry());
+void tesselate(ChunkData const &data, int3 const &position, ChunkGeometry *geometry) {
+	Timed t = stats.chunkTesselationTime.timed();
 
-	{
-		Timed t = stats.chunkTesselationTime.timed();
-
-		tesselateFace<-1,  0,  0, 0>(*data, position, geometry.get());
-		tesselateFace< 1,  0,  0, 1>(*data, position, geometry.get());
-		tesselateFace< 0, -1,  0, 2>(*data, position, geometry.get());
-		tesselateFace< 0,  1,  0, 3>(*data, position, geometry.get());
-		tesselateFace< 0,  0, -1, 4>(*data, position, geometry.get());
-		tesselateFace< 0,  0,  1, 5>(*data, position, geometry.get());
-	}
-
-	data.reset(); // No more use for this.
-	state = TESSELATED;
+	tesselateFace<-1,  0,  0, 0>(data, position, geometry);
+	tesselateFace< 1,  0,  0, 1>(data, position, geometry);
+	tesselateFace< 0, -1,  0, 2>(data, position, geometry);
+	tesselateFace< 0,  1,  0, 3>(data, position, geometry);
+	tesselateFace< 0,  0, -1, 4>(data, position, geometry);
+	tesselateFace< 0,  0,  1, 5>(data, position, geometry);
 
 	stats.chunksTesselated.increment();
+}
+
+void upload(ChunkGeometry const &geometry, ChunkBuffers *buffers) {
+	buffers->getVertexBuffer().putData(
+			geometry.getVertexData().size() * sizeof(short),
+			&(geometry.getVertexData()[0]),
+			GL_STATIC_DRAW);
+	buffers->getNormalBuffer().putData(
+			geometry.getNormalData().size() * sizeof(char),
+			&(geometry.getNormalData()[0]),
+			GL_STATIC_DRAW);
+	buffers->setRanges(geometry.getRanges());
+}
+
+void render(ChunkBuffers const &buffers) {
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glBindBuffer(GL_ARRAY_BUFFER, buffers.getVertexBuffer().getName());
+	glVertexPointer(3, GL_SHORT, 0, 0);
+
+	glEnableClientState(GL_NORMAL_ARRAY);
+	glBindBuffer(GL_ARRAY_BUFFER, buffers.getNormalBuffer().getName());
+	glNormalPointer(GL_BYTE, 0, 0);
+
+	glDrawArrays(GL_QUADS, 0, buffers.getVertexBuffer().getSizeInBytes() / sizeof(short) / 3);
+	stats.quadsRendered.increment(buffers.getVertexBuffer().getSizeInBytes() / sizeof(short) / 3 / 4);
+	stats.chunksRendered.increment();
+}
+
+Chunk::Chunk(int3 const &index)
+:
+	index(index),
+	position(CHUNK_SIZE * index.x, CHUNK_SIZE * index.y, CHUNK_SIZE * index.z),
+	state(NEW)
+{
+}
+
+void Chunk::setData(ChunkData *data) {
+	this->data.reset(data);
+	state = GENERATED;
+}
+
+void Chunk::setGeometry(ChunkGeometry *geometry) {
+	this->geometry.reset(geometry);
+	data.reset(); // No more use for this right now.
+	state = TESSELATED;
+}
+
+bool Chunk::needsGenerating() const {
+	return state == NEW;
+}
+
+void Chunk::render() {
+	if (state < TESSELATED) {
+		return;
+	}
+	if (state == TESSELATED) {
+		upload();
+	}
+	if (state == UPLOADED) {
+		if (buffers) {
+			::render(*buffers);
+		}
+	}
 }
 
 void Chunk::upload() { 

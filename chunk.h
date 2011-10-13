@@ -43,9 +43,11 @@ class ChunkGeometry
 		void setRanges(Ranges const &ranges) { this->ranges = ranges; }
 		void setRange(unsigned index, Range const &range) { ranges[index] = range; }
 
-		bool isEmpty() const;
+		bool isEmpty() const { return vertexData.size() == 0; }
 
 };
+
+void tesselate(ChunkData const &data, int3 const &position, ChunkGeometry *geometry);
 
 class ChunkBuffers
 :
@@ -100,13 +102,13 @@ class Chunk
 
 		void generating() { state = GENERATING; }
 		void setData(ChunkData *data);
+		void setGeometry(ChunkGeometry *geometry);
 
 		bool needsGenerating() const;
 		void render();
 
 	private:
 
-		void tesselate();
 		void upload();
 	
 };
