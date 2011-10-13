@@ -68,6 +68,10 @@ inline int3 chunkIndexFromPosition(vec3 const &position) {
 	return int3(floor(position / (float)CHUNK_SIZE));
 }
 
+inline int3 chunkPositionFromIndex(int3 const &index) {
+	return int3((int)CHUNK_SIZE * index);
+}
+
 inline vec3 chunkMin(int3 const &index) {
 	return (float)CHUNK_SIZE * vec3(index);
 }

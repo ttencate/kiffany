@@ -9,9 +9,9 @@
 
 #include <cmath>
 
-void TerrainGenerator::generateChunk(int3 const &pos, ChunkData *data) const {
+void TerrainGenerator::generateChunk(int3 const &position, ChunkData *chunkData) const {
 	Timed t = stats.chunkGenerationTime.timed();
-	doGenerateChunk(position, chunkData.get());
+	doGenerateChunk(position, chunkData);
 	stats.chunksGenerated.increment();
 }
 
@@ -93,45 +93,4 @@ void SineTerrainGenerator::doGenerateChunk(int3 const &pos, ChunkData *data) con
 			}
 		}
 	}
-}
-
-AsyncTerrainGenerator::AsyncTerrainGenerator(TerrainGenerator &terrainGenerator)
-:
-	terrainGenerator(terrainGenerator),
-	threadPool(32, 32)
-{
-}
-
-bool AsyncTerrainGenerator::tryGenerate(ChunkPtr chunk) {
-	if (inProgress.find(chunk) != inProgress.end()) {
-		return true;
-	}
-	ChunkGeometry* chunkGeometry = new ChunkGeometry(); // Caution!
-	if (!threadPool.tryEnqueue(
-		boost::bind(&AsyncTerrainGenerator::work, this, chunk->getPosition(), chunkGeometry),
-		boost::bind(&AsyncTerrainGenerator::finalize, this, chunk, chunkGeometry))) {
-		delete chunkGeometry;
-		return false;
-	} else {
-		chunk->generating();
-		inProgress.insert(chunk);
-		return true;
-	}
-}
-
-void AsyncTerrainGenerator::gather() {
-	threadPool.runFinalizers();
-}
-
-void AsyncTerrainGenerator::work(int3 position, ChunkGeometry* chunkGeometry) {
-	boost::scoped_ptr<ChunkData> chunkData(new ChunkData());
-
-	terrainGenerator.generateChunk(position, chunkData.get());
-
-	tesselate(*chunkData, position, chunkGeometry);
-}
-
-void AsyncTerrainGenerator::finalize(ChunkPtr chunk, ChunkGeometry *chunkGeometry) {
-	chunk->setGeometry(chunkGeometry);
-	inProgress.erase(chunk);
 }

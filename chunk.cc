@@ -122,6 +122,10 @@ bool Chunk::needsGenerating() const {
 	return state == NEW;
 }
 
+bool Chunk::readyForRendering() const {
+	return state >= TESSELATED;
+}
+
 void Chunk::render() {
 	if (state < TESSELATED) {
 		return;

@@ -74,19 +74,19 @@ class ThreadPool
 
 	public:
 
-		typedef WorkQueue::Worker Worker;
-		typedef WorkQueue::Worker Finalizer;
+		typedef boost::function<void(void)> Finalizer;
+		typedef boost::function<Finalizer(void)> Worker;
 
 		ThreadPool(unsigned maxInputQueueSize, unsigned maxOutputQueueSize, unsigned requestedNumThreads = 0);
 		~ThreadPool();
 
-		void enqueue(Worker worker, Finalizer finalizer);
-		bool tryEnqueue(Worker worker, Finalizer finalizer);
+		void enqueue(Worker worker);
+		bool tryEnqueue(Worker worker);
 		void runFinalizers();
 
 	private:
 
-		void work(Worker worker, Finalizer finalizer);
+		void work(Worker worker);
 		void finalize(Finalizer finalizer);
 
 };

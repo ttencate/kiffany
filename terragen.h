@@ -1,13 +1,10 @@
 #ifndef TERRAGEN_H
 #define TERRAGEN_H
 
-#include "chunk.h"
 #include "maths.h"
-#include "threadpool.h"
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_array.hpp>
-#include <boost/unordered_set.hpp>
 
 class ChunkData;
 class ChunkGeometry;
@@ -17,7 +14,7 @@ class TerrainGenerator {
 
 	public:
 
-		void generateChunk(int3 const &pos, ChunkData *data) const;
+		void generateChunk(int3 const &position, ChunkData *chunkData) const;
 
 	private:
 
@@ -55,29 +52,6 @@ class SineTerrainGenerator
 	private:
 
 		virtual void doGenerateChunk(int3 const &pos, ChunkData *data) const;
-
-};
-
-class AsyncTerrainGenerator
-:
-	boost::noncopyable
-{
-
-	TerrainGenerator &terrainGenerator;
-	boost::unordered_set<ChunkPtr> inProgress;
-	ThreadPool threadPool; // Must be after everything that it uses!
-
-	public:
-
-		AsyncTerrainGenerator(TerrainGenerator &terrainGenerator);
-
-		bool tryGenerate(ChunkPtr chunk);
-		void gather();
-
-	private:
-
-		void work(int3 position, ChunkGeometry* chunkGeometry);
-		void finalize(ChunkPtr chunk, ChunkGeometry* chunkGeometry);
 
 };
 

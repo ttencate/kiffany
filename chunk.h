@@ -105,6 +105,7 @@ class Chunk
 		void setGeometry(ChunkGeometry *geometry);
 
 		bool needsGenerating() const;
+		bool readyForRendering() const;
 
 		void render();
 

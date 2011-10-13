@@ -111,12 +111,12 @@ ThreadPool::~ThreadPool() {
 	}
 }
 
-void ThreadPool::enqueue(Worker worker, Finalizer finalizer) {
-	inputQueue.post(boost::bind(&ThreadPool::work, this, worker, finalizer));
+void ThreadPool::enqueue(Worker worker) {
+	inputQueue.post(boost::bind(&ThreadPool::work, this, worker));
 }
 
-bool ThreadPool::tryEnqueue(Worker worker, Finalizer finalizer) {
-	return inputQueue.tryPost(boost::bind(&ThreadPool::work, this, worker, finalizer));
+bool ThreadPool::tryEnqueue(Worker worker) {
+	return inputQueue.tryPost(boost::bind(&ThreadPool::work, this, worker));
 }
 
 void ThreadPool::runFinalizers() {
@@ -124,8 +124,8 @@ void ThreadPool::runFinalizers() {
 	outputQueue.reset();
 }
 
-void ThreadPool::work(Worker worker, Finalizer finalizer) {
-	worker();
+void ThreadPool::work(Worker worker) {
+	Finalizer finalizer = worker();
 	outputQueue.post(boost::bind(&ThreadPool::finalize, this, finalizer));
 }
 

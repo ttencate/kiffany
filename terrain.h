@@ -4,6 +4,7 @@
 #include "camera.h"
 #include "chunk.h"
 #include "terragen.h"
+#include "threadpool.h"
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -33,27 +34,45 @@ class ChunkMap
 
 	typedef boost::unordered_map<int3, ChunkPtr, CoordsHasher> PositionMap;
 	typedef std::pair<float, int3> PriorityPair;
-	struct PriorityPairCompare {
+	struct EvictionPriority {
 		bool operator()(PriorityPair const &a, PriorityPair const &b) {
 			return a.first < b.first;
 		}
 	};
-	typedef std::priority_queue<PriorityPair, std::vector<PriorityPair>, PriorityPairCompare > PriorityQueue;
+	struct GenerationPriority {
+		bool operator()(PriorityPair const &a, PriorityPair const &b) {
+			return a.first > b.first;
+		}
+	};
+	typedef std::priority_queue<PriorityPair, std::vector<PriorityPair>, EvictionPriority> EvictionQueue;
+	typedef std::priority_queue<PriorityPair, std::vector<PriorityPair>, GenerationPriority> GenerationQueue;
 
 	PositionMap map;
-	PriorityQueue queue;
+	EvictionQueue evictionQueue;
 	PriorityFunction priorityFunction;
+
+	boost::scoped_ptr<TerrainGenerator> terrainGenerator;
+
+	boost::mutex generationQueueMutex;
+	GenerationQueue generationQueue;
+	ThreadPool threadPool;
 
 	public:
 
+		ChunkMap(TerrainGenerator *terrainGenerator);
+
 		ChunkPtr get(int3 const &index);
 
+		void gather();
 		void setPriorityFunction(PriorityFunction const &priorityFunction);
 		void trimToSize(unsigned size);
 
 	private:
 
 		void recomputePriorities();
+		ThreadPool::Finalizer tryGenerateOne();
+		void finalize(int3 index, ChunkGeometry *chunkGeometry);
+		static void doNothing();
 
 };
 
@@ -61,9 +80,6 @@ class Terrain
 :
 	boost::noncopyable
 {
-
-	boost::scoped_ptr<TerrainGenerator> terrainGenerator;
-	AsyncTerrainGenerator asyncTerrainGenerator;
 
 	ChunkMap chunkMap;
 
