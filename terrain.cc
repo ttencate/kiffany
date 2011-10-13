@@ -65,24 +65,10 @@ void Terrain::render(Camera const &camera) {
 
 	int3 center = chunkIndexFromPosition(camera.getPosition());
 	int radius = flags.viewDistance / CHUNK_SIZE;
-	// Render in roughly front-to-back order to make chunks generate in that order
-	for (int r = 0; r <= radius; ++r) {
-		for (int z = -r; z <= r; ++z) {
-			for (int y = -r; y <= r; ++y) {
-				renderChunk(camera, center + int3(-r, y, z));
-				renderChunk(camera, center + int3(r, y, z));
-			}
-		}
-		for (int z = -r; z <= r; ++z) {
-			for (int x = -r + 1; x <= r - 1; ++x) {
-				renderChunk(camera, center + int3(x, -r, z));
-				renderChunk(camera, center + int3(x, r, z));
-			}
-		}
-		for (int y = -r + 1; y <= r - 1; ++y) {
-			for (int x = -r + 1; x <= r - 1; ++x) {
-				renderChunk(camera, center + int3(x, y, -r));
-				renderChunk(camera, center + int3(x, y, r));
+	for (int z = -radius; z <= radius; ++z) {
+		for (int y = -radius; y <= radius; ++y) {
+			for (int x = -radius; x <= radius; ++x) {
+				renderChunk(camera, center + int3(x, y, z));
 			}
 		}
 	}
