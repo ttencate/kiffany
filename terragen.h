@@ -12,6 +12,7 @@
 class ChunkData;
 class ChunkGeometry;
 
+// Must be thread-safe.
 class TerrainGenerator {
 
 	public:

@@ -16,6 +16,7 @@ void upload(ChunkGeometry const &geometry, ChunkBuffers *buffers) {
 			geometry.getNormalData().size() * sizeof(char),
 			&(geometry.getNormalData()[0]),
 			GL_STATIC_DRAW);
+	buffers->setRanges(geometry.getRanges());
 }
 
 void render(ChunkBuffers const &buffers) {
@@ -60,10 +61,8 @@ void Chunk::render() {
 		upload();
 	}
 	if (state == UPLOADED) {
-		for (unsigned i = 0; i < 6; ++i) {
-			if (buffers[i]) {
-				::render(*buffers[i]);
-			}
+		if (buffers) {
+			::render(*buffers);
 		}
 	}
 }
@@ -90,10 +89,10 @@ void tesselateFace(ChunkData const &data, int3 const &position, ChunkGeometry *g
 
 	std::vector<short> &vertices = geometry->getVertexData();
 	std::vector<char> &normals = geometry->getNormalData();
-	vertices.clear();
-	normals.clear();
 
-	unsigned s = 0;
+	unsigned const begin = vertices.size();
+
+	unsigned end = begin;
 	Block const *p = data.raw() + CHUNK_SIZE * CHUNK_SIZE + CHUNK_SIZE + 1;
 	for (unsigned z = 1; z < CHUNK_SIZE - 1; ++z) {
 		for (unsigned y = 1; y < CHUNK_SIZE - 1; ++y) {
@@ -108,11 +107,11 @@ void tesselateFace(ChunkData const &data, int3 const &position, ChunkGeometry *g
 						face[6] + m.x, face[ 7] + m.y, face[ 8] + m.z,
 						face[9] + m.x, face[10] + m.y, face[11] + m.z
 					};
-					vertices.resize(s + 12);
-					normals.resize(s + 12);
-					memcpy(&vertices[s], v, 12 * sizeof(short));
-					memcpy(&normals[s], n, 12 * sizeof(char));
-					s += 12;
+					vertices.resize(end + 12);
+					normals.resize(end + 12);
+					memcpy(&vertices[end], v, 12 * sizeof(short));
+					memcpy(&normals[end], n, 12 * sizeof(char));
+					end += 12;
 				}
 				++p;
 			}
@@ -122,22 +121,22 @@ void tesselateFace(ChunkData const &data, int3 const &position, ChunkGeometry *g
 	}
 
 	stats.quadsGenerated.increment(vertices.size() / 4);
+
+	geometry->setRange(faceIndex, Range(begin, end));
 }
 
 void Chunk::tesselate() {
-	for (unsigned i = 0; i < 6; ++i) {
-		geometry[i].reset(new ChunkGeometry());
-	}
+	geometry.reset(new ChunkGeometry());
 
 	{
 		Timed t = stats.chunkTesselationTime.timed();
 
-		tesselateFace<-1,  0,  0, 0>(*data, position, geometry[0].get());
-		tesselateFace< 1,  0,  0, 1>(*data, position, geometry[1].get());
-		tesselateFace< 0, -1,  0, 2>(*data, position, geometry[2].get());
-		tesselateFace< 0,  1,  0, 3>(*data, position, geometry[3].get());
-		tesselateFace< 0,  0, -1, 4>(*data, position, geometry[4].get());
-		tesselateFace< 0,  0,  1, 5>(*data, position, geometry[5].get());
+		tesselateFace<-1,  0,  0, 0>(*data, position, geometry.get());
+		tesselateFace< 1,  0,  0, 1>(*data, position, geometry.get());
+		tesselateFace< 0, -1,  0, 2>(*data, position, geometry.get());
+		tesselateFace< 0,  1,  0, 3>(*data, position, geometry.get());
+		tesselateFace< 0,  0, -1, 4>(*data, position, geometry.get());
+		tesselateFace< 0,  0,  1, 5>(*data, position, geometry.get());
 	}
 
 	data.reset(); // No more use for this.
@@ -147,14 +146,12 @@ void Chunk::tesselate() {
 }
 
 void Chunk::upload() { 
-	for (unsigned i = 0; i < 6; ++i) {
-		if (geometry[i]) {
-			if (!geometry[i]->isEmpty()) {
-				buffers[i].reset(new ChunkBuffers());
-				::upload(*geometry[i], buffers[i].get());
-			}
-			geometry[i].reset();
+	if (geometry) {
+		if (!geometry->isEmpty()) {
+			buffers.reset(new ChunkBuffers());
+			::upload(*geometry, buffers.get());
 		}
+		geometry.reset();
 	}
 	state = UPLOADED;
 }

@@ -7,6 +7,23 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include <utility>
+
+struct Range {
+	unsigned begin;
+	unsigned end;
+	Range() : begin(0), end(0) { }
+	Range(unsigned begin, unsigned end) : begin(begin), end(end) { }
+	bool isEmpty() const { return end == begin; }
+};
+
+class Ranges {
+	Range ranges[6];
+	public:
+		Range const &operator[](unsigned index) const { return ranges[index]; }
+		Range &operator[](unsigned index) { return ranges[index]; }
+};
+
 class ChunkGeometry
 :
 	boost::noncopyable
@@ -14,12 +31,17 @@ class ChunkGeometry
 	std::vector<short> vertexData;
 	std::vector<char> normalData;
 
+	Ranges ranges;
+
 	public:
 
 		std::vector<short> const &getVertexData() const { return vertexData; }
 		std::vector<short> &getVertexData() { return vertexData; }
 		std::vector<char> const &getNormalData() const { return normalData; }
 		std::vector<char> &getNormalData() { return normalData; }
+		Ranges const &getRanges() const { return ranges; }
+		void setRanges(Ranges const &ranges) { this->ranges = ranges; }
+		void setRange(unsigned index, Range const &range) { ranges[index] = range; }
 
 		bool isEmpty() const;
 
@@ -32,12 +54,17 @@ class ChunkBuffers
 	GLBuffer vertexBuffer;
 	GLBuffer normalBuffer;
 
+	Ranges ranges;
+
 	public:
 
 		GLBuffer const &getVertexBuffer() const { return vertexBuffer; }
 		GLBuffer &getVertexBuffer() { return vertexBuffer; }
 		GLBuffer const &getNormalBuffer() const { return normalBuffer; }
 		GLBuffer &getNormalBuffer() { return normalBuffer; }
+		Ranges const &getRanges() const { return ranges; }
+		void setRanges(Ranges const &ranges) { this->ranges = ranges; }
+
 };
 
 void upload(ChunkGeometry const &geometry, ChunkBuffers *buffers);
@@ -61,8 +88,8 @@ class Chunk
 	State state;
 
 	boost::scoped_ptr<ChunkData> data;
-	boost::scoped_ptr<ChunkGeometry> geometry[6];
-	boost::scoped_ptr<ChunkBuffers> buffers[6];
+	boost::scoped_ptr<ChunkGeometry> geometry;
+	boost::scoped_ptr<ChunkBuffers> buffers;
 
 	public:
 
