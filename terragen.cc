@@ -9,6 +9,12 @@
 
 #include <cmath>
 
+void TerrainGenerator::generateChunk(int3 const &pos, ChunkData *data) const {
+	Timed t = stats.chunkGenerationTime.timed();
+	doGenerateChunk(position, chunkData.get());
+	stats.chunksGenerated.increment();
+}
+
 PerlinTerrainGenerator::PerlinTerrainGenerator(unsigned size, unsigned seed)
 :
 	size(size),
@@ -21,7 +27,7 @@ PerlinTerrainGenerator::PerlinTerrainGenerator(unsigned size, unsigned seed)
 	}
 }
 
-void PerlinTerrainGenerator::generateChunk(int3 const &pos, ChunkData *data) const {
+void PerlinTerrainGenerator::doGenerateChunk(int3 const &pos, ChunkData *data) const {
 	CoordsBlock coordsBlock = data->getCoordsBlock();
 	for (CoordsBlock::const_iterator i = coordsBlock.begin(); i != coordsBlock.end(); ++i) {
 		if (perlin(*i) > 0.5f) {
@@ -69,7 +75,7 @@ float PerlinTerrainGenerator::perlin(int3 const &pos) const {
 	return sum / max;
 }
 
-void SineTerrainGenerator::generateChunk(int3 const &pos, ChunkData *data) const {
+void SineTerrainGenerator::doGenerateChunk(int3 const &pos, ChunkData *data) const {
 	float const amplitude = 32.0f;
 	float const period = 256.0f;
 	float const omega = 2 * M_PI / period;
@@ -119,12 +125,8 @@ void AsyncTerrainGenerator::gather() {
 
 void AsyncTerrainGenerator::work(int3 position, ChunkGeometry* chunkGeometry) {
 	boost::scoped_ptr<ChunkData> chunkData(new ChunkData());
-	// TODO move timing and counting into public nonvirtual method on TerrainGenerator
-	{
-		Timed t = stats.chunkGenerationTime.timed();
-		terrainGenerator.generateChunk(position, chunkData.get());
-	}
-	stats.chunksGenerated.increment();
+
+	terrainGenerator.generateChunk(position, chunkData.get());
 
 	tesselate(*chunkData, position, chunkGeometry);
 }
