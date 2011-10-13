@@ -9,10 +9,8 @@ size_t CoordsHasher::operator()(int3 const &p) const {
 	return hasher(p.x) ^ hasher(p.y) ^ hasher(p.z);
 }
 
-ChunkMap::ChunkMap(unsigned maxSize)
-:
-	maxSize(maxSize)
-{
+float PriorityFunction::operator()(Chunk const &chunk) const {
+	return length(chunkCenter(chunk.getIndex()) - camera.getPosition());
 }
 
 ChunkPtr ChunkMap::get(int3 const &index) {
@@ -20,16 +18,30 @@ ChunkPtr ChunkMap::get(int3 const &index) {
 	if (!chunkPtr) {
 		chunkPtr.reset(new Chunk(index));
 	}
-	trimToSize();
 	return chunkPtr;
 }
 
-void ChunkMap::trimToSize() {
-	if (maxSize > 0) {
-		while (map.size() > maxSize) {
-			stats.chunksEvicted.increment();
-			map.pop_back();
-		}
+void ChunkMap::setPriorityFunction(PriorityFunction const &priorityFunction) {
+	this->priorityFunction = priorityFunction;
+	recomputePriorities();
+}
+
+void ChunkMap::trimToSize(unsigned size) {
+	while (map.size() > size) {
+		stats.chunksEvicted.increment();
+		int3 index = queue.top().second;
+		map.erase(index);
+		queue.pop();
+	}
+}
+
+void ChunkMap::recomputePriorities() {
+	queue = PriorityQueue(); // it has no clear() function
+	for (PositionMap::const_iterator i = map.begin(); i != map.end(); ++i) {
+		int3 const &index = i->first;
+		Chunk const &chunk = *i->second;
+		float priority = priorityFunction(chunk);
+		queue.push(std::make_pair(priority, index));
 	}
 }
 
@@ -37,7 +49,7 @@ Terrain::Terrain(TerrainGenerator *terrainGenerator)
 :
 	terrainGenerator(terrainGenerator),
 	asyncTerrainGenerator(*terrainGenerator),
-	chunkMap(computeMaxNumChunks())
+	maxNumChunks(computeMaxNumChunks())
 {
 }
 
@@ -49,6 +61,8 @@ void Terrain::update(float dt) {
 }
 
 void Terrain::render(Camera const &camera) {
+	chunkMap.setPriorityFunction(PriorityFunction(camera));
+
 	int3 center = chunkIndexFromPosition(camera.getPosition());
 	int radius = flags.viewDistance / CHUNK_SIZE;
 	// Render in roughly front-to-back order to make chunks generate in that order
@@ -72,6 +86,8 @@ void Terrain::render(Camera const &camera) {
 			}
 		}
 	}
+
+	chunkMap.trimToSize(maxNumChunks);
 }
 
 unsigned Terrain::computeMaxNumChunks() const {

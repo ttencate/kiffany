@@ -97,8 +97,8 @@ class Chunk
 
 		Chunk(int3 const &index);
 
-		int3 const &getIndex() { return index; }
-		int3 const &getPosition() { return position; }
+		int3 const &getIndex() const { return index; }
+		int3 const &getPosition() const { return position; }
 
 		void generating() { state = GENERATING; }
 		void setData(ChunkData *data);

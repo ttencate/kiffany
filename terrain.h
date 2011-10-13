@@ -11,49 +11,19 @@
 #include <boost/unordered_map.hpp>
 
 #include <list>
+#include <queue>
 #include <utility>
-
-#include <iostream>
 
 struct CoordsHasher {
 	size_t operator()(int3 const &p) const;
 };
 
-template<typename K, typename V, typename Hash = boost::hash<K> >
-class LruMap {
-
-	typedef std::pair<K, V> Pair;
-	typedef std::list<Pair> List;
-	typedef boost::unordered_map<K, typename List::iterator, Hash> Map;
-
-	List list;
-	Map map;
-
+class PriorityFunction {
+	Camera camera;
 	public:
-
-		V &operator[](K const &key) {
-			typename Map::iterator i = map.find(key);
-			Pair p;
-			if (i == map.end()) {
-				p = std::make_pair(key, V());
-			} else {
-				p = *i->second;
-				list.erase(i->second);
-			}
-			list.push_front(p);
-			map[key] = list.begin();
-			return list.front().second;
-		}
-
-		void pop_back() {
-			map.erase(list.back().first);
-			list.pop_back();
-		}
-
-		size_t size() const {
-			return map.size();
-		}
-
+		PriorityFunction() { }
+		explicit PriorityFunction(Camera const &camera) : camera(camera) { }
+		float operator()(Chunk const &chunk) const;
 };
 
 class ChunkMap
@@ -61,21 +31,29 @@ class ChunkMap
 	boost::noncopyable
 {
 
-	unsigned const maxSize;
+	typedef boost::unordered_map<int3, ChunkPtr, CoordsHasher> PositionMap;
+	typedef std::pair<float, int3> PriorityPair;
+	struct PriorityPairCompare {
+		bool operator()(PriorityPair const &a, PriorityPair const &b) {
+			return a.first < b.first;
+		}
+	};
+	typedef std::priority_queue<PriorityPair, std::vector<PriorityPair>, PriorityPairCompare > PriorityQueue;
 
-	typedef LruMap<int3, ChunkPtr, CoordsHasher> Map;
-
-	Map map;
+	PositionMap map;
+	PriorityQueue queue;
+	PriorityFunction priorityFunction;
 
 	public:
 
-		ChunkMap(unsigned maxSize);
-
 		ChunkPtr get(int3 const &index);
+
+		void setPriorityFunction(PriorityFunction const &priorityFunction);
+		void trimToSize(unsigned size);
 
 	private:
 
-		void trimToSize();
+		void recomputePriorities();
 
 };
 
@@ -88,6 +66,8 @@ class Terrain
 	AsyncTerrainGenerator asyncTerrainGenerator;
 
 	ChunkMap chunkMap;
+
+	unsigned const maxNumChunks;
 
 	public:
 
