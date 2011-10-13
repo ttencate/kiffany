@@ -97,7 +97,6 @@ void render(ChunkBuffers const &buffers) {
 
 	glDrawArrays(GL_QUADS, 0, buffers.getVertexBuffer().getSizeInBytes() / sizeof(short) / 3);
 	stats.quadsRendered.increment(buffers.getVertexBuffer().getSizeInBytes() / sizeof(short) / 3 / 4);
-	stats.chunksRendered.increment();
 }
 
 Chunk::Chunk(int3 const &index)
@@ -133,6 +132,9 @@ void Chunk::render() {
 	if (state == UPLOADED) {
 		if (buffers) {
 			::render(*buffers);
+			stats.chunksRendered.increment();
+		} else {
+			stats.chunksEmpty.increment();
 		}
 	}
 }

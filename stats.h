@@ -65,8 +65,11 @@ struct Stats {
 	TimerStat chunkTesselationTime;
 
 	CounterStat framesRendered;
-	CounterStat chunksRendered;
+	CounterStat chunksConsidered;
+	CounterStat chunksSkipped;
 	CounterStat chunksCulled;
+	CounterStat chunksEmpty;
+	CounterStat chunksRendered;
 	CounterStat quadsRendered;
 
 	void print() const;

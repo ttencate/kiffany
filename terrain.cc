@@ -87,8 +87,10 @@ unsigned Terrain::computeMaxNumChunks() const {
 
 void Terrain::renderChunk(Camera const &camera, int3 const &index) {
 	ChunkPtr chunk = chunkMap.get(index);
+	stats.chunksConsidered.increment();
 	if (chunk->needsGenerating()) {
 		asyncTerrainGenerator.tryGenerate(chunk);
+		stats.chunksSkipped.increment();
 	} else {
 		if (camera.isSphereInView(chunkCenter(index), CHUNK_RADIUS)) {
 			chunk->render();
