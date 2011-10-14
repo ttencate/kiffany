@@ -4,50 +4,6 @@
 
 Stats stats;
 
-CounterStat::CounterStat()
-:
-	value(0)
-{
-}
-
-void CounterStat::increment(long delta) {
-	value += delta;
-}
-
-long CounterStat::get() const {
-	return value;
-}
-
-TimerStat::TimerStat()
-:
-	value(0.0)
-{
-}
-
-Timed::Timed(TimerStat *parent)
-:
-	parent(parent)
-{
-	clock_gettime(CLOCK_MONOTONIC, &start);
-}
-
-Timed::~Timed() {
-	if (parent) {
-		timespec end;
-		clock_gettime(CLOCK_MONOTONIC, &end);
-		double delta = end.tv_sec - start.tv_sec + 1e-9 * (end.tv_nsec - start.tv_nsec);
-		parent->value += delta;
-	}
-}
-
-Timed TimerStat::timed() {
-	return Timed(this);
-}
-
-double TimerStat::get() const {
-	return value;
-}
-
 void Stats::print() const {
 	std::cout
 		<< "Chunks generated: " << chunksGenerated.get() << '\n'

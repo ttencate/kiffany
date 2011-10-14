@@ -62,7 +62,7 @@ void tesselateFace(ChunkData const &data, int3 const &position, ChunkGeometry *g
 }
 
 void tesselate(ChunkData const &data, int3 const &position, ChunkGeometry *geometry) {
-	Timed t = stats.chunkTesselationTime.timed();
+	SafeTimer::Timed t = stats.chunkTesselationTime.timed();
 
 	tesselateFace<-1,  0,  0, 0>(data, position, geometry);
 	tesselateFace< 1,  0,  0, 1>(data, position, geometry);

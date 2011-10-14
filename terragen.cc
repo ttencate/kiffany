@@ -10,7 +10,7 @@
 #include <cmath>
 
 void TerrainGenerator::generateChunk(int3 const &position, ChunkData *chunkData) const {
-	Timed t = stats.chunkGenerationTime.timed();
+	SafeTimer::Timed t = stats.chunkGenerationTime.timed();
 	doGenerateChunk(position, chunkData);
 	stats.chunksGenerated.increment();
 }
