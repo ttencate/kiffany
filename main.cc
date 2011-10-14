@@ -22,6 +22,7 @@ void keyCallback(int key, int state) {
 				break;
 			case 'S':
 				stats.print();
+				std::cout << "----------------------------------------\n";
 				break;
 		}
 	}
