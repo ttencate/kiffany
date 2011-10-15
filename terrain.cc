@@ -13,7 +13,7 @@ float PriorityFunction::operator()(int3 index) const {
 }
 
 float PriorityFunction::operator()(vec3 chunkCenter) const {
-	return -length(chunkCenter - camera.getPosition());
+	return 1 / length(chunkCenter - camera.getPosition());
 }
 
 ChunkMap::ChunkMap(unsigned maxSize)
@@ -104,7 +104,7 @@ void ChunkManager::requestTesselation(ChunkPtr chunk) {
 					boost::bind(
 						&ChunkManager::tesselate, this,
 						index, chunk->getData(), neighbourChunkData),
-					priority);
+					1e6f * priority); // Tesselations are more important.
 		}
 	}
 }
@@ -167,6 +167,7 @@ void ChunkManager::finalizeTesselation(int3 index, ChunkGeometryPtr chunkGeometr
 	ChunkPtr chunk = chunkOrNull(index);
 	if (chunk) {
 		chunk->setGeometry(chunkGeometry);
+		// TODO see if its or its neighbours' data can be cleaned up
 	}
 }
 
