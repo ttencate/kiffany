@@ -24,21 +24,25 @@ class Ranges {
 		Range &operator[](unsigned index) { return ranges[index]; }
 };
 
+typedef std::vector<short> VertexArray;
+typedef std::vector<char> NormalArray;
+
 class ChunkGeometry
 :
 	boost::noncopyable
 {
-	std::vector<short> vertexData;
-	std::vector<char> normalData;
+
+	VertexArray vertexData;
+	NormalArray normalData;
 
 	Ranges ranges;
 
 	public:
 
-		std::vector<short> const &getVertexData() const { return vertexData; }
-		std::vector<short> &getVertexData() { return vertexData; }
-		std::vector<char> const &getNormalData() const { return normalData; }
-		std::vector<char> &getNormalData() { return normalData; }
+		VertexArray const &getVertexData() const { return vertexData; }
+		VertexArray &getVertexData() { return vertexData; }
+		NormalArray const &getNormalData() const { return normalData; }
+		NormalArray &getNormalData() { return normalData; }
 		Ranges const &getRanges() const { return ranges; }
 		void setRanges(Ranges const &ranges) { this->ranges = ranges; }
 		void setRange(unsigned index, Range const &range) { ranges[index] = range; }
