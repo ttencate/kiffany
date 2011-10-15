@@ -28,6 +28,8 @@ class PriorityFunction {
 		PriorityFunction() { }
 		explicit PriorityFunction(Camera const &camera) : camera(camera) { }
 		float operator()(Chunk const &chunk) const;
+		float operator()(int3 index) const;
+		float operator()(vec3 chunkCenter) const;
 };
 
 class ChunkMap
@@ -62,6 +64,7 @@ class ChunkMap
 	private:
 
 		bool atCapacity() const { return map.size() >= maxSize; }
+		bool overCapacity() const { return map.size() > maxSize; }
 		void recomputePriorities();
 		void trim();
 
@@ -91,8 +94,8 @@ class ChunkManager {
 
 		ChunkManager(unsigned maxNumChunks, TerrainGenerator *terrainGenerator);
 
-		ChunkPtr chunkAtIndex(int3 index);
-		void requestGeneration(int3 index);
+		ChunkPtr chunkOrNull(int3 index);
+		void requestGeneration(ChunkPtr chunk);
 
 		void setPriorityFunction(PriorityFunction const &priorityFunction);
 		void gather();

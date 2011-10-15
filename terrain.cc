@@ -5,7 +5,15 @@
 #include "terragen.h"
 
 float PriorityFunction::operator()(Chunk const &chunk) const {
-	return length(chunkCenter(chunk.getIndex()) - camera.getPosition());
+	return (*this)(chunk.getIndex());
+}
+
+float PriorityFunction::operator()(int3 index) const {
+	return (*this)(chunkCenter(index));
+}
+
+float PriorityFunction::operator()(vec3 chunkCenter) const {
+	return length(chunkCenter - camera.getPosition());
 }
 
 ChunkMap::ChunkMap(unsigned maxSize)
@@ -17,14 +25,17 @@ ChunkMap::ChunkMap(unsigned maxSize)
 ChunkPtr ChunkMap::operator[](int3 index) {
 	PositionMap::iterator i = map.find(index);
 	if (i == map.end()) {
-		ChunkPtr chunk(new Chunk(index));
-		float priority = priorityFunction(*chunk);
+		float priority = priorityFunction(index);
+		if (atCapacity() && (evictionQueue.empty() || priority >= evictionQueue.top().first)) {
+			return ChunkPtr();
+		}
 
-		evictionQueue.push(PriorityPair(priority, index));
+		ChunkPtr chunk(new Chunk(index));
 		stats.chunksCreated.increment();
 
 		map[index] = chunk;
-		trim(); // Note: this might evict the chunk we just created!
+		evictionQueue.push(PriorityPair(priority, index));
+		trim();
 
 		return chunk;
 	}
@@ -41,7 +52,7 @@ void ChunkMap::setPriorityFunction(PriorityFunction const &priorityFunction) {
 }
 
 void ChunkMap::trim() {
-	while (atCapacity()) {
+	while (overCapacity()) {
 		stats.chunksEvicted.increment();
 		int3 index = evictionQueue.top().second;
 		map.erase(index);
@@ -53,8 +64,7 @@ void ChunkMap::recomputePriorities() {
 	evictionQueue = EvictionQueue(); // it has no clear() function
 	for (PositionMap::const_iterator i = map.begin(); i != map.end(); ++i) {
 		int3 const &index = i->first;
-		Chunk const &chunk = *i->second;
-		float priority = priorityFunction(chunk);
+		float priority = priorityFunction(index);
 		evictionQueue.push(PriorityPair(priority, index));
 	}
 }
@@ -67,16 +77,16 @@ ChunkManager::ChunkManager(unsigned maxNumChunks, TerrainGenerator *terrainGener
 {
 }
 
-ChunkPtr ChunkManager::chunkAtIndex(int3 index) {
+ChunkPtr ChunkManager::chunkOrNull(int3 index) {
 	return chunkMap[index];
 }
 
-void ChunkManager::requestGeneration(int3 index) {
-	ChunkPtr chunk = chunkMap[index];
+void ChunkManager::requestGeneration(ChunkPtr chunk) {
 	if (chunk->needsGenerating()) {
+		float priority = priorityFunction(*chunk);
 		{
 			boost::unique_lock<boost::mutex> lock(generationQueueMutex);
-			generationQueue.push(PriorityPair(priorityFunction(*chunk), index));
+			generationQueue.push(PriorityPair(priority, chunk->getIndex()));
 		}
 		chunk->generating();
 		threadPool.enqueue(boost::bind(&ChunkManager::generate, this));
@@ -163,8 +173,11 @@ unsigned Terrain::computeMaxNumChunks() const {
 }
 
 void Terrain::renderChunk(Camera const &camera, int3 const &index) {
-	ChunkPtr chunk = chunkManager.chunkAtIndex(index);
-	chunkManager.requestGeneration(index);
+	ChunkPtr chunk = chunkManager.chunkOrNull(index);
+	if (!chunk) {
+		return;
+	}
+	chunkManager.requestGeneration(chunk);
 	stats.chunksConsidered.increment();
 	if (!chunk->readyForRendering()) {
 		stats.chunksSkipped.increment();
