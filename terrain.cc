@@ -93,7 +93,8 @@ void ChunkManager::requestTesselation(ChunkPtr chunk) {
 	if (chunk->getState() == Chunk::GENERATED) {
 		float priority = priorityFunction(*chunk);
 		chunk->setTesselating();
-		threadPool.enqueue(boost::bind(&ChunkManager::tesselate, this, chunk->getIndex(), chunk->getData()), priority);
+		NeighbourChunkData neighbourChunkData;
+		threadPool.enqueue(boost::bind(&ChunkManager::tesselate, this, chunk->getIndex(), chunk->getData(), neighbourChunkData), priority);
 	}
 }
 
@@ -110,7 +111,7 @@ ThreadPool::Finalizer ChunkManager::generate(int3 index) {
 	int3 position = chunkPositionFromIndex(index);
 
 	ChunkDataPtr chunkData(new ChunkData());
-	terrainGenerator->generateChunk(position, chunkData.get());
+	terrainGenerator->generateChunk(position, chunkData);
 
 	return boost::bind(&ChunkManager::finalizeGeneration, this, index, chunkData);
 }
@@ -122,11 +123,11 @@ void ChunkManager::finalizeGeneration(int3 index, ChunkDataPtr chunkData) {
 	}
 }
 
-ThreadPool::Finalizer ChunkManager::tesselate(int3 index, ChunkDataPtr chunkData) {
+ThreadPool::Finalizer ChunkManager::tesselate(int3 index, ChunkDataPtr chunkData, NeighbourChunkData neighbourChunkData) {
 	int3 position = chunkPositionFromIndex(index);
 
 	ChunkGeometryPtr chunkGeometry(new ChunkGeometry());
-	::tesselate(*chunkData, position, chunkGeometry.get());
+	::tesselate(chunkData, neighbourChunkData, position, chunkGeometry);
 
 	return boost::bind(&ChunkManager::finalizeTesselation, this, index, chunkGeometry);
 }

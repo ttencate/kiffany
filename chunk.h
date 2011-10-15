@@ -47,7 +47,18 @@ class ChunkGeometry
 
 };
 
-void tesselate(ChunkData const &data, int3 const &position, ChunkGeometry *geometry);
+typedef boost::shared_ptr<ChunkGeometry> ChunkGeometryPtr;
+
+struct NeighbourChunkData {
+	ChunkDataPtr xn;
+	ChunkDataPtr xp;
+	ChunkDataPtr yn;
+	ChunkDataPtr yp;
+	ChunkDataPtr zn;
+	ChunkDataPtr zp;
+};
+
+void tesselate(ChunkDataPtr data, NeighbourChunkData const &neighbourData, int3 const &position, ChunkGeometryPtr geometry);
 
 class ChunkBuffers
 :
@@ -71,9 +82,6 @@ class ChunkBuffers
 
 void upload(ChunkGeometry const &geometry, ChunkBuffers *buffers);
 void render(ChunkBuffers const &buffers);
-
-typedef boost::shared_ptr<ChunkData> ChunkDataPtr;
-typedef boost::shared_ptr<ChunkGeometry> ChunkGeometryPtr;
 
 class Chunk
 :

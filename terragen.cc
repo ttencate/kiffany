@@ -9,7 +9,7 @@
 
 #include <cmath>
 
-void TerrainGenerator::generateChunk(int3 const &position, ChunkData *chunkData) const {
+void TerrainGenerator::generateChunk(int3 const &position, ChunkDataPtr chunkData) const {
 	SafeTimer::Timed t = stats.chunkGenerationTime.timed();
 	doGenerateChunk(position, chunkData);
 	stats.chunksGenerated.increment();
@@ -27,7 +27,7 @@ PerlinTerrainGenerator::PerlinTerrainGenerator(unsigned size, unsigned seed)
 	}
 }
 
-void PerlinTerrainGenerator::doGenerateChunk(int3 const &pos, ChunkData *data) const {
+void PerlinTerrainGenerator::doGenerateChunk(int3 const &pos, ChunkDataPtr data) const {
 	CoordsBlock coordsBlock = data->getCoordsBlock();
 	for (CoordsBlock::const_iterator i = coordsBlock.begin(); i != coordsBlock.end(); ++i) {
 		if (perlin(*i) > 0.5f) {
@@ -75,7 +75,7 @@ float PerlinTerrainGenerator::perlin(int3 const &pos) const {
 	return sum / max;
 }
 
-void SineTerrainGenerator::doGenerateChunk(int3 const &pos, ChunkData *data) const {
+void SineTerrainGenerator::doGenerateChunk(int3 const &pos, ChunkDataPtr data) const {
 	float const amplitude = 32.0f;
 	float const period = 256.0f;
 	float const omega = 2 * M_PI / period;

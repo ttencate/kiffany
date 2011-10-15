@@ -95,7 +95,7 @@ class ChunkManager {
 
 		ThreadPool::Finalizer generate(int3 index);
 		void finalizeGeneration(int3 index, ChunkDataPtr chunkData);
-		ThreadPool::Finalizer tesselate(int3 index, ChunkDataPtr chunkData);
+		ThreadPool::Finalizer tesselate(int3 index, ChunkDataPtr chunkData, NeighbourChunkData neighbourChunkData);
 		void finalizeTesselation(int3 index, ChunkGeometryPtr chunkGeometry);
 
 };

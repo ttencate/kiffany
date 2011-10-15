@@ -4,7 +4,7 @@
 #include "terragen.h"
 
 template<int dx, int dy, int dz, int faceIndex>
-void tesselateFace(ChunkData const &data, int3 const &position, ChunkGeometry *geometry) {
+void tesselateFace(ChunkDataPtr data, int3 const &position, ChunkGeometryPtr geometry) {
 	static char const N = 0x7F;
 	static char const n[12] = {
 		dx * N, dy * N, dz * N,
@@ -29,7 +29,7 @@ void tesselateFace(ChunkData const &data, int3 const &position, ChunkGeometry *g
 	unsigned const begin = vertices.size();
 
 	unsigned end = begin;
-	Block const *p = data.raw() + CHUNK_SIZE * CHUNK_SIZE + CHUNK_SIZE + 1;
+	Block const *p = data->raw() + CHUNK_SIZE * CHUNK_SIZE + CHUNK_SIZE + 1;
 	for (unsigned z = 1; z < CHUNK_SIZE - 1; ++z) {
 		for (unsigned y = 1; y < CHUNK_SIZE - 1; ++y) {
 			for (unsigned x = 1; x < CHUNK_SIZE - 1; ++x) {
@@ -61,7 +61,7 @@ void tesselateFace(ChunkData const &data, int3 const &position, ChunkGeometry *g
 	geometry->setRange(faceIndex, Range(begin, end));
 }
 
-void tesselate(ChunkData const &data, int3 const &position, ChunkGeometry *geometry) {
+void tesselate(ChunkDataPtr data, NeighbourChunkData const &neighbourData, int3 const &position, ChunkGeometryPtr geometry) {
 	SafeTimer::Timed t = stats.chunkTesselationTime.timed();
 
 	tesselateFace<-1,  0,  0, 0>(data, position, geometry);

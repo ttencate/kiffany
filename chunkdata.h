@@ -7,6 +7,7 @@
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_array.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <vector>
 
@@ -38,5 +39,7 @@ class ChunkData
 		Block *raw();
 
 };
+
+typedef boost::shared_ptr<ChunkData> ChunkDataPtr;
 
 #endif
