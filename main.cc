@@ -61,7 +61,7 @@ void update(float dt) {
 		float const s = flags.autoflySpeed * dt;
 		camera->moveRelative(s * Y_AXIS);
 	} else {
-		float const s = 30.0f * dt;
+		float const s = 100.0f * dt;
 		vec3 delta;
 		if (glfwGetKey('O')) {
 			delta += s * -X_AXIS;
