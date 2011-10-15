@@ -39,39 +39,57 @@ WorkQueue::WorkQueue(unsigned maxSize)
 {
 }
 
-boost::asio::io_service::work *WorkQueue::createWork() {
-	return new boost::asio::io_service::work(queue);
-}
+Priority const DEFAULT_PRIORITY = 0;
 
-void WorkQueue::run() {
-	queue.run();
-}
-
-void WorkQueue::reset() {
-	queue.reset();
-}
-
-void WorkQueue::stop() {
-	queue.stop();
-}
-
-void WorkQueue::post(Worker worker) {
+void WorkQueue::post(Worker worker, Priority priority) {
 	semaphore.wait();
-	queue.post(boost::bind(&WorkQueue::runAndSignal, this, worker));
+	doPost(worker, priority);
 }
 
-bool WorkQueue::tryPost(Worker worker) {
+bool WorkQueue::tryPost(Worker worker, Priority priority) {
 	if (semaphore.tryWait()) {
-		queue.post(boost::bind(&WorkQueue::runAndSignal, this, worker));
+		doPost(worker, priority);
 		return true;
 	} else {
 		return false;
 	}
 }
 
-void WorkQueue::runAndSignal(Worker worker) {
+void WorkQueue::runOne() {
+	Worker worker;
+	{
+		boost::unique_lock<boost::mutex> lock(queueMutex);
+		while (queue.empty()) {
+			conditionVariable.wait(lock);
+		}
+		worker = queue.top().first;
+		queue.pop();
+	}
 	semaphore.signal();
 	worker();
+}
+
+void WorkQueue::runAll() {
+	Queue all;
+	{
+		boost::unique_lock<boost::mutex> lock(queueMutex);
+		std::swap(queue, all);
+	}
+	for (unsigned i = 0; i < all.size(); ++i) {
+		semaphore.signal();
+	}
+	while (!all.empty()) {
+		all.top().first();
+		all.pop();
+	}
+}
+
+void WorkQueue::doPost(Worker worker, Priority priority) {
+	{
+		boost::unique_lock<boost::mutex> lock(queueMutex);
+		queue.push(std::make_pair(worker, priority));
+	}
+	conditionVariable.notify_one();
 }
 
 ThreadPool::ThreadPool(unsigned maxInputQueueSize, unsigned maxOutputQueueSize, unsigned numThreads)
@@ -79,36 +97,36 @@ ThreadPool::ThreadPool(unsigned maxInputQueueSize, unsigned maxOutputQueueSize, 
 	numThreads(numThreads == 0 ? defaultNumThreads() : numThreads),
 	inputQueue(maxInputQueueSize),
 	outputQueue(maxOutputQueueSize),
-	works(new boost::scoped_ptr<boost::asio::io_service::work>[numThreads]),
 	threads(new boost::scoped_ptr<boost::thread>[numThreads])
 {
 	for (unsigned i = 0; i < numThreads; ++i) {
-		works[i].reset(inputQueue.createWork());
-		threads[i].reset(new boost::thread(boost::bind(&WorkQueue::run, &inputQueue)));
+		threads[i].reset(new boost::thread(boost::bind(&ThreadPool::loop, this)));
 	}
 }
 
 ThreadPool::~ThreadPool() {
-	inputQueue.stop();
-	runFinalizers();
+	for (unsigned i = 0; i < numThreads; ++i) {
+		threads[i]->interrupt();
+	}
 	// Do not delete the queues until all threads have finished.
+	// Ensure that there is enough space in the output queue for them.
+	runFinalizers();
 	for (unsigned i = 0; i < numThreads; ++i) {
 		threads[i]->join();
 		runFinalizers();
 	}
 }
 
-void ThreadPool::enqueue(Worker worker) {
-	inputQueue.post(boost::bind(&ThreadPool::work, this, worker));
+void ThreadPool::enqueue(Worker worker, Priority priority) {
+	inputQueue.post(boost::bind(&ThreadPool::work, this, worker), priority);
 }
 
-bool ThreadPool::tryEnqueue(Worker worker) {
-	return inputQueue.tryPost(boost::bind(&ThreadPool::work, this, worker));
+bool ThreadPool::tryEnqueue(Worker worker, Priority priority) {
+	return inputQueue.tryPost(boost::bind(&ThreadPool::work, this, worker), priority);
 }
 
 void ThreadPool::runFinalizers() {
-	outputQueue.run();
-	outputQueue.reset();
+	outputQueue.runAll();
 }
 
 unsigned ThreadPool::defaultNumThreads() {
@@ -117,6 +135,12 @@ unsigned ThreadPool::defaultNumThreads() {
 		numThreads = 1;
 	}
 	return numThreads;
+}
+
+void ThreadPool::loop() {
+	while (true) {
+		inputQueue.runOne();
+	}
 }
 
 void ThreadPool::work(Worker worker) {

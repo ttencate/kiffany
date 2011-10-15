@@ -1,12 +1,13 @@
 #ifndef THREADPOOL_H
 #define THREADPOOL_H
 
-#include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
+
+#include <queue>
 
 class Semaphore
 :
@@ -26,36 +27,52 @@ class Semaphore
 
 };
 
+typedef float Priority;
+
+extern Priority const DEFAULT_PRIORITY;
+
 // A wrapper around io_service that keeps track of the queue size,
 // and allows new posts to block if the queue gets too large.
 class WorkQueue
 :
 	boost::noncopyable
 {
-	unsigned const maxSize;
-
-	boost::asio::io_service queue;
-	Semaphore semaphore;
-
 	public:
 
 		typedef boost::function<void(void)> Worker;
 
+	private:
+
+		typedef std::pair<Worker, Priority> PriorityWorker;
+		struct PriorityWorkerCompare {
+			bool operator()(PriorityWorker const &a, PriorityWorker const &b) {
+				return a.second < b.second;
+			}
+		};
+		typedef std::priority_queue<PriorityWorker, std::vector<PriorityWorker>, PriorityWorkerCompare> Queue;
+
+		unsigned const maxSize;
+
+		boost::mutex mutable queueMutex;
+		Queue queue;
+		boost::condition_variable conditionVariable;
+		Semaphore semaphore;
+
+	public:
+
 		WorkQueue(unsigned maxSize);
 
-		boost::asio::io_service::work *createWork();
+		void post(Worker worker, Priority priority = DEFAULT_PRIORITY);
+		bool tryPost(Worker worker, Priority priority = DEFAULT_PRIORITY);
 
-		void run();
+		bool empty() const;
 
-		void reset();
-		void stop();
-
-		void post(Worker worker);
-		bool tryPost(Worker worker);
+		void runOne();
+		void runAll();
 
 	private:
 
-		void runAndSignal(Worker worker);
+		void doPost(Worker worker, Priority priority);
 
 };
 
@@ -69,7 +86,6 @@ class ThreadPool
 	WorkQueue inputQueue;
 	WorkQueue outputQueue;
 
-	boost::scoped_array<boost::scoped_ptr<boost::asio::io_service::work> > const works;
 	boost::scoped_array<boost::scoped_ptr<boost::thread> > const threads;
 
 	public:
@@ -80,14 +96,15 @@ class ThreadPool
 		ThreadPool(unsigned maxInputQueueSize, unsigned maxOutputQueueSize, unsigned numThreads = defaultNumThreads());
 		~ThreadPool();
 
-		void enqueue(Worker worker);
-		bool tryEnqueue(Worker worker);
+		void enqueue(Worker worker, Priority priority = DEFAULT_PRIORITY);
+		bool tryEnqueue(Worker worker, Priority priority = DEFAULT_PRIORITY);
 		void runFinalizers();
 
 		static unsigned defaultNumThreads();
 
 	private:
 
+		void loop();
 		void work(Worker worker);
 		void finalize(Finalizer finalizer);
 
