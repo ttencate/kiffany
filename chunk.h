@@ -72,6 +72,8 @@ class ChunkBuffers
 void upload(ChunkGeometry const &geometry, ChunkBuffers *buffers);
 void render(ChunkBuffers const &buffers);
 
+typedef boost::shared_ptr<ChunkData> ChunkDataPtr;
+
 class Chunk
 :
 	boost::noncopyable
@@ -89,7 +91,7 @@ class Chunk
 	};
 	State state;
 
-	boost::scoped_ptr<ChunkData> data;
+	ChunkDataPtr data;
 	boost::scoped_ptr<ChunkGeometry> geometry;
 	boost::scoped_ptr<ChunkBuffers> buffers;
 
@@ -101,6 +103,7 @@ class Chunk
 		int3 const &getPosition() const { return position; }
 
 		void generating() { state = GENERATING; }
+		ChunkDataPtr const &getData() const { return data; }
 		void setData(ChunkData *data);
 		void setGeometry(ChunkGeometry *geometry);
 
