@@ -85,16 +85,27 @@ void ChunkManager::requestGeneration(ChunkPtr chunk) {
 	if (chunk->getState() == Chunk::NEW) {
 		float priority = priorityFunction(*chunk);
 		chunk->setGenerating();
-		threadPool.enqueue(boost::bind(&ChunkManager::generate, this, chunk->getIndex()), priority);
+		threadPool.enqueue(
+				boost::bind(
+					&ChunkManager::generate, this,
+					chunk->getIndex()),
+				priority);
 	}
 }
 
 void ChunkManager::requestTesselation(ChunkPtr chunk) {
 	if (chunk->getState() == Chunk::GENERATED) {
-		float priority = priorityFunction(*chunk);
-		chunk->setTesselating();
-		NeighbourChunkData neighbourChunkData;
-		threadPool.enqueue(boost::bind(&ChunkManager::tesselate, this, chunk->getIndex(), chunk->getData(), neighbourChunkData), priority);
+		int3 index = chunk->getIndex();
+		NeighbourChunkData neighbourChunkData = getNeighbourChunkData(index);
+		if (neighbourChunkData.isComplete()) {
+			float priority = priorityFunction(*chunk);
+			chunk->setTesselating();
+			threadPool.enqueue(
+					boost::bind(
+						&ChunkManager::tesselate, this,
+						index, chunk->getData(), neighbourChunkData),
+					priority);
+		}
 	}
 }
 
@@ -105,6 +116,26 @@ void ChunkManager::setPriorityFunction(PriorityFunction const &priorityFunction)
 
 void ChunkManager::gather() {
 	threadPool.runFinalizers();
+}
+
+ChunkDataPtr ChunkManager::chunkDataOrNull(int3 index) {
+	ChunkPtr chunk = chunkOrNull(index);
+	if (!chunk) {
+		return ChunkDataPtr();
+	}
+	requestGeneration(chunk);
+	return chunk->getData();
+}
+
+NeighbourChunkData ChunkManager::getNeighbourChunkData(int3 index) {
+	NeighbourChunkData data;
+	data.xn = chunkDataOrNull(index + int3(-1,  0,  0));
+	data.xp = chunkDataOrNull(index + int3( 1,  0,  0));
+	data.yn = chunkDataOrNull(index + int3( 0, -1,  0));
+	data.yp = chunkDataOrNull(index + int3( 0,  1,  0));
+	data.zn = chunkDataOrNull(index + int3( 0,  0, -1));
+	data.zp = chunkDataOrNull(index + int3( 0,  0,  1));
+	return data;
 }
 
 ThreadPool::Finalizer ChunkManager::generate(int3 index) {

@@ -56,6 +56,7 @@ struct NeighbourChunkData {
 	ChunkDataPtr yp;
 	ChunkDataPtr zn;
 	ChunkDataPtr zp;
+	bool isComplete() const { return xn && xp && yn && yp && zn && zp; }
 };
 
 void tesselate(ChunkDataPtr data, NeighbourChunkData const &neighbourData, int3 const &position, ChunkGeometryPtr geometry);
@@ -124,7 +125,7 @@ class Chunk
 		void setTesselating();
 		void setGeometry(ChunkGeometryPtr geometry);
 
-		ChunkDataPtr const &getData() const { return data; }
+		ChunkDataPtr getData() const { return data; }
 
 		void render();
 

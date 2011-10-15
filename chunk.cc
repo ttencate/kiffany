@@ -122,7 +122,6 @@ void Chunk::setTesselating() {
 
 void Chunk::setGeometry(ChunkGeometryPtr geometry) {
 	this->geometry = geometry;
-	data.reset(); // No more use for this right now.
 	state = TESSELATED;
 }
 
