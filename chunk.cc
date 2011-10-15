@@ -147,16 +147,29 @@ void tesselateFace(ChunkDataPtr data, ChunkDataPtr neighData, int3 const &positi
 	unsigned end = begin;
 	Block const *rawData = data->raw();
 	Block const *rawNeighData = neighData->raw();
-	Block const *p = rawData + CHUNK_SIZE * CHUNK_SIZE + CHUNK_SIZE + 1;
-	for (unsigned z = 1; z < CHUNK_SIZE - 1; ++z) {
-		for (unsigned y = 1; y < CHUNK_SIZE - 1; ++y) {
-			for (unsigned x = 1; x < CHUNK_SIZE - 1; ++x) {
+	unsigned const xMin = (dx == -1 ? 1 : 0);
+	unsigned const yMin = (dy == -1 ? 1 : 0);
+	unsigned const zMin = (dz == -1 ? 1 : 0);
+	unsigned const xMax = CHUNK_SIZE - (dx == 1 ? 1 : 0);
+	unsigned const yMax = CHUNK_SIZE - (dy == 1 ? 1 : 0);
+	unsigned const zMax = CHUNK_SIZE - (dz == 1 ? 1 : 0);
+	Block const *p = rawData +
+		xMin +
+		yMin * CHUNK_SIZE +
+		zMin * CHUNK_SIZE * CHUNK_SIZE;
+	for (unsigned z = zMin; z < zMax; ++z) {
+		for (unsigned y = yMin; y < yMax; ++y) {
+			for (unsigned x = xMin; x < xMax; ++x) {
 				tess<dx, dy, dz>(*p, p[neighOffset], x, y, z, position, vertices, normals, end);
 				++p;
 			}
-			p += 2;
+			if (dx != 0) {
+				++p;
+			}
 		}
-		p += 2 * CHUNK_SIZE;
+		if (dy != 0) {
+			p += CHUNK_SIZE;
+		}
 	}
 
 	tesselateNeigh<dx, dy, dz>(rawData, rawNeighData, position, vertices, normals, end);
