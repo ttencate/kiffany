@@ -32,6 +32,8 @@ class ChunkMap
 	boost::noncopyable
 {
 
+	unsigned const maxSize;
+
 	typedef boost::unordered_map<int3, ChunkPtr, CoordsHasher> PositionMap;
 	typedef std::pair<float, int3> PriorityPair;
 	struct EvictionPriority {
@@ -59,7 +61,7 @@ class ChunkMap
 
 	public:
 
-		ChunkMap(TerrainGenerator *terrainGenerator);
+		ChunkMap(unsigned maxSize, TerrainGenerator *terrainGenerator);
 
 		ChunkPtr get(int3 const &index);
 
@@ -70,7 +72,8 @@ class ChunkMap
 	private:
 
 		void recomputePriorities();
-		ThreadPool::Finalizer tryGenerateOne();
+		void trim();
+		ThreadPool::Finalizer generate();
 		void finalize(int3 index, ChunkGeometry *chunkGeometry);
 		static void doNothing();
 
@@ -82,8 +85,6 @@ class Terrain
 {
 
 	ChunkMap chunkMap;
-
-	unsigned const maxNumChunks;
 
 	public:
 

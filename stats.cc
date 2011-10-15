@@ -6,6 +6,7 @@ Stats stats;
 
 void Stats::print() const {
 	std::cout
+		<< "Chunks created: " << chunksCreated.get() << '\n'
 		<< "Chunks generated: " << chunksGenerated.get() << '\n'
 		<< "Time per chunk: " << (chunkGenerationTime.get() / chunksGenerated.get()) << '\n'
 		<< "Tesselations done: " << chunksTesselated.get() << '\n'

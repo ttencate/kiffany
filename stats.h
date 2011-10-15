@@ -121,6 +121,7 @@ struct Stats {
 	UnsafeCounter buffersCreated;
 	UnsafeCounter buffersDeleted;
 
+	SafeCounter chunksCreated;
 	SafeCounter chunksGenerated;
 	SafeCounter chunksEvicted;
 	SafeCounter quadsGenerated;
