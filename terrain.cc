@@ -89,6 +89,14 @@ void ChunkManager::requestGeneration(ChunkPtr chunk) {
 	}
 }
 
+void ChunkManager::requestTesselation(ChunkPtr chunk) {
+	if (chunk->getState() == Chunk::GENERATED) {
+		float priority = priorityFunction(*chunk);
+		chunk->setTesselating();
+		threadPool.enqueue(boost::bind(&ChunkManager::tesselate, this, chunk->getIndex(), chunk->getData()), priority);
+	}
+}
+
 void ChunkManager::setPriorityFunction(PriorityFunction const &priorityFunction) {
 	this->priorityFunction = priorityFunction;
 	chunkMap.setPriorityFunction(priorityFunction);
@@ -101,26 +109,37 @@ void ChunkManager::gather() {
 ThreadPool::Finalizer ChunkManager::generate(int3 index) {
 	int3 position = chunkPositionFromIndex(index);
 
-	boost::scoped_ptr<ChunkData> chunkData(new ChunkData());
-	terrainGenerator->generateChunk(position, chunkData.get());
+	ChunkData *chunkData = new ChunkData();
+	terrainGenerator->generateChunk(position, chunkData);
 
-	ChunkGeometry *chunkGeometry = new ChunkGeometry();
-	tesselate(*chunkData, position, chunkGeometry);
-
-	return boost::bind(&ChunkManager::finalize, this, index, chunkGeometry);
+	return boost::bind(&ChunkManager::finalizeGeneration, this, index, chunkData);
 }
 
-void ChunkManager::finalize(int3 index, ChunkGeometry *geometry) {
+void ChunkManager::finalizeGeneration(int3 index, ChunkData *chunkData) {
 	if (chunkMap.contains(index)) {
-		ChunkPtr chunk = chunkMap[index];
-		chunk->setGeometry(geometry);
+		chunkMap[index]->setData(chunkData);
 	} else {
 		// The chunk has been evicted in the meantime. Tough luck.
-		delete geometry;
+		delete chunkData;
 	}
 }
 
-void ChunkManager::doNothing() {
+ThreadPool::Finalizer ChunkManager::tesselate(int3 index, ChunkDataPtr chunkData) {
+	int3 position = chunkPositionFromIndex(index);
+
+	ChunkGeometry *chunkGeometry = new ChunkGeometry();
+	::tesselate(*chunkData, position, chunkGeometry);
+
+	return boost::bind(&ChunkManager::finalizeTesselation, this, index, chunkGeometry);
+}
+
+void ChunkManager::finalizeTesselation(int3 index, ChunkGeometry *chunkGeometry) {
+	if (chunkMap.contains(index)) {
+		chunkMap[index]->setGeometry(chunkGeometry);
+	} else {
+		// The chunk has been evicted in the meantime. Tough luck.
+		delete chunkGeometry;
+	}
 }
 
 Terrain::Terrain(TerrainGenerator *terrainGenerator)
@@ -165,6 +184,7 @@ void Terrain::renderChunk(Camera const &camera, int3 const &index) {
 		return;
 	}
 	chunkManager.requestGeneration(chunk);
+	chunkManager.requestTesselation(chunk);
 	stats.chunksConsidered.increment();
 	if (chunk->getState() < Chunk::TESSELATED) {
 		stats.chunksSkipped.increment();

@@ -86,6 +86,7 @@ class ChunkManager {
 
 		ChunkPtr chunkOrNull(int3 index);
 		void requestGeneration(ChunkPtr chunk);
+		void requestTesselation(ChunkPtr chunk);
 
 		void setPriorityFunction(PriorityFunction const &priorityFunction);
 		void gather();
@@ -93,8 +94,9 @@ class ChunkManager {
 	private:
 
 		ThreadPool::Finalizer generate(int3 index);
-		void finalize(int3 index, ChunkGeometry *chunkGeometry);
-		static void doNothing();
+		void finalizeGeneration(int3 index, ChunkData *chunkData);
+		ThreadPool::Finalizer tesselate(int3 index, ChunkDataPtr chunkData);
+		void finalizeTesselation(int3 index, ChunkGeometry *chunkGeometry);
 
 };
 
