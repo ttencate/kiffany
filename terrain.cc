@@ -13,7 +13,7 @@ float PriorityFunction::operator()(int3 index) const {
 }
 
 float PriorityFunction::operator()(vec3 chunkCenter) const {
-	return length(chunkCenter - camera.getPosition());
+	return -length(chunkCenter - camera.getPosition());
 }
 
 ChunkMap::ChunkMap(unsigned maxSize)
@@ -26,7 +26,7 @@ ChunkPtr ChunkMap::operator[](int3 index) {
 	PositionMap::iterator i = map.find(index);
 	if (i == map.end()) {
 		float priority = priorityFunction(index);
-		if (atCapacity() && (evictionQueue.empty() || priority >= evictionQueue.top().first)) {
+		if (atCapacity() && (evictionQueue.empty() || priority <= evictionQueue.top().first)) {
 			return ChunkPtr();
 		}
 
@@ -84,12 +84,8 @@ ChunkPtr ChunkManager::chunkOrNull(int3 index) {
 void ChunkManager::requestGeneration(ChunkPtr chunk) {
 	if (chunk->getState() == Chunk::NEW) {
 		float priority = priorityFunction(*chunk);
-		{
-			boost::unique_lock<boost::mutex> lock(generationQueueMutex);
-			generationQueue.push(PriorityPair(priority, chunk->getIndex()));
-		}
 		chunk->setGenerating();
-		threadPool.enqueue(boost::bind(&ChunkManager::generate, this));
+		threadPool.enqueue(boost::bind(&ChunkManager::generate, this, chunk->getIndex()), priority);
 	}
 }
 
@@ -102,16 +98,7 @@ void ChunkManager::gather() {
 	threadPool.runFinalizers();
 }
 
-ThreadPool::Finalizer ChunkManager::generate() {
-	int3 index;
-	{
-		boost::unique_lock<boost::mutex> lock(generationQueueMutex);
-		if (generationQueue.empty()) {
-			return boost::bind(&doNothing);
-		}
-		index = generationQueue.top().second;
-		generationQueue.pop();
-	}
+ThreadPool::Finalizer ChunkManager::generate(int3 index) {
 	int3 position = chunkPositionFromIndex(index);
 
 	boost::scoped_ptr<ChunkData> chunkData(new ChunkData());

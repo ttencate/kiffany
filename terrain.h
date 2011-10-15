@@ -43,7 +43,7 @@ class ChunkMap
 	typedef std::pair<float, int3> PriorityPair;
 	struct EvictionPriority {
 		bool operator()(PriorityPair const &a, PriorityPair const &b) {
-			return a.first < b.first;
+			return a.first > b.first;
 		}
 	};
 	typedef std::priority_queue<PriorityPair, std::vector<PriorityPair>, EvictionPriority> EvictionQueue;
@@ -72,22 +72,12 @@ class ChunkMap
 
 class ChunkManager {
 
-	typedef std::pair<float, int3> PriorityPair;
-	struct Priority {
-		bool operator()(PriorityPair const &a, PriorityPair const &b) {
-			return a.first > b.first;
-		}
-	};
-	typedef std::priority_queue<PriorityPair, std::vector<PriorityPair>, Priority> Queue;
-
 	ChunkMap chunkMap;
 
 	boost::scoped_ptr<TerrainGenerator> terrainGenerator;
 
 	PriorityFunction priorityFunction;
 
-	boost::mutex generationQueueMutex;
-	Queue generationQueue;
 	ThreadPool threadPool;
 
 	public:
@@ -102,7 +92,7 @@ class ChunkManager {
 
 	private:
 
-		ThreadPool::Finalizer generate();
+		ThreadPool::Finalizer generate(int3 index);
 		void finalize(int3 index, ChunkGeometry *chunkGeometry);
 		static void doNothing();
 
