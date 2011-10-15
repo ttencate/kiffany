@@ -109,36 +109,32 @@ void ChunkManager::gather() {
 ThreadPool::Finalizer ChunkManager::generate(int3 index) {
 	int3 position = chunkPositionFromIndex(index);
 
-	ChunkData *chunkData = new ChunkData();
-	terrainGenerator->generateChunk(position, chunkData);
+	ChunkDataPtr chunkData(new ChunkData());
+	terrainGenerator->generateChunk(position, chunkData.get());
 
 	return boost::bind(&ChunkManager::finalizeGeneration, this, index, chunkData);
 }
 
-void ChunkManager::finalizeGeneration(int3 index, ChunkData *chunkData) {
-	if (chunkMap.contains(index)) {
-		chunkMap[index]->setData(chunkData);
-	} else {
-		// The chunk has been evicted in the meantime. Tough luck.
-		delete chunkData;
+void ChunkManager::finalizeGeneration(int3 index, ChunkDataPtr chunkData) {
+	ChunkPtr chunk = chunkOrNull(index);
+	if (chunk) {
+		chunk->setData(chunkData);
 	}
 }
 
 ThreadPool::Finalizer ChunkManager::tesselate(int3 index, ChunkDataPtr chunkData) {
 	int3 position = chunkPositionFromIndex(index);
 
-	ChunkGeometry *chunkGeometry = new ChunkGeometry();
-	::tesselate(*chunkData, position, chunkGeometry);
+	ChunkGeometryPtr chunkGeometry(new ChunkGeometry());
+	::tesselate(*chunkData, position, chunkGeometry.get());
 
 	return boost::bind(&ChunkManager::finalizeTesselation, this, index, chunkGeometry);
 }
 
-void ChunkManager::finalizeTesselation(int3 index, ChunkGeometry *chunkGeometry) {
-	if (chunkMap.contains(index)) {
-		chunkMap[index]->setGeometry(chunkGeometry);
-	} else {
-		// The chunk has been evicted in the meantime. Tough luck.
-		delete chunkGeometry;
+void ChunkManager::finalizeTesselation(int3 index, ChunkGeometryPtr chunkGeometry) {
+	ChunkPtr chunk = chunkOrNull(index);
+	if (chunk) {
+		chunk->setGeometry(chunkGeometry);
 	}
 }
 

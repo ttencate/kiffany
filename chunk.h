@@ -73,6 +73,7 @@ void upload(ChunkGeometry const &geometry, ChunkBuffers *buffers);
 void render(ChunkBuffers const &buffers);
 
 typedef boost::shared_ptr<ChunkData> ChunkDataPtr;
+typedef boost::shared_ptr<ChunkGeometry> ChunkGeometryPtr;
 
 class Chunk
 :
@@ -98,7 +99,7 @@ class Chunk
 		State state;
 
 		ChunkDataPtr data;
-		boost::scoped_ptr<ChunkGeometry> geometry;
+		ChunkGeometryPtr geometry;
 		boost::scoped_ptr<ChunkBuffers> buffers;
 
 	public:
@@ -111,9 +112,9 @@ class Chunk
 		State getState() const { return state; }
 
 		void setGenerating();
-		void setData(ChunkData *data);
+		void setData(ChunkDataPtr data);
 		void setTesselating();
-		void setGeometry(ChunkGeometry *geometry);
+		void setGeometry(ChunkGeometryPtr geometry);
 
 		ChunkDataPtr const &getData() const { return data; }
 

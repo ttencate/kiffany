@@ -111,8 +111,8 @@ void Chunk::setGenerating() {
 	state = GENERATING;
 }
 
-void Chunk::setData(ChunkData *data) {
-	this->data.reset(data);
+void Chunk::setData(ChunkDataPtr data) {
+	this->data = data;
 	state = GENERATED;
 }
 
@@ -120,8 +120,8 @@ void Chunk::setTesselating() {
 	state = TESSELATING;
 }
 
-void Chunk::setGeometry(ChunkGeometry *geometry) {
-	this->geometry.reset(geometry);
+void Chunk::setGeometry(ChunkGeometryPtr geometry) {
+	this->geometry = geometry;
 	data.reset(); // No more use for this right now.
 	state = TESSELATED;
 }
