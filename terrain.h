@@ -16,7 +16,10 @@
 #include <utility>
 
 struct CoordsHasher {
-	size_t operator()(int3 const &p) const;
+	size_t operator()(int3 p) const {
+		static boost::hash<float> hasher;
+		return hasher(p.x) ^ hasher(p.y) ^ hasher(p.z);
+	}
 };
 
 class PriorityFunction {
@@ -41,19 +44,44 @@ class ChunkMap
 			return a.first < b.first;
 		}
 	};
-	struct GenerationPriority {
-		bool operator()(PriorityPair const &a, PriorityPair const &b) {
-			return a.first > b.first;
-		}
-	};
 	typedef std::priority_queue<PriorityPair, std::vector<PriorityPair>, EvictionPriority> EvictionQueue;
-	typedef std::priority_queue<PriorityPair, std::vector<PriorityPair>, GenerationPriority> GenerationQueue;
 
 	PositionMap map;
 	EvictionQueue evictionQueue;
 	PriorityFunction priorityFunction;
 
+	public:
+
+		ChunkMap(unsigned maxSize);
+
+		ChunkPtr operator[](int3 index);
+		bool contains(int3 index) const;
+
+		void setPriorityFunction(PriorityFunction const &priorityFunction);
+
+	private:
+
+		bool atCapacity() const { return map.size() >= maxSize; }
+		void recomputePriorities();
+		void trim();
+
+};
+
+class ChunkManager {
+
+	typedef std::pair<float, int3> PriorityPair;
+	struct GenerationPriority {
+		bool operator()(PriorityPair const &a, PriorityPair const &b) {
+			return a.first > b.first;
+		}
+	};
+	typedef std::priority_queue<PriorityPair, std::vector<PriorityPair>, GenerationPriority> GenerationQueue;
+
+	ChunkMap chunkMap;
+
 	boost::scoped_ptr<TerrainGenerator> terrainGenerator;
+
+	PriorityFunction priorityFunction;
 
 	boost::mutex generationQueueMutex;
 	GenerationQueue generationQueue;
@@ -61,18 +89,16 @@ class ChunkMap
 
 	public:
 
-		ChunkMap(unsigned maxSize, TerrainGenerator *terrainGenerator);
+		ChunkManager(unsigned maxNumChunks, TerrainGenerator *terrainGenerator);
 
-		ChunkPtr get(int3 const &index);
+		ChunkPtr chunkAtIndex(int3 index);
+		void requestGeneration(int3 index);
 
-		void gather();
 		void setPriorityFunction(PriorityFunction const &priorityFunction);
-		void trimToSize(unsigned size);
+		void gather();
 
 	private:
 
-		void recomputePriorities();
-		void trim();
 		ThreadPool::Finalizer generate();
 		void finalize(int3 index, ChunkGeometry *chunkGeometry);
 		static void doNothing();
@@ -84,7 +110,7 @@ class Terrain
 	boost::noncopyable
 {
 
-	ChunkMap chunkMap;
+	ChunkManager chunkManager;
 
 	public:
 

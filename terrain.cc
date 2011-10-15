@@ -4,48 +4,35 @@
 #include "stats.h"
 #include "terragen.h"
 
-size_t CoordsHasher::operator()(int3 const &p) const {
-	static boost::hash<float> hasher;
-	return hasher(p.x) ^ hasher(p.y) ^ hasher(p.z);
-}
-
 float PriorityFunction::operator()(Chunk const &chunk) const {
 	return length(chunkCenter(chunk.getIndex()) - camera.getPosition());
 }
 
-ChunkMap::ChunkMap(unsigned maxSize, TerrainGenerator *terrainGenerator)
+ChunkMap::ChunkMap(unsigned maxSize)
 :
-	maxSize(maxSize),
-	terrainGenerator(terrainGenerator),
-	threadPool(0, ThreadPool::defaultNumThreads())
+	maxSize(maxSize)
 {
 }
 
-ChunkPtr ChunkMap::get(int3 const &index) {
-	ChunkPtr &chunk = map[index];
-	if (!chunk) {
-		chunk.reset(new Chunk(index));
-		evictionQueue.push(PriorityPair(priorityFunction(*chunk), index));
+ChunkPtr ChunkMap::operator[](int3 index) {
+	PositionMap::iterator i = map.find(index);
+	if (i == map.end()) {
+		ChunkPtr chunk(new Chunk(index));
+		float priority = priorityFunction(*chunk);
+
+		evictionQueue.push(PriorityPair(priority, index));
 		stats.chunksCreated.increment();
-		trim();
+
+		map[index] = chunk;
+		trim(); // Note: this might evict the chunk we just created!
+
+		return chunk;
 	}
-	if (map.find(index) == map.end()) {
-		// It was evicted right away.
-		return ChunkPtr();
-	}
-	if (chunk->needsGenerating()) {
-		{
-			boost::unique_lock<boost::mutex> lock(generationQueueMutex);
-			generationQueue.push(PriorityPair(priorityFunction(*chunk), index));
-		}
-		chunk->generating();
-		threadPool.enqueue(boost::bind(&ChunkMap::generate, this));
-	}
-	return chunk;
+	return i->second;
 }
 
-void ChunkMap::gather() {
-	threadPool.runFinalizers();
+bool ChunkMap::contains(int3 index) const {
+	return map.find(index) != map.end();
 }
 
 void ChunkMap::setPriorityFunction(PriorityFunction const &priorityFunction) {
@@ -54,7 +41,7 @@ void ChunkMap::setPriorityFunction(PriorityFunction const &priorityFunction) {
 }
 
 void ChunkMap::trim() {
-	while (map.size() > maxSize) {
+	while (atCapacity()) {
 		stats.chunksEvicted.increment();
 		int3 index = evictionQueue.top().second;
 		map.erase(index);
@@ -72,7 +59,40 @@ void ChunkMap::recomputePriorities() {
 	}
 }
 
-ThreadPool::Finalizer ChunkMap::generate() {
+ChunkManager::ChunkManager(unsigned maxNumChunks, TerrainGenerator *terrainGenerator)
+:
+	chunkMap(maxNumChunks),
+	terrainGenerator(terrainGenerator),
+	threadPool(0, ThreadPool::defaultNumThreads())
+{
+}
+
+ChunkPtr ChunkManager::chunkAtIndex(int3 index) {
+	return chunkMap[index];
+}
+
+void ChunkManager::requestGeneration(int3 index) {
+	ChunkPtr chunk = chunkMap[index];
+	if (chunk->needsGenerating()) {
+		{
+			boost::unique_lock<boost::mutex> lock(generationQueueMutex);
+			generationQueue.push(PriorityPair(priorityFunction(*chunk), index));
+		}
+		chunk->generating();
+		threadPool.enqueue(boost::bind(&ChunkManager::generate, this));
+	}
+}
+
+void ChunkManager::setPriorityFunction(PriorityFunction const &priorityFunction) {
+	this->priorityFunction = priorityFunction;
+	chunkMap.setPriorityFunction(priorityFunction);
+}
+
+void ChunkManager::gather() {
+	threadPool.runFinalizers();
+}
+
+ThreadPool::Finalizer ChunkManager::generate() {
 	int3 index;
 	{
 		boost::unique_lock<boost::mutex> lock(generationQueueMutex);
@@ -90,25 +110,25 @@ ThreadPool::Finalizer ChunkMap::generate() {
 	ChunkGeometry *chunkGeometry = new ChunkGeometry();
 	tesselate(*chunkData, position, chunkGeometry);
 
-	return boost::bind(&ChunkMap::finalize, this, index, chunkGeometry);
+	return boost::bind(&ChunkManager::finalize, this, index, chunkGeometry);
 }
 
-void ChunkMap::finalize(int3 index, ChunkGeometry *geometry) {
-	if (map.find(index) != map.end()) {
-		ChunkPtr chunk = map[index];
+void ChunkManager::finalize(int3 index, ChunkGeometry *geometry) {
+	if (chunkMap.contains(index)) {
+		ChunkPtr chunk = chunkMap[index];
 		chunk->setGeometry(geometry);
 	} else {
-		// The chunk has been evicted in the meantime.
+		// The chunk has been evicted in the meantime. Tough luck.
 		delete geometry;
 	}
 }
 
-void ChunkMap::doNothing() {
+void ChunkManager::doNothing() {
 }
 
 Terrain::Terrain(TerrainGenerator *terrainGenerator)
 :
-	chunkMap(computeMaxNumChunks(), terrainGenerator)
+	chunkManager(computeMaxNumChunks(), terrainGenerator)
 {
 }
 
@@ -116,11 +136,11 @@ Terrain::~Terrain() {
 }
 
 void Terrain::update(float dt) {
-	chunkMap.gather();
+	chunkManager.gather();
 }
 
 void Terrain::render(Camera const &camera) {
-	chunkMap.setPriorityFunction(PriorityFunction(camera));
+	chunkManager.setPriorityFunction(PriorityFunction(camera));
 
 	int3 center = chunkIndexFromPosition(camera.getPosition());
 	int radius = flags.viewDistance / CHUNK_SIZE;
@@ -143,10 +163,8 @@ unsigned Terrain::computeMaxNumChunks() const {
 }
 
 void Terrain::renderChunk(Camera const &camera, int3 const &index) {
-	ChunkPtr chunk = chunkMap.get(index);
-	if (!chunk) {
-		return;
-	}
+	ChunkPtr chunk = chunkManager.chunkAtIndex(index);
+	chunkManager.requestGeneration(index);
 	stats.chunksConsidered.increment();
 	if (!chunk->readyForRendering()) {
 		stats.chunksSkipped.increment();
