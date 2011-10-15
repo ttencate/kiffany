@@ -82,13 +82,13 @@ ChunkPtr ChunkManager::chunkOrNull(int3 index) {
 }
 
 void ChunkManager::requestGeneration(ChunkPtr chunk) {
-	if (chunk->needsGenerating()) {
+	if (chunk->getState() == Chunk::NEW) {
 		float priority = priorityFunction(*chunk);
 		{
 			boost::unique_lock<boost::mutex> lock(generationQueueMutex);
 			generationQueue.push(PriorityPair(priority, chunk->getIndex()));
 		}
-		chunk->generating();
+		chunk->setGenerating();
 		threadPool.enqueue(boost::bind(&ChunkManager::generate, this));
 	}
 }
@@ -179,7 +179,7 @@ void Terrain::renderChunk(Camera const &camera, int3 const &index) {
 	}
 	chunkManager.requestGeneration(chunk);
 	stats.chunksConsidered.increment();
-	if (!chunk->readyForRendering()) {
+	if (chunk->getState() < Chunk::TESSELATED) {
 		stats.chunksSkipped.increment();
 	} else {
 		if (camera.isSphereInView(chunkCenter(index), CHUNK_RADIUS)) {

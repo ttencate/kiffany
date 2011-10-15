@@ -79,21 +79,27 @@ class Chunk
 	boost::noncopyable
 {
 
-	int3 const index;
-	int3 const position;
+	public:
 
-	enum State {
-		NEW,
-		GENERATING,
-		GENERATED,
-		TESSELATED,
-		UPLOADED
-	};
-	State state;
+		enum State {
+			NEW,
+			GENERATING,
+			GENERATED,
+			TESSELATING,
+			TESSELATED,
+			UPLOADED
+		};
 
-	ChunkDataPtr data;
-	boost::scoped_ptr<ChunkGeometry> geometry;
-	boost::scoped_ptr<ChunkBuffers> buffers;
+	private:
+
+		int3 const index;
+		int3 const position;
+
+		State state;
+
+		ChunkDataPtr data;
+		boost::scoped_ptr<ChunkGeometry> geometry;
+		boost::scoped_ptr<ChunkBuffers> buffers;
 
 	public:
 
@@ -102,13 +108,14 @@ class Chunk
 		int3 const &getIndex() const { return index; }
 		int3 const &getPosition() const { return position; }
 
-		void generating() { state = GENERATING; }
-		ChunkDataPtr const &getData() const { return data; }
+		State getState() const { return state; }
+
+		void setGenerating();
 		void setData(ChunkData *data);
+		void setTesselating();
 		void setGeometry(ChunkGeometry *geometry);
 
-		bool needsGenerating() const;
-		bool readyForRendering() const;
+		ChunkDataPtr const &getData() const { return data; }
 
 		void render();
 

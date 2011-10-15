@@ -73,12 +73,12 @@ class ChunkMap
 class ChunkManager {
 
 	typedef std::pair<float, int3> PriorityPair;
-	struct GenerationPriority {
+	struct Priority {
 		bool operator()(PriorityPair const &a, PriorityPair const &b) {
 			return a.first > b.first;
 		}
 	};
-	typedef std::priority_queue<PriorityPair, std::vector<PriorityPair>, GenerationPriority> GenerationQueue;
+	typedef std::priority_queue<PriorityPair, std::vector<PriorityPair>, Priority> Queue;
 
 	ChunkMap chunkMap;
 
@@ -87,7 +87,7 @@ class ChunkManager {
 	PriorityFunction priorityFunction;
 
 	boost::mutex generationQueueMutex;
-	GenerationQueue generationQueue;
+	Queue generationQueue;
 	ThreadPool threadPool;
 
 	public:

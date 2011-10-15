@@ -107,23 +107,23 @@ Chunk::Chunk(int3 const &index)
 {
 }
 
+void Chunk::setGenerating() {
+	state = GENERATING;
+}
+
 void Chunk::setData(ChunkData *data) {
 	this->data.reset(data);
 	state = GENERATED;
+}
+
+void Chunk::setTesselating() {
+	state = TESSELATING;
 }
 
 void Chunk::setGeometry(ChunkGeometry *geometry) {
 	this->geometry.reset(geometry);
 	data.reset(); // No more use for this right now.
 	state = TESSELATED;
-}
-
-bool Chunk::needsGenerating() const {
-	return state == NEW;
-}
-
-bool Chunk::readyForRendering() const {
-	return state >= TESSELATED;
 }
 
 void Chunk::render() {
