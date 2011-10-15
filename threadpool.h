@@ -77,12 +77,14 @@ class ThreadPool
 		typedef boost::function<void(void)> Finalizer;
 		typedef boost::function<Finalizer(void)> Worker;
 
-		ThreadPool(unsigned maxInputQueueSize, unsigned maxOutputQueueSize, unsigned requestedNumThreads = 0);
+		ThreadPool(unsigned maxInputQueueSize, unsigned maxOutputQueueSize, unsigned numThreads = defaultNumThreads());
 		~ThreadPool();
 
 		void enqueue(Worker worker);
 		bool tryEnqueue(Worker worker);
 		void runFinalizers();
+
+		static unsigned defaultNumThreads();
 
 	private:
 

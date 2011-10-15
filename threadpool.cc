@@ -74,22 +74,9 @@ void WorkQueue::runAndSignal(Worker worker) {
 	worker();
 }
 
-unsigned computeNumThreads(int requestedNumThreads) {
-	int numThreads;
-	if (requestedNumThreads == 0) {
-		numThreads = boost::thread::hardware_concurrency() - 1;
-		if (numThreads == 0) {
-			numThreads = 1;
-		}
-	} else {
-		numThreads = requestedNumThreads;
-	}
-	return numThreads;
-}
-
-ThreadPool::ThreadPool(unsigned maxInputQueueSize, unsigned maxOutputQueueSize, unsigned requestedNumThreads)
+ThreadPool::ThreadPool(unsigned maxInputQueueSize, unsigned maxOutputQueueSize, unsigned numThreads)
 :
-	numThreads(computeNumThreads(requestedNumThreads)),
+	numThreads(numThreads == 0 ? defaultNumThreads() : numThreads),
 	inputQueue(maxInputQueueSize),
 	outputQueue(maxOutputQueueSize),
 	works(new boost::scoped_ptr<boost::asio::io_service::work>[numThreads]),
@@ -122,6 +109,14 @@ bool ThreadPool::tryEnqueue(Worker worker) {
 void ThreadPool::runFinalizers() {
 	outputQueue.run();
 	outputQueue.reset();
+}
+
+unsigned ThreadPool::defaultNumThreads() {
+	unsigned numThreads = boost::thread::hardware_concurrency();
+	if (numThreads == 0) {
+		numThreads = 1;
+	}
+	return numThreads;
 }
 
 void ThreadPool::work(Worker worker) {
