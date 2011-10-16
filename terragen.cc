@@ -42,7 +42,7 @@ Octaves PerlinTerrainGenerator::buildOctaves3D(unsigned seed) const {
 	boost::normal_distribution<float> normal(1.0f, 0.1f);
 	boost::variate_generator<boost::mt11213b, boost::normal_distribution<float> > gen(engine, normal);
 	Octaves octaves;
-	for (int i = 32; i >= 8; i /= 2) {
+	for (int i = 64; i >= 8; i /= 2) {
 		float period = i * gen();
 		float amplitude = i;
 		octaves.push_back(Octave(period, amplitude));
@@ -66,7 +66,7 @@ void PerlinTerrainGenerator::doGenerateChunk(int3 const &pos, ChunkDataPtr data)
 				vec3 center = blockCenter(pos + int3(x, y, z));
 				Block block = AIR_BLOCK;
 				float h = center.z - heights[x + CHUNK_SIZE * y];
-				if (h >= -amplitude3D && h <= amplitude3D) {
+				if (h >= -amplitude3D && h <= 0) {
 					h += perlin3D(center);
 				}
 				if (h < 0) {
