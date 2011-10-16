@@ -25,8 +25,8 @@ ChunkMap::ChunkMap(unsigned maxSize)
 ChunkPtr ChunkMap::operator[](int3 index) {
 	PositionMap::iterator i = map.find(index);
 	if (i == map.end()) {
-		float priority = priorityFunction(index);
-		if (atCapacity() && (evictionQueue.empty() || priority <= evictionQueue.top().first)) {
+		float priority = evictionQueue.priority(index);
+		if (atCapacity() && (evictionQueue.empty() || priority <= evictionQueue.back_priority())) {
 			return ChunkPtr();
 		}
 
@@ -34,7 +34,7 @@ ChunkPtr ChunkMap::operator[](int3 index) {
 		stats.chunksCreated.increment();
 
 		map[index] = chunk;
-		evictionQueue.push(PriorityPair(priority, index));
+		evictionQueue.insert(index);
 		trim();
 
 		return chunk;
@@ -47,25 +47,15 @@ bool ChunkMap::contains(int3 index) const {
 }
 
 void ChunkMap::setPriorityFunction(PriorityFunction const &priorityFunction) {
-	this->priorityFunction = priorityFunction;
-	recomputePriorities();
+	evictionQueue.setPriorityFunction(priorityFunction);
 }
 
 void ChunkMap::trim() {
 	while (overCapacity()) {
 		stats.chunksEvicted.increment();
-		int3 index = evictionQueue.top().second;
+		int3 index = evictionQueue.back();
+		evictionQueue.pop_back();
 		map.erase(index);
-		evictionQueue.pop();
-	}
-}
-
-void ChunkMap::recomputePriorities() {
-	evictionQueue = EvictionQueue(); // it has no clear() function
-	for (PositionMap::const_iterator i = map.begin(); i != map.end(); ++i) {
-		int3 const &index = i->first;
-		float priority = priorityFunction(index);
-		evictionQueue.push(PriorityPair(priority, index));
 	}
 }
 

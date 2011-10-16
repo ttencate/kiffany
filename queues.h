@@ -4,6 +4,7 @@
 #include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
 
+#include <algorithm>
 #include <set>
 
 /* Priority queue that maintains strict ordering of its elements according to
@@ -17,6 +18,8 @@ class StrictPriorityQueue {
 	Queue queue; // Ordered low to high priority.
 
 	public:
+
+		typedef typename Queue::const_iterator const_iterator;
 
 		bool empty() const { return queue.empty(); }
 
@@ -38,47 +41,83 @@ class StrictPriorityQueue {
 
 		void insert(T const &t) { queue.insert(t); }
 
+		const_iterator begin() const { return queue.begin(); }
+
+		const_iterator end() const { return queue.end(); }
+
 };
+
+template<typename T, typename Priority>
+struct PriorityItem {
+	T item;
+	Priority priority;
+	PriorityItem(T const &item, Priority priority) : item(item), priority(priority) { }
+};
+
+template<typename T, typename Priority>
+bool operator<(PriorityItem<T, Priority> const &a, PriorityItem<T, Priority> const &b) {
+	return a.priority < b.priority;
+}
 
 /* Priority queue that needs explicitly provided priority values.
  */
-template<typename T, typename Priority = float, template<typename T, typename Compare> class QueueType = StrictPriorityQueue>
+template<
+	typename T,
+	typename Priority = float,
+	typename QueueType = StrictPriorityQueue<PriorityItem<T, Priority> >
+>
 class ExplicitPriorityQueue {
 
-	typedef std::pair<T, Priority> Pair;
-	struct Compare {
-		bool operator()(Pair const &a, Pair const &b) const {
-			return a.second < b.second;
-		}
-	};
-	typedef QueueType<Pair, Compare> Queue;
+	typedef PriorityItem<T, Priority> Item;
 
-	Queue queue;
+	class ConstIterator {
+		typename QueueType::const_iterator i;
+		public:
+			ConstIterator(typename QueueType::const_iterator i) : i(i) { }
+			ConstIterator &operator++() { ++i; return *this; }
+			ConstIterator operator++(int) { ConstIterator old = *this; ++*this; return old; }
+			bool operator==(ConstIterator const &other) const { return i == other.i; }
+			bool operator!=(ConstIterator const &other) const { return !(*this == other); }
+			T const &operator*() const { return i->item; }
+	};
+
+	QueueType queue;
 
 	public:
+
+		typedef ConstIterator const_iterator;
 
 		bool empty() const { return queue.empty(); }
 
 		size_t size() const { return queue.size(); }
 
-		T const &front() const { return queue.front().first; }
+		T const &front() const { return queue.front().item; }
 
-		T const &back() const { return queue.back().first; }
+		T const &back() const { return queue.back().item; }
+
+		Priority front_priority() const { return queue.front().priority; }
+
+		Priority back_priority() const { return queue.back().priority; }
 
 		void pop_front() { queue.pop_front(); }
 
 		void pop_back() { queue.pop_back(); }
 
 		void insert(T const &t, Priority priority = Priority()) {
-			queue.insert(Pair(t, priority));
+			queue.insert(Item(t, priority));
 		}
+
+		const_iterator begin() const { return ConstIterator(queue.begin()); }
+
+		const_iterator end() const { return ConstIterator(queue.end()); }
+
 };
 
 /* Priority queue that computes the priorities of its elements using a supplied
  * priority function. This function can be changed to cause updating of all
  * priorities.
  */
-template<typename T, typename Priority = float, template<typename T, typename Priority> class QueueType = ExplicitPriorityQueue>
+template<typename T, typename Priority = float, typename QueueType = ExplicitPriorityQueue<T, Priority> >
 class ComputingPriorityQueue {
 
 	public:
@@ -87,10 +126,8 @@ class ComputingPriorityQueue {
 
 	private:
 
-		typedef QueueType<T, Priority> Queue;
-
 		PriorityFunction priorityFunction;
-		Queue queue;
+		QueueType queue;
 
 	public:
 
@@ -98,6 +135,10 @@ class ComputingPriorityQueue {
 		:
 			priorityFunction(priorityFunction)
 		{
+		}
+
+		Priority priority(T const &t) const {
+			return priorityFunction ? priorityFunction(t) : Priority();
 		}
 
 		void setPriorityFunction(PriorityFunction const &priorityFunction) {
@@ -109,26 +150,29 @@ class ComputingPriorityQueue {
 
 		size_t size() const { return queue.size(); }
 
-		T const &front() const { return queue.front().first; }
+		T const &front() const { return queue.front(); }
 
-		T const &back() const { return queue.back().first; }
+		T const &back() const { return queue.back(); }
+
+		Priority front_priority() const { return queue.front_priority(); }
+
+		Priority back_priority() const { return queue.back_priority(); }
 
 		void pop_front() { queue.pop_front(); }
 
 		void pop_back() { queue.pop_back(); }
 
 		void insert(T const &t) {
-			Priority priority = priorityFunction ? priorityFunction(t) : Priority();
-			queue.insert(Pair(t, priority));
+			queue.insert(t, priority(t));
 		}
 
 	private:
 
 		void recompute() {
-			Queue orig;
-			queue.swap(orig);
-			for (typename Queue::const_iterator i = orig.begin(); i != orig.end(); ++i) {
-				insert(i->first);
+			QueueType orig;
+			std::swap(orig, queue);
+			for (typename QueueType::const_iterator i = orig.begin(); i != orig.end(); ++i) {
+				insert(*i);
 			}
 		}
 };

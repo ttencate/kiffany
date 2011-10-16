@@ -40,17 +40,10 @@ class ChunkMap
 	unsigned const maxSize;
 
 	typedef boost::unordered_map<int3, ChunkPtr, CoordsHasher> PositionMap;
-	typedef std::pair<float, int3> PriorityPair;
-	struct EvictionPriority {
-		bool operator()(PriorityPair const &a, PriorityPair const &b) {
-			return a.first > b.first;
-		}
-	};
-	typedef std::priority_queue<PriorityPair, std::vector<PriorityPair>, EvictionPriority> EvictionQueue;
+	typedef ComputingPriorityQueue<int3> EvictionQueue;
 
 	PositionMap map;
 	EvictionQueue evictionQueue;
-	PriorityFunction priorityFunction;
 
 	public:
 
@@ -65,7 +58,6 @@ class ChunkMap
 
 		bool atCapacity() const { return map.size() >= maxSize; }
 		bool overCapacity() const { return map.size() > maxSize; }
-		void recomputePriorities();
 		void trim();
 
 };
