@@ -154,7 +154,7 @@ int main(int argc, char **argv) {
 	}
 
 	Camera camera;
-	camera.setPosition(vec3(0.0f, 0.0f, 16.0f));
+	camera.setPosition(vec3(flags.startX, flags.startY, flags.startZ));
 	::camera = &camera;
 	World world(&camera, new PerlinTerrainGenerator(32, flags.seed));
 	::world = &world;

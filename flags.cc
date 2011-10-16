@@ -19,6 +19,9 @@ bool parseCommandLine(int argc, char **argv) {
 		("seed", po::value<unsigned>(&flags.seed)->default_value(4), "seed for world generation")
 		("view_distance", po::value<unsigned>(&flags.viewDistance)->default_value(64), "view depth in blocks")
 		("max_num_chunks", po::value<unsigned>(&flags.maxNumChunks)->default_value(0), "maximum number of chunks to hold in memory at any given time")
+		("start_x", po::value<float>(&flags.startX)->default_value(0.0f), "x coordinate of start point")
+		("start_y", po::value<float>(&flags.startY)->default_value(0.0f), "y coordinate of start point")
+		("start_z", po::value<float>(&flags.startZ)->default_value(0.0f), "z coordinate of start point")
 	;
 	po::variables_map vm;
 	po::store(po::parse_command_line(argc, argv, desc), vm);

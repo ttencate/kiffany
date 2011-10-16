@@ -10,6 +10,9 @@ struct Flags {
 	unsigned seed;
 	unsigned viewDistance;
 	unsigned maxNumChunks;
+	float startX;
+	float startY;
+	float startZ;
 };
 
 extern Flags flags;
