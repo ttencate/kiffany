@@ -41,6 +41,8 @@ class StrictPriorityQueue {
 
 		void insert(T const &t) { queue.insert(t); }
 
+		void erase(const_iterator const &t) { queue.erase(t); }
+
 		const_iterator begin() const { return queue.begin(); }
 
 		const_iterator end() const { return queue.end(); }
@@ -111,6 +113,22 @@ class ExplicitPriorityQueue {
 
 		const_iterator end() const { return ConstIterator(queue.end()); }
 
+		unsigned eraseIf(boost::function<bool(T const &)> predicate) {
+			unsigned count = 0;
+			typename QueueType::const_iterator i = queue.begin();
+			while (i != queue.end()) {
+				if (predicate(i->item)) {
+					typename QueueType::const_iterator victim = i;
+					++i;
+					queue.erase(victim);
+					++count;
+				} else {
+					++i;
+				}
+			}
+			return count;
+		}
+
 };
 
 /* Priority queue that computes the priorities of its elements using a supplied
@@ -165,6 +183,8 @@ class DynamicPriorityQueue {
 		void insert(T const &t) {
 			queue.insert(t, priority(t));
 		}
+
+		unsigned eraseIf(boost::function<bool(T const &)> predicate) { return queue.eraseIf(predicate); }
 
 	private:
 

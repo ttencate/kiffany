@@ -124,6 +124,8 @@ struct Stats {
 	SafeCounter chunksCreated;
 	SafeCounter chunksGenerated;
 	SafeCounter chunksEvicted;
+	SafeCounter irrelevantJobsSkipped;
+	SafeCounter irrelevantJobsRun;
 	SafeCounter quadsGenerated;
 	SafeTimer chunkGenerationTime;
 

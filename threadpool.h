@@ -95,6 +95,11 @@ class WorkQueue
 			queue.setPriorityFunction(priorityFunction);
 		}
 
+		unsigned eraseIf(boost::function<bool(Worker const &)> predicate) {
+			boost::unique_lock<boost::mutex> lock(queueMutex);
+			return queue.eraseIf(predicate);
+		}
+
 	private:
 
 		void doPost(Worker worker) {
@@ -172,6 +177,10 @@ class ThreadPool
 
 		void setPriorityFunction(PriorityFunction const &priorityFunction) {
 			queue.setPriorityFunction(priorityFunction);
+		}
+
+		unsigned cleanUp(boost::function<bool(Worker const &)> predicate) {
+			return queue.eraseIf(predicate);
 		}
 
 	private:

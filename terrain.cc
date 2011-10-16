@@ -110,6 +110,8 @@ void ChunkManager::setPriorityFunction(ChunkPriorityFunction const &priorityFunc
 
 void ChunkManager::gather() {
 	finalizerQueue.runAll();
+	stats.irrelevantJobsSkipped.increment(
+			threadPool.cleanUp(boost::bind(&ChunkManager::isJobIrrelevant, this, _1)));
 }
 
 ChunkDataPtr ChunkManager::chunkDataOrNull(int3 index) {
@@ -132,6 +134,10 @@ NeighbourChunkData ChunkManager::getNeighbourChunkData(int3 index) {
 	return data;
 }
 
+bool ChunkManager::isJobIrrelevant(Job const &job) {
+	return !chunkMap.contains(job.index);
+}
+
 void ChunkManager::generate(int3 index) {
 	int3 position = chunkPositionFromIndex(index);
 
@@ -144,9 +150,11 @@ void ChunkManager::generate(int3 index) {
 
 void ChunkManager::finalizeGeneration(int3 index, ChunkDataPtr chunkData) {
 	ChunkPtr chunk = chunkOrNull(index);
-	if (chunk) {
-		chunk->setData(chunkData);
+	if (!chunk) {
+		stats.irrelevantJobsRun.increment();
+		return;
 	}
+	chunk->setData(chunkData);
 }
 
 void ChunkManager::tesselate(int3 index, ChunkDataPtr chunkData, NeighbourChunkData neighbourChunkData) {
@@ -159,9 +167,11 @@ void ChunkManager::tesselate(int3 index, ChunkDataPtr chunkData, NeighbourChunkD
 
 void ChunkManager::finalizeTesselation(int3 index, ChunkGeometryPtr chunkGeometry) {
 	ChunkPtr chunk = chunkOrNull(index);
-	if (chunk) {
-		chunk->setGeometry(chunkGeometry);
+	if (!chunk) {
+		stats.irrelevantJobsRun.increment();
+		return;
 	}
+	chunk->setGeometry(chunkGeometry);
 }
 
 Terrain::Terrain(TerrainGenerator *terrainGenerator)

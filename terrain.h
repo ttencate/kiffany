@@ -121,6 +121,8 @@ class ChunkManager {
 		ChunkDataPtr chunkDataOrNull(int3 index);
 		NeighbourChunkData getNeighbourChunkData(int3 index);
 
+		bool isJobIrrelevant(Job const &job);
+
 		void generate(int3 index);
 		void finalizeGeneration(int3 index, ChunkDataPtr chunkData);
 		void tesselate(int3 index, ChunkDataPtr chunkData, NeighbourChunkData neighbourChunkData);
