@@ -16,7 +16,7 @@ template<> int FaceIndex< 0,  0, -1>::value = 4;
 template<> int FaceIndex< 0,  0,  1>::value = 5;
 
 template<int dx, int dy, int dz>
-void tess(
+inline void tess(
 		Block block, Block neigh,
 		unsigned x, unsigned y, unsigned z,
 		int3 const &position, // TODO remove once relative
@@ -57,10 +57,10 @@ void tess(
 }
 
 template<int dx, int dy, int dz>
-void tesselateNeigh(Block const *rawData, Block const *rawNeighData, int3 const &position, VertexArray &vertices, NormalArray &normals, unsigned &end);
+inline void tesselateNeigh(Block const *rawData, Block const *rawNeighData, int3 const &position, VertexArray &vertices, NormalArray &normals, unsigned &end);
 
 template<>
-void tesselateNeigh<-1, 0, 0>(Block const *p, Block const *q, int3 const &position, VertexArray &vertices, NormalArray &normals, unsigned &end) {
+inline void tesselateNeigh<-1, 0, 0>(Block const *p, Block const *q, int3 const &position, VertexArray &vertices, NormalArray &normals, unsigned &end) {
 	q += CHUNK_SIZE - 1;
 	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
 		for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
@@ -72,7 +72,7 @@ void tesselateNeigh<-1, 0, 0>(Block const *p, Block const *q, int3 const &positi
 }
 
 template<>
-void tesselateNeigh<1, 0, 0>(Block const *p, Block const *q, int3 const &position, VertexArray &vertices, NormalArray &normals, unsigned &end) {
+inline void tesselateNeigh<1, 0, 0>(Block const *p, Block const *q, int3 const &position, VertexArray &vertices, NormalArray &normals, unsigned &end) {
 	p += CHUNK_SIZE - 1;
 	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
 		for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
@@ -84,7 +84,7 @@ void tesselateNeigh<1, 0, 0>(Block const *p, Block const *q, int3 const &positio
 }
 
 template<>
-void tesselateNeigh<0, -1, 0>(Block const *p, Block const *q, int3 const &position, VertexArray &vertices, NormalArray &normals, unsigned &end) {
+inline void tesselateNeigh<0, -1, 0>(Block const *p, Block const *q, int3 const &position, VertexArray &vertices, NormalArray &normals, unsigned &end) {
 	q += CHUNK_SIZE * (CHUNK_SIZE - 1);
 	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
 		for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
@@ -98,7 +98,7 @@ void tesselateNeigh<0, -1, 0>(Block const *p, Block const *q, int3 const &positi
 }
 
 template<>
-void tesselateNeigh<0, 1, 0>(Block const *p, Block const *q, int3 const &position, VertexArray &vertices, NormalArray &normals, unsigned &end) {
+inline void tesselateNeigh<0, 1, 0>(Block const *p, Block const *q, int3 const &position, VertexArray &vertices, NormalArray &normals, unsigned &end) {
 	p += CHUNK_SIZE * (CHUNK_SIZE - 1);
 	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
 		for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
@@ -112,7 +112,7 @@ void tesselateNeigh<0, 1, 0>(Block const *p, Block const *q, int3 const &positio
 }
 
 template<>
-void tesselateNeigh<0, 0, -1>(Block const *p, Block const *q, int3 const &position, VertexArray &vertices, NormalArray &normals, unsigned &end) {
+inline void tesselateNeigh<0, 0, -1>(Block const *p, Block const *q, int3 const &position, VertexArray &vertices, NormalArray &normals, unsigned &end) {
 	q += CHUNK_SIZE * CHUNK_SIZE * (CHUNK_SIZE - 1);
 	for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
 		for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
@@ -124,7 +124,7 @@ void tesselateNeigh<0, 0, -1>(Block const *p, Block const *q, int3 const &positi
 }
 
 template<>
-void tesselateNeigh<0, 0, 1>(Block const *p, Block const *q, int3 const &position, VertexArray &vertices, NormalArray &normals, unsigned &end) {
+inline void tesselateNeigh<0, 0, 1>(Block const *p, Block const *q, int3 const &position, VertexArray &vertices, NormalArray &normals, unsigned &end) {
 	p += CHUNK_SIZE * CHUNK_SIZE * (CHUNK_SIZE - 1);
 	for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
 		for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
