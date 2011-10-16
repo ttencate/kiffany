@@ -1,6 +1,9 @@
 #ifndef THREADPOOL_H
 #define THREADPOOL_H
 
+#include "queues.h"
+#include "threading.h"
+
 #include <boost/bind.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_array.hpp>
@@ -9,29 +12,7 @@
 
 #include <queue>
 
-class Semaphore
-:
-	boost::noncopyable
-{
-	unsigned count;
-	boost::mutex mutex;
-	boost::condition_variable condition_variable;
-
-	public:
-
-		Semaphore(unsigned initialCount);
-
-		void wait();
-		bool tryWait();
-		void signal();
-
-};
-
-typedef float Priority;
-
-extern Priority const DEFAULT_PRIORITY;
-
-// A wrapper around io_service that keeps track of the queue size,
+// A thread-safe wrapper around priority_queue,
 // and allows new posts to block if the queue gets too large.
 class WorkQueue
 :
@@ -40,16 +21,11 @@ class WorkQueue
 	public:
 
 		typedef boost::function<void(void)> Worker;
+		typedef float Priority;
 
 	private:
 
-		typedef std::pair<Worker, Priority> PriorityWorker;
-		struct PriorityWorkerCompare {
-			bool operator()(PriorityWorker const &a, PriorityWorker const &b) {
-				return a.second < b.second;
-			}
-		};
-		typedef std::priority_queue<PriorityWorker, std::vector<PriorityWorker>, PriorityWorkerCompare> Queue;
+		typedef ExplicitPriorityQueue<Worker> Queue;
 
 		unsigned const maxSize;
 
@@ -62,8 +38,8 @@ class WorkQueue
 
 		WorkQueue(unsigned maxSize);
 
-		void post(Worker worker, Priority priority = DEFAULT_PRIORITY);
-		bool tryPost(Worker worker, Priority priority = DEFAULT_PRIORITY);
+		void post(Worker worker, Priority priority = Priority());
+		bool tryPost(Worker worker, Priority priority = Priority());
 
 		bool empty() const;
 
@@ -90,14 +66,15 @@ class ThreadPool
 
 	public:
 
+		typedef WorkQueue::Priority Priority;
 		typedef boost::function<void(void)> Finalizer;
 		typedef boost::function<Finalizer(void)> Worker;
 
 		ThreadPool(unsigned maxInputQueueSize, unsigned maxOutputQueueSize, unsigned numThreads = defaultNumThreads());
 		~ThreadPool();
 
-		void enqueue(Worker worker, Priority priority = DEFAULT_PRIORITY);
-		bool tryEnqueue(Worker worker, Priority priority = DEFAULT_PRIORITY);
+		void enqueue(Worker worker, Priority priority = Priority());
+		bool tryEnqueue(Worker worker, Priority priority = Priority());
 		void runFinalizers();
 
 		static unsigned defaultNumThreads();

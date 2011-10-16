@@ -2,44 +2,12 @@
 
 #include <iostream>
 
-Semaphore::Semaphore(unsigned initialCount)
-:
-	count(initialCount)
-{
-}
-
-void Semaphore::wait() {
-	boost::unique_lock<boost::mutex> lock(mutex);
-	while (count == 0) {
-		condition_variable.wait(lock);
-	}
-	--count;
-}
-
-bool Semaphore::tryWait() {
-	boost::unique_lock<boost::mutex> lock(mutex);
-	if (count > 0) {
-		--count;
-		return true;
-	} else {
-		return false;
-	}
-}
-
-void Semaphore::signal() {
-	boost::unique_lock<boost::mutex> lock(mutex);
-	++count;
-	condition_variable.notify_one();
-}
-
 WorkQueue::WorkQueue(unsigned maxSize)
 :
 	maxSize(maxSize),
 	semaphore(maxSize == 0 ? std::numeric_limits<unsigned>::max() : maxSize)
 {
 }
-
-Priority const DEFAULT_PRIORITY = 0;
 
 void WorkQueue::post(Worker worker, Priority priority) {
 	semaphore.wait();
@@ -62,8 +30,8 @@ void WorkQueue::runOne() {
 		while (queue.empty()) {
 			conditionVariable.wait(lock);
 		}
-		worker = queue.top().first;
-		queue.pop();
+		worker = queue.front();
+		queue.pop_front();
 	}
 	semaphore.signal();
 	worker();
@@ -79,15 +47,16 @@ void WorkQueue::runAll() {
 		semaphore.signal();
 	}
 	while (!all.empty()) {
-		all.top().first();
-		all.pop();
+		Worker worker = all.front();
+		all.pop_front();
+		worker();
 	}
 }
 
 void WorkQueue::doPost(Worker worker, Priority priority) {
 	{
 		boost::unique_lock<boost::mutex> lock(queueMutex);
-		queue.push(std::make_pair(worker, priority));
+		queue.insert(worker, priority);
 	}
 	conditionVariable.notify_one();
 }

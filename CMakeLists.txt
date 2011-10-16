@@ -19,9 +19,11 @@ set(sources
 	gl.cc gl.h
 	main.cc
 	maths.cc maths.h
+	queues.cc queues.h
 	stats.cc stats.h
 	terrain.cc terrain.h
 	terragen.cc terragen.h
+	threading.cc threading.h
 	threadpool.cc threadpool.h
 	world.cc world.h
 	)
