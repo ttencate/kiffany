@@ -156,7 +156,7 @@ int main(int argc, char **argv) {
 	Camera camera;
 	camera.setPosition(vec3(0.0f, 0.0f, 16.0f));
 	::camera = &camera;
-	World world(&camera, new SineTerrainGenerator()); //PerlinTerrainGenerator(32, flags.seed));
+	World world(&camera, new PerlinTerrainGenerator(32, flags.seed));
 	::world = &world;
 
 	glfwOpenWindow(1024, 768, 8, 8, 8, 8, 16, 0, GLFW_WINDOW);

@@ -1,6 +1,6 @@
 #include "coords.h"
 
-const unsigned CHUNK_SIZE = 128;
+const unsigned CHUNK_SIZE = 64;
 
 const unsigned BLOCKS_PER_CHUNK = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
 

@@ -3,6 +3,7 @@
 
 #include "chunkdata.h"
 #include "maths.h"
+#include "perlin.h"
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_array.hpp>
@@ -26,8 +27,7 @@ class PerlinTerrainGenerator
 	public TerrainGenerator
 {
 
-	unsigned const size;
-	boost::scoped_array<float> noise;
+	Perlin<Noise2D> perlin;
 
 	public:
 
@@ -35,10 +35,9 @@ class PerlinTerrainGenerator
 
 	private:
 
-		virtual void doGenerateChunk(int3 const &pos, ChunkDataPtr data) const;
+		Octaves buildOctaves(unsigned seed) const;
 
-		float lookup(int x, int y, int z) const;
-		float perlin(int3 const &pos) const;
+		virtual void doGenerateChunk(int3 const &pos, ChunkDataPtr data) const;
 
 };
 

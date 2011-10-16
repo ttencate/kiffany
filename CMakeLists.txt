@@ -19,6 +19,7 @@ set(sources
 	gl.cc gl.h
 	main.cc
 	maths.cc maths.h
+	perlin.cc perlin.h
 	queues.cc queues.h
 	stats.cc stats.h
 	terrain.cc terrain.h
@@ -34,7 +35,7 @@ set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_DETAILED_FAILURE_MSG TRUE)
 
-find_package(Boost 1.41.0 REQUIRED COMPONENTS program_options system thread)
+find_package(Boost 1.47.0 REQUIRED COMPONENTS program_options system thread)
 find_package(OpenGL REQUIRED)
 
 target_link_libraries(kiffany

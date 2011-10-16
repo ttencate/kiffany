@@ -17,6 +17,7 @@ using glm::vec4;
 using glm::clamp;
 using glm::dot;
 using glm::floor;
+using glm::fract;
 using glm::inverse;
 using glm::mix;
 using glm::length;
