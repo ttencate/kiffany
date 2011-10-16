@@ -22,11 +22,11 @@ struct CoordsHasher {
 	}
 };
 
-class PriorityFunction {
+class ChunkPriorityFunction {
 	Camera camera;
 	public:
-		PriorityFunction() { }
-		explicit PriorityFunction(Camera const &camera) : camera(camera) { }
+		ChunkPriorityFunction() { }
+		explicit ChunkPriorityFunction(Camera const &camera) : camera(camera) { }
 		float operator()(Chunk const &chunk) const;
 		float operator()(int3 index) const;
 		float operator()(vec3 chunkCenter) const;
@@ -40,7 +40,7 @@ class ChunkMap
 	unsigned const maxSize;
 
 	typedef boost::unordered_map<int3, ChunkPtr, CoordsHasher> PositionMap;
-	typedef ComputingPriorityQueue<int3> EvictionQueue;
+	typedef DynamicPriorityQueue<int3> EvictionQueue;
 
 	PositionMap map;
 	EvictionQueue evictionQueue;
@@ -52,7 +52,7 @@ class ChunkMap
 		ChunkPtr operator[](int3 index);
 		bool contains(int3 index) const;
 
-		void setPriorityFunction(PriorityFunction const &priorityFunction);
+		void setPriorityFunction(ChunkPriorityFunction const &priorityFunction);
 
 	private:
 
@@ -64,13 +64,46 @@ class ChunkMap
 
 class ChunkManager {
 
+	struct Job {
+
+		typedef boost::function<void(void)> Worker;
+
+		int3 const index;
+		float const multiplier;
+		Worker const worker;
+
+		Job(int3 index, float multiplier, Worker const &worker) : index(index), multiplier(multiplier), worker(worker) { }
+
+		void operator()() const {
+			worker();
+		}
+
+	};
+
+	struct JobPriorityFunction {
+		ChunkPriorityFunction const chunkPriorityFunction;
+		JobPriorityFunction(ChunkPriorityFunction const &chunkPriorityFunction)
+		:
+			chunkPriorityFunction(chunkPriorityFunction)
+		{
+		}
+		float operator()(Job const &job) const {
+			return chunkPriorityFunction(job.index) * job.multiplier;
+		}
+	};
+
+	typedef ThreadPool<Job> JobThreadPool;
+	typedef boost::function<void(void)> Finalizer;
+	typedef WorkQueue<Finalizer> FinalizerQueue;
+
 	ChunkMap chunkMap;
 
 	boost::scoped_ptr<TerrainGenerator> terrainGenerator;
 
-	PriorityFunction priorityFunction;
+	ChunkPriorityFunction chunkPriorityFunction;
 
-	ThreadPool threadPool;
+	JobThreadPool threadPool;
+	FinalizerQueue finalizerQueue;
 
 	public:
 
@@ -80,7 +113,7 @@ class ChunkManager {
 		void requestGeneration(ChunkPtr chunk);
 		void requestTesselation(ChunkPtr chunk);
 
-		void setPriorityFunction(PriorityFunction const &priorityFunction);
+		void setPriorityFunction(ChunkPriorityFunction const &priorityFunction);
 		void gather();
 
 	private:
@@ -88,9 +121,9 @@ class ChunkManager {
 		ChunkDataPtr chunkDataOrNull(int3 index);
 		NeighbourChunkData getNeighbourChunkData(int3 index);
 
-		ThreadPool::Finalizer generate(int3 index);
+		void generate(int3 index);
 		void finalizeGeneration(int3 index, ChunkDataPtr chunkData);
-		ThreadPool::Finalizer tesselate(int3 index, ChunkDataPtr chunkData, NeighbourChunkData neighbourChunkData);
+		void tesselate(int3 index, ChunkDataPtr chunkData, NeighbourChunkData neighbourChunkData);
 		void finalizeTesselation(int3 index, ChunkGeometryPtr chunkGeometry);
 
 };

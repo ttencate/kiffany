@@ -47,15 +47,15 @@ class StrictPriorityQueue {
 
 };
 
-template<typename T, typename Priority>
+template<typename T, typename P>
 struct PriorityItem {
 	T item;
-	Priority priority;
-	PriorityItem(T const &item, Priority priority) : item(item), priority(priority) { }
+	P priority;
+	PriorityItem(T const &item, P priority) : item(item), priority(priority) { }
 };
 
-template<typename T, typename Priority>
-bool operator<(PriorityItem<T, Priority> const &a, PriorityItem<T, Priority> const &b) {
+template<typename T, typename P>
+bool operator<(PriorityItem<T, P> const &a, PriorityItem<T, P> const &b) {
 	return a.priority < b.priority;
 }
 
@@ -63,12 +63,12 @@ bool operator<(PriorityItem<T, Priority> const &a, PriorityItem<T, Priority> con
  */
 template<
 	typename T,
-	typename Priority = float,
-	typename QueueType = StrictPriorityQueue<PriorityItem<T, Priority> >
+	typename P = float,
+	typename QueueType = StrictPriorityQueue<PriorityItem<T, P> >
 >
 class ExplicitPriorityQueue {
 
-	typedef PriorityItem<T, Priority> Item;
+	typedef PriorityItem<T, P> Item;
 
 	class ConstIterator {
 		typename QueueType::const_iterator i;
@@ -95,15 +95,15 @@ class ExplicitPriorityQueue {
 
 		T const &back() const { return queue.back().item; }
 
-		Priority front_priority() const { return queue.front().priority; }
+		P front_priority() const { return queue.front().priority; }
 
-		Priority back_priority() const { return queue.back().priority; }
+		P back_priority() const { return queue.back().priority; }
 
 		void pop_front() { queue.pop_front(); }
 
 		void pop_back() { queue.pop_back(); }
 
-		void insert(T const &t, Priority priority = Priority()) {
+		void insert(T const &t, P priority = P()) {
 			queue.insert(Item(t, priority));
 		}
 
@@ -117,12 +117,12 @@ class ExplicitPriorityQueue {
  * priority function. This function can be changed to cause updating of all
  * priorities.
  */
-template<typename T, typename Priority = float, typename QueueType = ExplicitPriorityQueue<T, Priority> >
-class ComputingPriorityQueue {
+template<typename T, typename P = float, typename QueueType = ExplicitPriorityQueue<T, P> >
+class DynamicPriorityQueue {
 
 	public:
 
-		typedef boost::function<Priority(T const &)> PriorityFunction;
+		typedef boost::function<P(T const &)> PriorityFunction;
 
 	private:
 
@@ -131,14 +131,14 @@ class ComputingPriorityQueue {
 
 	public:
 
-		ComputingPriorityQueue(PriorityFunction const &priorityFunction = PriorityFunction())
+		DynamicPriorityQueue(PriorityFunction const &priorityFunction = PriorityFunction())
 		:
 			priorityFunction(priorityFunction)
 		{
 		}
 
-		Priority priority(T const &t) const {
-			return priorityFunction ? priorityFunction(t) : Priority();
+		P priority(T const &t) const {
+			return priorityFunction ? priorityFunction(t) : P();
 		}
 
 		void setPriorityFunction(PriorityFunction const &priorityFunction) {
@@ -154,9 +154,9 @@ class ComputingPriorityQueue {
 
 		T const &back() const { return queue.back(); }
 
-		Priority front_priority() const { return queue.front_priority(); }
+		P front_priority() const { return queue.front_priority(); }
 
-		Priority back_priority() const { return queue.back_priority(); }
+		P back_priority() const { return queue.back_priority(); }
 
 		void pop_front() { queue.pop_front(); }
 

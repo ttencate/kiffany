@@ -10,22 +10,26 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
 
+#include <iostream> // TODO remove
 #include <queue>
 
-// A thread-safe wrapper around priority_queue,
-// and allows new posts to block if the queue gets too large.
+/* A thread-safe wrapper around a priority queue,
+ * which also allows new posts to block if the queue gets too large.
+ */
+template<typename WorkerType = boost::function<void(void)>, typename QueueType = DynamicPriorityQueue<WorkerType> >
 class WorkQueue
 :
 	boost::noncopyable
 {
 	public:
 
-		typedef boost::function<void(void)> Worker;
+		typedef WorkerType Worker;
 		typedef float Priority;
+		typedef boost::function<Priority(Worker const &)> PriorityFunction;
 
 	private:
 
-		typedef ExplicitPriorityQueue<Worker> Queue;
+		typedef QueueType Queue;
 
 		unsigned const maxSize;
 
@@ -36,54 +40,147 @@ class WorkQueue
 
 	public:
 
-		WorkQueue(unsigned maxSize);
+		WorkQueue(unsigned maxSize)
+		:
+			maxSize(maxSize),
+			semaphore(maxSize == 0 ? std::numeric_limits<unsigned>::max() : maxSize)
+		{
+		}
 
-		void post(Worker worker, Priority priority = Priority());
-		bool tryPost(Worker worker, Priority priority = Priority());
+		void post(Worker worker) {
+			semaphore.wait();
+			doPost(worker);
+		}
 
-		bool empty() const;
+		bool tryPost(Worker worker) {
+			if (semaphore.tryWait()) {
+				doPost(worker);
+				return true;
+			} else {
+				return false;
+			}
+		}
 
-		void runOne();
-		void runAll();
+		void runOne() {
+			boost::unique_lock<boost::mutex> lock(queueMutex);
+			while (queue.empty()) {
+				conditionVariable.wait(lock);
+			}
+			Worker worker(queue.front());
+			queue.pop_front();
+			lock.unlock();
+
+			semaphore.signal();
+			worker();
+		}
+
+		void runAll() {
+			Queue all;
+			{
+				boost::unique_lock<boost::mutex> lock(queueMutex);
+				std::swap(queue, all);
+			}
+			for (unsigned i = 0; i < all.size(); ++i) {
+				semaphore.signal();
+			}
+			while (!all.empty()) {
+				Worker worker = all.front();
+				all.pop_front();
+				worker();
+			}
+		}
+
+		void setPriorityFunction(PriorityFunction const &priorityFunction) {
+			boost::unique_lock<boost::mutex> lock(queueMutex);
+			queue.setPriorityFunction(priorityFunction);
+		}
 
 	private:
 
-		void doPost(Worker worker, Priority priority);
+		void doPost(Worker worker) {
+			{
+				boost::unique_lock<boost::mutex> lock(queueMutex);
+				queue.insert(worker);
+			}
+			conditionVariable.notify_one();
+		}
 
 };
 
+template<typename WorkerType = boost::function<void(void)> >
 class ThreadPool
 :
 	boost::noncopyable
 {
 
-	unsigned const numThreads;
-
-	WorkQueue inputQueue;
-	WorkQueue outputQueue;
-
-	boost::scoped_array<boost::scoped_ptr<boost::thread> > const threads;
-
 	public:
 
-		typedef WorkQueue::Priority Priority;
-		typedef boost::function<void(void)> Finalizer;
-		typedef boost::function<Finalizer(void)> Worker;
-
-		ThreadPool(unsigned maxInputQueueSize, unsigned maxOutputQueueSize, unsigned numThreads = defaultNumThreads());
-		~ThreadPool();
-
-		void enqueue(Worker worker, Priority priority = Priority());
-		bool tryEnqueue(Worker worker, Priority priority = Priority());
-		void runFinalizers();
-
-		static unsigned defaultNumThreads();
+		typedef WorkerType Worker;
+		typedef float Priority;
 
 	private:
 
-		void loop();
-		void work(Worker worker);
-		void finalize(Finalizer finalizer);
+		typedef WorkQueue<Worker> Queue;
+		typedef ThreadPool<Worker> Type;
+
+		unsigned const numThreads;
+
+		Queue queue;
+
+		boost::scoped_array<boost::scoped_ptr<boost::thread> > const threads;
+
+	public:
+
+		typedef typename Queue::PriorityFunction PriorityFunction;
+
+		ThreadPool(unsigned maxQueueSize, unsigned numThreads = defaultNumThreads())
+		:
+			numThreads(numThreads == 0 ? defaultNumThreads() : numThreads),
+			queue(maxQueueSize),
+			threads(new boost::scoped_ptr<boost::thread>[numThreads])
+		{
+			for (unsigned i = 0; i < numThreads; ++i) {
+				threads[i].reset(new boost::thread(boost::bind(&Type::loop, this)));
+			}
+		}
+
+		~ThreadPool() {
+			for (unsigned i = 0; i < numThreads; ++i) {
+				threads[i]->interrupt();
+			}
+			// Do not delete the queue until all threads have finished.
+			for (unsigned i = 0; i < numThreads; ++i) {
+				threads[i]->join();
+			}
+		}
+
+		void enqueue(Worker worker) {
+			queue.post(worker);
+		}
+
+		bool tryEnqueue(Worker worker) {
+			return queue.tryPost(worker);
+		}
+
+		static unsigned defaultNumThreads() {
+			unsigned numThreads = boost::thread::hardware_concurrency();
+			if (numThreads == 0) {
+				numThreads = 1;
+			}
+			return numThreads;
+		}
+
+		void setPriorityFunction(PriorityFunction const &priorityFunction) {
+			queue.setPriorityFunction(priorityFunction);
+		}
+
+	private:
+
+		void loop() {
+			while (true) {
+				queue.runOne();
+			}
+		}
 
 };
 

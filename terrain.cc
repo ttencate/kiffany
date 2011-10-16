@@ -4,15 +4,15 @@
 #include "stats.h"
 #include "terragen.h"
 
-float PriorityFunction::operator()(Chunk const &chunk) const {
+float ChunkPriorityFunction::operator()(Chunk const &chunk) const {
 	return (*this)(chunk.getIndex());
 }
 
-float PriorityFunction::operator()(int3 index) const {
+float ChunkPriorityFunction::operator()(int3 index) const {
 	return (*this)(chunkCenter(index));
 }
 
-float PriorityFunction::operator()(vec3 chunkCenter) const {
+float ChunkPriorityFunction::operator()(vec3 chunkCenter) const {
 	return 1 / length(chunkCenter - camera.getPosition());
 }
 
@@ -46,7 +46,7 @@ bool ChunkMap::contains(int3 index) const {
 	return map.find(index) != map.end();
 }
 
-void ChunkMap::setPriorityFunction(PriorityFunction const &priorityFunction) {
+void ChunkMap::setPriorityFunction(ChunkPriorityFunction const &priorityFunction) {
 	evictionQueue.setPriorityFunction(priorityFunction);
 }
 
@@ -63,7 +63,8 @@ ChunkManager::ChunkManager(unsigned maxNumChunks, TerrainGenerator *terrainGener
 :
 	chunkMap(maxNumChunks),
 	terrainGenerator(terrainGenerator),
-	threadPool(0, ThreadPool::defaultNumThreads())
+	threadPool(0),
+	finalizerQueue(JobThreadPool::defaultNumThreads())
 {
 }
 
@@ -73,13 +74,14 @@ ChunkPtr ChunkManager::chunkOrNull(int3 index) {
 
 void ChunkManager::requestGeneration(ChunkPtr chunk) {
 	if (chunk->getState() == Chunk::NEW) {
-		float priority = priorityFunction(*chunk);
+		int3 index = chunk->getIndex();
 		chunk->setGenerating();
-		threadPool.enqueue(
-				boost::bind(
-					&ChunkManager::generate, this,
-					chunk->getIndex()),
-				priority);
+		threadPool.enqueue(Job(
+					index,
+					1.0f,
+					boost::bind(
+						&ChunkManager::generate, this,
+						chunk->getIndex())));
 	}
 }
 
@@ -88,24 +90,26 @@ void ChunkManager::requestTesselation(ChunkPtr chunk) {
 		int3 index = chunk->getIndex();
 		NeighbourChunkData neighbourChunkData = getNeighbourChunkData(index);
 		if (neighbourChunkData.isComplete()) {
-			float priority = priorityFunction(*chunk);
 			chunk->setTesselating();
-			threadPool.enqueue(
-					boost::bind(
-						&ChunkManager::tesselate, this,
-						index, chunk->getData(), neighbourChunkData),
-					1e6f * priority); // Tesselations are more important.
+			threadPool.enqueue(Job(
+						index,
+						1.0e6f,
+						boost::bind(
+							&ChunkManager::tesselate, this,
+							index, chunk->getData(), neighbourChunkData)));
 		}
 	}
 }
 
-void ChunkManager::setPriorityFunction(PriorityFunction const &priorityFunction) {
-	this->priorityFunction = priorityFunction;
+void ChunkManager::setPriorityFunction(ChunkPriorityFunction const &priorityFunction) {
+	this->chunkPriorityFunction = priorityFunction;
 	chunkMap.setPriorityFunction(priorityFunction);
+	threadPool.setPriorityFunction(
+			JobThreadPool::PriorityFunction(JobPriorityFunction(priorityFunction)));
 }
 
 void ChunkManager::gather() {
-	threadPool.runFinalizers();
+	finalizerQueue.runAll();
 }
 
 ChunkDataPtr ChunkManager::chunkDataOrNull(int3 index) {
@@ -128,13 +132,14 @@ NeighbourChunkData ChunkManager::getNeighbourChunkData(int3 index) {
 	return data;
 }
 
-ThreadPool::Finalizer ChunkManager::generate(int3 index) {
+void ChunkManager::generate(int3 index) {
 	int3 position = chunkPositionFromIndex(index);
 
 	ChunkDataPtr chunkData(new ChunkData());
 	terrainGenerator->generateChunk(position, chunkData);
 
-	return boost::bind(&ChunkManager::finalizeGeneration, this, index, chunkData);
+	finalizerQueue.post(boost::bind(
+				&ChunkManager::finalizeGeneration, this, index, chunkData));
 }
 
 void ChunkManager::finalizeGeneration(int3 index, ChunkDataPtr chunkData) {
@@ -144,13 +149,14 @@ void ChunkManager::finalizeGeneration(int3 index, ChunkDataPtr chunkData) {
 	}
 }
 
-ThreadPool::Finalizer ChunkManager::tesselate(int3 index, ChunkDataPtr chunkData, NeighbourChunkData neighbourChunkData) {
+void ChunkManager::tesselate(int3 index, ChunkDataPtr chunkData, NeighbourChunkData neighbourChunkData) {
 	int3 position = chunkPositionFromIndex(index);
 
 	ChunkGeometryPtr chunkGeometry(new ChunkGeometry());
 	::tesselate(chunkData, neighbourChunkData, position, chunkGeometry);
 
-	return boost::bind(&ChunkManager::finalizeTesselation, this, index, chunkGeometry);
+	finalizerQueue.post(boost::bind(
+				&ChunkManager::finalizeTesselation, this, index, chunkGeometry));
 }
 
 void ChunkManager::finalizeTesselation(int3 index, ChunkGeometryPtr chunkGeometry) {
@@ -175,7 +181,7 @@ void Terrain::update(float dt) {
 }
 
 void Terrain::render(Camera const &camera) {
-	chunkManager.setPriorityFunction(PriorityFunction(camera));
+	chunkManager.setPriorityFunction(ChunkPriorityFunction(camera));
 
 	int3 center = chunkIndexFromPosition(camera.getPosition());
 	int radius = flags.viewDistance / CHUNK_SIZE;
