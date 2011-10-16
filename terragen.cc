@@ -28,12 +28,17 @@ PerlinTerrainGenerator::PerlinTerrainGenerator(unsigned size, unsigned seed)
 }
 
 void PerlinTerrainGenerator::doGenerateChunk(int3 const &pos, ChunkDataPtr data) const {
-	CoordsBlock coordsBlock = data->getCoordsBlock();
-	for (CoordsBlock::const_iterator i = coordsBlock.begin(); i != coordsBlock.end(); ++i) {
-		if (perlin(*i) > 0.5f) {
-			(*data)[*i] = STONE_BLOCK;
-		} else {
-			(*data)[*i] = AIR_BLOCK;
+	RleCompressor compressor(*data);
+	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
+		for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
+			for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
+				vec3 c = blockCenter(pos + int3(x, y, z));
+				Block block = AIR_BLOCK;
+				if (perlin(int3(c)) > 0.5f) {
+					block = STONE_BLOCK;
+				}
+				compressor.put(block);
+			}
 		}
 	}
 }
@@ -79,17 +84,16 @@ void SineTerrainGenerator::doGenerateChunk(int3 const &pos, ChunkDataPtr data) c
 	float const amplitude = 32.0f;
 	float const period = 256.0f;
 	float const omega = 2 * M_PI / period;
-	Block *p = data->raw();
+	RleCompressor compressor(*data);
 	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
 		for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
 			for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
 				vec3 c = blockCenter(pos + int3(x, y, z));
-				if (c.z > amplitude * (sinf(omega * c.x) + sinf(omega * c.y))) {
-					*p = AIR_BLOCK;
-				} else {
-					*p = STONE_BLOCK;
+				Block block = AIR_BLOCK;
+				if (c.z < amplitude * (sinf(omega * c.x) + sinf(omega * c.y))) {
+					block = STONE_BLOCK;
 				}
-				++p;
+				compressor.put(block);
 			}
 		}
 	}

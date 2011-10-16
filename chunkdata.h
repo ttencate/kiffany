@@ -11,7 +11,7 @@
 
 #include <vector>
 
-class ChunkData
+class RawChunkData
 :
 	boost::noncopyable
 {
@@ -23,7 +23,7 @@ class ChunkData
 		typedef Block* iterator;
 		typedef Block const* const_iterator;
 
-		ChunkData();
+		RawChunkData();
 
 		Block &operator[](int3 pos);
 		Block const &operator[](int3 pos) const;
@@ -33,16 +33,14 @@ class ChunkData
 		const_iterator begin() const;
 		const_iterator end() const;
 
-		CoordsBlock getCoordsBlock() const;
-
 		Block const *raw() const;
 		Block *raw();
 
 };
 
-typedef boost::shared_ptr<ChunkData> ChunkDataPtr;
+typedef boost::shared_ptr<RawChunkData> RawChunkDataPtr;
 
-class RleChunkData
+class ChunkData
 :
 	boost::noncopyable
 {
@@ -68,16 +66,16 @@ class RleChunkData
 
 };
 
-typedef boost::shared_ptr<RleChunkData> RleChunkDataPtr;
+typedef boost::shared_ptr<ChunkData> ChunkDataPtr;
 
 class RleCompressor {
 
-	RleChunkDataPtr const rleChunkData;
-	RleChunkData::Run currentRun;
+	ChunkData &chunkData;
+	ChunkData::Run currentRun;
 
 	public:
 
-		RleCompressor(RleChunkDataPtr rleChunkData);
+		RleCompressor(ChunkData &chunkData);
 		~RleCompressor();
 
 		void put(Block block);
@@ -90,19 +88,19 @@ class RleCompressor {
 
 class RleDecompressor {
 
-	RleChunkDataPtr const rleChunkData;
-	RleChunkData::Run currentRun;
+	ChunkData const &chunkData;
+	ChunkData::Run currentRun;
 	unsigned nextRunIndex;
 
 	public:
 
-		RleDecompressor(RleChunkDataPtr rleChunkData);
+		RleDecompressor(ChunkData const &chunkData);
 
 		Block get();
 
 };
 
-void compress(ChunkDataPtr chunkData, RleChunkDataPtr rleChunkData);
-void decompress(RleChunkDataPtr rleChunkData, ChunkDataPtr chunkData);
+void compress(RawChunkData const &rawChunkData, ChunkData &chunkData);
+void decompress(ChunkData const &chunkData, RawChunkData &rawChunkData);
 
 #endif

@@ -9,49 +9,6 @@ extern const unsigned BLOCKS_PER_CHUNK;
 
 extern const float CHUNK_RADIUS;
 
-class CoordsBlock {
-
-	int3 const size;
-	int3 const offset;
-
-	class Iterator {
-
-		CoordsBlock const *const parent;
-
-		int3 relCoords;
-
-		public:
-
-			Iterator(CoordsBlock const *parent, int3 relCoords);
-
-			Iterator &operator++();
-			Iterator operator++(int);
-
-			Iterator &operator+=(int delta);
-			Iterator operator+(int delta) const;
-
-			bool operator==(Iterator const &other) const;
-			bool operator!=(Iterator const &other) const;
-
-			int3 operator*() const;
-		
-		private:
-
-			void wrap();
-
-	};
-
-	public:
-
-		typedef Iterator const_iterator;
-	
-		CoordsBlock(int3 const &size, int3 const &offset = int3(0));
-
-		const_iterator begin() const;
-		const_iterator end() const;
-
-};
-
 inline vec3 blockMin(int3 const &pos) {
 	return vec3(pos);
 }
