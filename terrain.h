@@ -102,8 +102,8 @@ class ChunkManager {
 
 	ChunkPriorityFunction chunkPriorityFunction;
 
-	JobThreadPool threadPool;
 	FinalizerQueue finalizerQueue;
+	JobThreadPool threadPool;
 
 	public:
 

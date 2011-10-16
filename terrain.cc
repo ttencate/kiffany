@@ -63,8 +63,8 @@ ChunkManager::ChunkManager(unsigned maxNumChunks, TerrainGenerator *terrainGener
 :
 	chunkMap(maxNumChunks),
 	terrainGenerator(terrainGenerator),
-	threadPool(0),
-	finalizerQueue(JobThreadPool::defaultNumThreads())
+	finalizerQueue(JobThreadPool::defaultNumThreads()),
+	threadPool(0)
 {
 }
 
