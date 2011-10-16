@@ -42,4 +42,67 @@ class ChunkData
 
 typedef boost::shared_ptr<ChunkData> ChunkDataPtr;
 
+class RleChunkData
+:
+	boost::noncopyable
+{
+	public:
+
+		typedef unsigned Length;
+
+		struct Run {
+			Block block;
+			Length length;
+		};
+
+		typedef std::vector<Run> Runs;
+
+	private:
+
+		Runs runs;
+
+	public:
+
+		Runs &getRuns() { return runs; }
+		Runs const &getRuns() const { return runs; }
+
+};
+
+typedef boost::shared_ptr<RleChunkData> RleChunkDataPtr;
+
+class RleCompressor {
+
+	RleChunkDataPtr const rleChunkData;
+	RleChunkData::Run currentRun;
+
+	public:
+
+		RleCompressor(RleChunkDataPtr rleChunkData);
+		~RleCompressor();
+
+		void put(Block block);
+
+	private:
+
+		void pushRun();
+
+};
+
+class RleDecompressor {
+
+	RleChunkDataPtr const rleChunkData;
+	RleChunkData::Run currentRun;
+	unsigned nextRunIndex;
+
+	public:
+
+		RleDecompressor(RleChunkDataPtr rleChunkData);
+
+		Block get();
+
+};
+
+void compress(ChunkDataPtr chunkData, RleChunkDataPtr rleChunkData);
+void decompress(RleChunkDataPtr rleChunkData, ChunkDataPtr chunkData);
+
 #endif
