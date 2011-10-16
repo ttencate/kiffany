@@ -36,6 +36,25 @@ class Noise2D
 
 };
 
+class Noise3D
+:
+	Noise
+{
+
+	unsigned const size;
+
+	public:
+
+		typedef vec3 Coords;
+
+		Noise3D(unsigned size, unsigned seed);
+
+		unsigned getSize() const { return size; }
+
+		float operator()(vec3 pos) const;
+
+};
+
 struct Octave {
 	float frequency;
 	float amplitude;
@@ -55,6 +74,8 @@ class Perlin {
 	NoiseType noise;
 	Octaves octaves;
 
+	float amplitude;
+
 	public:
 
 		typedef typename NoiseType::Coords Coords;
@@ -64,8 +85,10 @@ class Perlin {
 			noise(noise),
 			octaves(octaves)
 		{
+			amplitude = 0;
 			for (unsigned i = 0; i < octaves.size(); ++i) {
 				this->octaves[i].frequency /= noise.getSize();
+				amplitude += this->octaves[i].amplitude;
 			}
 		}
 
@@ -76,6 +99,10 @@ class Perlin {
 				out += octave.amplitude * noise(octave.frequency * pos);
 			}
 			return out;
+		}
+
+		float getAmplitude() const {
+			return amplitude;
 		}
 
 };

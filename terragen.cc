@@ -16,20 +16,35 @@ void TerrainGenerator::generateChunk(int3 const &position, ChunkDataPtr chunkDat
 	stats.chunksGenerated.increment();
 }
 
+// TODO don't reuse seed
 PerlinTerrainGenerator::PerlinTerrainGenerator(unsigned size, unsigned seed)
 :
-	perlin(Noise2D(size, seed), buildOctaves(seed))
+	perlin2D(Noise2D(size, seed), buildOctaves2D(seed)),
+	perlin3D(Noise3D(size, seed), buildOctaves3D(seed))
 {
 }
 
-Octaves PerlinTerrainGenerator::buildOctaves(unsigned seed) const {
+Octaves PerlinTerrainGenerator::buildOctaves2D(unsigned seed) const {
 	boost::mt11213b engine(seed);
 	boost::normal_distribution<float> normal(1.0f, 0.1f);
 	boost::variate_generator<boost::mt11213b, boost::normal_distribution<float> > gen(engine, normal);
 	Octaves octaves;
-	for (int i = 1024; i >= 8; i /= 2) {
+	for (int i = 512; i >= 8; i /= 2) {
 		float period = i * gen();
 		float amplitude = 0.5f * i;
+		octaves.push_back(Octave(period, amplitude));
+	}
+	return octaves;
+}
+
+Octaves PerlinTerrainGenerator::buildOctaves3D(unsigned seed) const {
+	boost::mt11213b engine(seed);
+	boost::normal_distribution<float> normal(1.0f, 0.1f);
+	boost::variate_generator<boost::mt11213b, boost::normal_distribution<float> > gen(engine, normal);
+	Octaves octaves;
+	for (int i = 32; i >= 8; i /= 2) {
+		float period = i * gen();
+		float amplitude = i;
 		octaves.push_back(Octave(period, amplitude));
 	}
 	return octaves;
@@ -40,16 +55,21 @@ void PerlinTerrainGenerator::doGenerateChunk(int3 const &pos, ChunkDataPtr data)
 	for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
 		for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
 			vec2 p(blockCenter(pos + int3(x, y, 0)));
-			heights[x + CHUNK_SIZE * y] = perlin(p);
+			heights[x + CHUNK_SIZE * y] = perlin2D(p);
 		}
 	}
+	float const amplitude3D = perlin3D.getAmplitude();
 	RleCompressor compressor(*data);
 	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
 		for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
 			for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
 				vec3 center = blockCenter(pos + int3(x, y, z));
 				Block block = AIR_BLOCK;
-				if (center.z < heights[x + CHUNK_SIZE * y]) {
+				float h = center.z - heights[x + CHUNK_SIZE * y];
+				if (h >= -amplitude3D && h <= amplitude3D) {
+					h += perlin3D(center);
+				}
+				if (h < 0) {
 					block = STONE_BLOCK;
 				}
 				compressor.put(block);

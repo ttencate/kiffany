@@ -27,7 +27,8 @@ class PerlinTerrainGenerator
 	public TerrainGenerator
 {
 
-	Perlin<Noise2D> perlin;
+	Perlin<Noise2D> perlin2D;
+	Perlin<Noise3D> perlin3D;
 
 	public:
 
@@ -35,7 +36,8 @@ class PerlinTerrainGenerator
 
 	private:
 
-		Octaves buildOctaves(unsigned seed) const;
+		Octaves buildOctaves2D(unsigned seed) const;
+		Octaves buildOctaves3D(unsigned seed) const;
 
 		virtual void doGenerateChunk(int3 const &pos, ChunkDataPtr data) const;
 
