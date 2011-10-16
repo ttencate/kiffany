@@ -64,6 +64,8 @@ class ChunkData
 		Runs &getRuns() { return runs; }
 		Runs const &getRuns() const { return runs; }
 
+		bool isEmpty() const;
+
 };
 
 typedef boost::shared_ptr<ChunkData> ChunkDataPtr;

@@ -180,23 +180,25 @@ void tesselateFace(Block const *rawData, Block const *rawNeighData, int3 const &
 void tesselate(ChunkDataPtr data, NeighbourChunkData const &neighbourData, int3 const &position, ChunkGeometryPtr geometry) {
 	SafeTimer::Timed t = stats.chunkTesselationTime.timed();
 
-	boost::scoped_ptr<RawChunkData> rawData(new RawChunkData());
-	decompress(*data, *rawData);
+	if (!data->isEmpty()) {
+		boost::scoped_ptr<RawChunkData> rawData(new RawChunkData());
+		decompress(*data, *rawData);
 
-	boost::scoped_ptr<RawChunkData> rawNeighData(new RawChunkData());
+		boost::scoped_ptr<RawChunkData> rawNeighData(new RawChunkData());
 
-	decompress(*neighbourData.xn, *rawNeighData);
-	tesselateFace<-1,  0,  0>(rawData->raw(), rawNeighData->raw(), position, geometry);
-	decompress(*neighbourData.xp, *rawNeighData);
-	tesselateFace< 1,  0,  0>(rawData->raw(), rawNeighData->raw(), position, geometry);
-	decompress(*neighbourData.yn, *rawNeighData);
-	tesselateFace< 0, -1,  0>(rawData->raw(), rawNeighData->raw(), position, geometry);
-	decompress(*neighbourData.yp, *rawNeighData);
-	tesselateFace< 0,  1,  0>(rawData->raw(), rawNeighData->raw(), position, geometry);
-	decompress(*neighbourData.zn, *rawNeighData);
-	tesselateFace< 0,  0, -1>(rawData->raw(), rawNeighData->raw(), position, geometry);
-	decompress(*neighbourData.zp, *rawNeighData);
-	tesselateFace< 0,  0,  1>(rawData->raw(), rawNeighData->raw(), position, geometry);
+		decompress(*neighbourData.xn, *rawNeighData);
+		tesselateFace<-1,  0,  0>(rawData->raw(), rawNeighData->raw(), position, geometry);
+		decompress(*neighbourData.xp, *rawNeighData);
+		tesselateFace< 1,  0,  0>(rawData->raw(), rawNeighData->raw(), position, geometry);
+		decompress(*neighbourData.yn, *rawNeighData);
+		tesselateFace< 0, -1,  0>(rawData->raw(), rawNeighData->raw(), position, geometry);
+		decompress(*neighbourData.yp, *rawNeighData);
+		tesselateFace< 0,  1,  0>(rawData->raw(), rawNeighData->raw(), position, geometry);
+		decompress(*neighbourData.zn, *rawNeighData);
+		tesselateFace< 0,  0, -1>(rawData->raw(), rawNeighData->raw(), position, geometry);
+		decompress(*neighbourData.zp, *rawNeighData);
+		tesselateFace< 0,  0,  1>(rawData->raw(), rawNeighData->raw(), position, geometry);
+	}
 
 	stats.chunksTesselated.increment();
 }

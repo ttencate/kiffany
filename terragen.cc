@@ -9,7 +9,6 @@
 #include <boost/random/normal_distribution.hpp>
 
 #include <cmath>
-#include <iostream> // TODO remove
 
 void TerrainGenerator::generateChunk(int3 const &position, ChunkDataPtr chunkData) const {
 	SafeTimer::Timed t = stats.chunkGenerationTime.timed();
@@ -30,7 +29,6 @@ Octaves PerlinTerrainGenerator::buildOctaves(unsigned seed) const {
 	Octaves octaves;
 	for (int i = 1024; i >= 8; i /= 2) {
 		float period = i * gen();
-		std::cerr << period << '\n';
 		float amplitude = 0.5f * i;
 		octaves.push_back(Octave(period, amplitude));
 	}

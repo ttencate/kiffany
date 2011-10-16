@@ -43,6 +43,15 @@ Block *RawChunkData::raw() {
 	return &blocks[0];
 }
 
+bool ChunkData::isEmpty() const {
+	for (unsigned i = 0; i < runs.size(); ++i) {
+		if (runs[i].block != AIR_BLOCK) {
+			return false;
+		}
+	}
+	return true;
+}
+
 RleCompressor::RleCompressor(ChunkData &chunkData)
 :
 	chunkData(chunkData)
