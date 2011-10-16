@@ -150,10 +150,8 @@ void ChunkManager::finalizeGeneration(int3 index, ChunkDataPtr chunkData) {
 }
 
 void ChunkManager::tesselate(int3 index, ChunkDataPtr chunkData, NeighbourChunkData neighbourChunkData) {
-	int3 position = chunkPositionFromIndex(index);
-
 	ChunkGeometryPtr chunkGeometry(new ChunkGeometry());
-	::tesselate(chunkData, neighbourChunkData, position, chunkGeometry);
+	::tesselate(chunkData, neighbourChunkData, chunkGeometry);
 
 	finalizerQueue.post(boost::bind(
 				&ChunkManager::finalizeTesselation, this, index, chunkGeometry));
@@ -163,7 +161,6 @@ void ChunkManager::finalizeTesselation(int3 index, ChunkGeometryPtr chunkGeometr
 	ChunkPtr chunk = chunkOrNull(index);
 	if (chunk) {
 		chunk->setGeometry(chunkGeometry);
-		// TODO see if its or its neighbours' data can be cleaned up
 	}
 }
 

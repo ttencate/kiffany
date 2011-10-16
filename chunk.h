@@ -63,7 +63,7 @@ struct NeighbourChunkData {
 	bool isComplete() const { return xn && xp && yn && yp && zn && zp; }
 };
 
-void tesselate(ChunkDataPtr data, NeighbourChunkData const &neighbourData, int3 const &position, ChunkGeometryPtr geometry);
+void tesselate(ChunkDataPtr data, NeighbourChunkData const &neighbourData, ChunkGeometryPtr geometry);
 
 class ChunkBuffers
 :
