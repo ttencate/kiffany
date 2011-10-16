@@ -38,14 +38,20 @@ Octaves PerlinTerrainGenerator::buildOctaves(unsigned seed) const {
 }
 
 void PerlinTerrainGenerator::doGenerateChunk(int3 const &pos, ChunkDataPtr data) const {
+	std::vector<float> heights(CHUNK_SIZE * CHUNK_SIZE);
+	for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
+		for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
+			vec2 p(blockCenter(pos + int3(x, y, 0)));
+			heights[x + CHUNK_SIZE * y] = perlin(p);
+		}
+	}
 	RleCompressor compressor(*data);
 	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
 		for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
 			for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
 				vec3 center = blockCenter(pos + int3(x, y, z));
-				vec2 pos(center.x, center.y);
 				Block block = AIR_BLOCK;
-				if (center.z < perlin(pos)) {
+				if (center.z < heights[x + CHUNK_SIZE * y]) {
 					block = STONE_BLOCK;
 				}
 				compressor.put(block);
