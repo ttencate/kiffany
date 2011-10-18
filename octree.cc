@@ -1,6 +1,7 @@
 #include "octree.h"
 
 #include "chunkdata.h"
+#include "stats.h"
 
 inline Block determineType(unsigned size, Block const *base) {
 	Block const block = *base;
@@ -59,7 +60,10 @@ unsigned subdivideOctree(unsigned size, Block const *base, OctreeNodes &nodes) {
 }
 
 void buildOctree(RawChunkData const &rawChunkData, Octree &octree) {
+	SafeTimer::Timed timed = stats.octreeBuildTime.timed();
 	octree = Octree();
 	Block const *raw = rawChunkData.raw();
 	subdivideOctree(CHUNK_SIZE, raw, octree.getNodes());
+	stats.octreesBuilt.increment();
+	stats.octreeNodes.increment(octree.getNodes().size());
 }

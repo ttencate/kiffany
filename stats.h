@@ -121,16 +121,24 @@ struct Stats {
 	UnsafeCounter buffersCreated;
 	UnsafeCounter buffersDeleted;
 
-	SafeCounter chunksCreated;
-	SafeCounter chunksGenerated;
-	SafeCounter chunksEvicted;
-	SafeCounter irrelevantJobsSkipped;
-	SafeCounter irrelevantJobsRun;
+	SafeCounter octreeNodes;
+	SafeCounter runs;
 	SafeCounter quadsGenerated;
-	SafeTimer chunkGenerationTime;
 
+	SafeCounter chunksCreated;
+	SafeCounter chunksEvicted;
+
+	SafeCounter chunksGenerated;
+	SafeTimer chunkGenerationTime;
+	SafeCounter chunksCompressed;
+	SafeTimer chunkCompressionTime;
+	SafeCounter octreesBuilt;
+	SafeTimer octreeBuildTime;
 	SafeCounter chunksTesselated;
 	SafeTimer chunkTesselationTime;
+
+	SafeCounter irrelevantJobsSkipped;
+	SafeCounter irrelevantJobsRun;
 
 	UnsafeCounter framesRendered;
 	UnsafeCounter chunksConsidered;

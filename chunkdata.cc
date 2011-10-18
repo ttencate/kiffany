@@ -101,14 +101,21 @@ Block RleDecompressor::get() {
 }
 
 void compress(RawChunkData const &rawChunkData, ChunkData &chunkData) {
-	Block const *data = rawChunkData.raw();
-	Block const *const end = data + BLOCKS_PER_CHUNK;
+	{
+		SafeTimer::Timed timed = stats.chunkCompressionTime.timed();
 
-	RleCompressor compressor(chunkData);
+		Block const *data = rawChunkData.raw();
+		Block const *const end = data + BLOCKS_PER_CHUNK;
 
-	for (; data < end; ++data) {
-		compressor.put(*data);
+		RleCompressor compressor(chunkData);
+
+		for (; data < end; ++data) {
+			compressor.put(*data);
+		}
 	}
+
+	stats.chunksCompressed.increment();
+	stats.runs.increment(chunkData.getRuns().size());
 }
 
 void decompress(ChunkData const &chunkData, RawChunkData &rawChunkData) {
