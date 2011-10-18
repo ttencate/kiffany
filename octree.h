@@ -13,7 +13,7 @@ struct OctreeNode {
 	Block block;
 	unsigned children[8];
 
-	OctreeNode(Block block = INVALID_BLOCK)
+	explicit OctreeNode(Block block = INVALID_BLOCK)
 	:
 		block(block)
 	{
@@ -34,8 +34,6 @@ class Octree {
 	OctreeNodes nodes;
 
 	public:
-
-		Octree();
 
 		OctreeNodes &getNodes() { return nodes; }
 		OctreeNodes const &getNodes() const { return nodes; }

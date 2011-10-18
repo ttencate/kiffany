@@ -2,13 +2,7 @@
 
 #include "chunkdata.h"
 
-Octree::Octree()
-:
-	nodes()
-{
-}
-
-Block determineType(unsigned size, Block const *base) {
+inline Block determineType(unsigned size, Block const *base) {
 	Block const block = *base;
 	for (unsigned z = 0; z < size; ++z) {
 		for (unsigned y = 0; y < size; ++y) {
@@ -40,23 +34,25 @@ unsigned subdivideOctree(unsigned size, Block const *base, OctreeNodes &nodes) {
 			return 0;
 		} else {
 			unsigned const i = nodes.size();
-			nodes.push_back(OctreeNode(block));
+			// Don't operate on the new node directly,
+			// since the vector might reallocate in the meantime.
+			nodes.push_back(OctreeNode());
+			OctreeNode node(block);
 			if (block == INVALID_BLOCK) {
 				unsigned const s = size / 2;
 				unsigned const sx = s;
 				unsigned const sy = CHUNK_SIZE * s;
 				unsigned const sz = CHUNK_SIZE * CHUNK_SIZE * s;
-				// Don't store a pointer/reference to the new node,
-				// since the vector might reallocate in the meantime.
-				nodes[i].children[0] = subdivideOctree(s, base               , nodes);
-				nodes[i].children[1] = subdivideOctree(s, base +           sx, nodes);
-				nodes[i].children[2] = subdivideOctree(s, base +      sy     , nodes);
-				nodes[i].children[3] = subdivideOctree(s, base +      sy + sx, nodes);
-				nodes[i].children[4] = subdivideOctree(s, base + sz          , nodes);
-				nodes[i].children[5] = subdivideOctree(s, base + sz +      sx, nodes);
-				nodes[i].children[6] = subdivideOctree(s, base + sz + sy     , nodes);
-				nodes[i].children[7] = subdivideOctree(s, base + sz + sy + sx, nodes);
+				node.children[0] = subdivideOctree(s, base               , nodes);
+				node.children[1] = subdivideOctree(s, base +           sx, nodes);
+				node.children[2] = subdivideOctree(s, base +      sy     , nodes);
+				node.children[3] = subdivideOctree(s, base +      sy + sx, nodes);
+				node.children[4] = subdivideOctree(s, base + sz          , nodes);
+				node.children[5] = subdivideOctree(s, base + sz +      sx, nodes);
+				node.children[6] = subdivideOctree(s, base + sz + sy     , nodes);
+				node.children[7] = subdivideOctree(s, base + sz + sy + sx, nodes);
 			}
+			nodes[i] = node;
 			return i;
 		}
 	}
