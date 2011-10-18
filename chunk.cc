@@ -241,7 +241,16 @@ void Chunk::setGenerating() {
 
 void Chunk::setData(ChunkDataPtr data) {
 	this->data = data;
-	state = GENERATED;
+	if (octree) {
+		state = GENERATED;
+	}
+}
+
+void Chunk::setOctree(OctreePtr octree) {
+	this->octree = octree;
+	if (data) {
+		state = GENERATED;
+	}
 }
 
 void Chunk::setTesselating() {

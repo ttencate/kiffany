@@ -141,20 +141,27 @@ bool ChunkManager::isJobIrrelevant(Job const &job) {
 void ChunkManager::generate(int3 index) {
 	int3 position = chunkPositionFromIndex(index);
 
+	RawChunkData rawChunkData;
+	terrainGenerator->generateChunk(position, rawChunkData);
+
 	ChunkDataPtr chunkData(new ChunkData());
-	terrainGenerator->generateChunk(position, chunkData);
+	compress(rawChunkData, *chunkData);
+
+	OctreePtr octree(new Octree());
+	buildOctree(rawChunkData, *octree);
 
 	finalizerQueue.post(boost::bind(
-				&ChunkManager::finalizeGeneration, this, index, chunkData));
+				&ChunkManager::finalizeGeneration, this, index, chunkData, octree));
 }
 
-void ChunkManager::finalizeGeneration(int3 index, ChunkDataPtr chunkData) {
+void ChunkManager::finalizeGeneration(int3 index, ChunkDataPtr chunkData, OctreePtr octree) {
 	ChunkPtr chunk = chunkOrNull(index);
 	if (!chunk) {
 		stats.irrelevantJobsRun.increment();
 		return;
 	}
 	chunk->setData(chunkData);
+	chunk->setOctree(octree);
 }
 
 void ChunkManager::tesselate(int3 index, ChunkDataPtr chunkData, NeighbourChunkData neighbourChunkData) {

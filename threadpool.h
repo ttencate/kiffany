@@ -10,7 +10,6 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
 
-#include <iostream> // TODO remove
 #include <queue>
 
 /* A thread-safe wrapper around a priority queue,

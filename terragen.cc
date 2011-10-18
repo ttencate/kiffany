@@ -10,9 +10,9 @@
 
 #include <cmath>
 
-void TerrainGenerator::generateChunk(int3 const &position, ChunkDataPtr chunkData) const {
+void TerrainGenerator::generateChunk(int3 const &position, RawChunkData &rawChunkData) const {
 	SafeTimer::Timed t = stats.chunkGenerationTime.timed();
-	doGenerateChunk(position, chunkData);
+	doGenerateChunk(position, rawChunkData);
 	stats.chunksGenerated.increment();
 }
 
@@ -50,7 +50,7 @@ Octaves PerlinTerrainGenerator::buildOctaves3D(unsigned seed) const {
 	return octaves;
 }
 
-void PerlinTerrainGenerator::doGenerateChunk(int3 const &pos, ChunkDataPtr data) const {
+void PerlinTerrainGenerator::doGenerateChunk(int3 const &pos, RawChunkData &rawChunkData) const {
 	std::vector<float> heights(CHUNK_SIZE * CHUNK_SIZE);
 	for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
 		for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
@@ -59,7 +59,7 @@ void PerlinTerrainGenerator::doGenerateChunk(int3 const &pos, ChunkDataPtr data)
 		}
 	}
 	float const amplitude3D = perlin3D.getAmplitude();
-	RleCompressor compressor(*data);
+	Block *p = rawChunkData.raw();
 	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
 		for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
 			for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
@@ -72,17 +72,18 @@ void PerlinTerrainGenerator::doGenerateChunk(int3 const &pos, ChunkDataPtr data)
 				if (h < 0) {
 					block = STONE_BLOCK;
 				}
-				compressor.put(block);
+				*p = block;
+				++p;
 			}
 		}
 	}
 }
 
-void SineTerrainGenerator::doGenerateChunk(int3 const &pos, ChunkDataPtr data) const {
+void SineTerrainGenerator::doGenerateChunk(int3 const &pos, RawChunkData &rawChunkData) const {
 	float const amplitude = 32.0f;
 	float const period = 256.0f;
 	float const omega = 2 * M_PI / period;
-	RleCompressor compressor(*data);
+	Block *p = rawChunkData.raw();
 	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
 		for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
 			for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
@@ -91,7 +92,8 @@ void SineTerrainGenerator::doGenerateChunk(int3 const &pos, ChunkDataPtr data) c
 				if (c.z < amplitude * (sinf(omega * c.x) + sinf(omega * c.y))) {
 					block = STONE_BLOCK;
 				}
-				compressor.put(block);
+				*p = block;
+				++p;
 			}
 		}
 	}

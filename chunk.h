@@ -2,6 +2,7 @@
 #define CHUNK_H
 
 #include "chunkdata.h"
+#include "octree.h"
 #include "gl.h"
 
 #include <boost/scoped_ptr.hpp>
@@ -112,6 +113,7 @@ class Chunk
 		State state;
 
 		ChunkDataPtr data;
+		OctreePtr octree;
 		ChunkGeometryPtr geometry;
 		boost::scoped_ptr<ChunkBuffers> buffers;
 
@@ -126,10 +128,12 @@ class Chunk
 
 		void setGenerating();
 		void setData(ChunkDataPtr data);
+		void setOctree(OctreePtr octree);
 		void setTesselating();
 		void setGeometry(ChunkGeometryPtr geometry);
 
 		ChunkDataPtr getData() const { return data; }
+		OctreePtr getOctree() const { return octree; }
 
 		void render();
 

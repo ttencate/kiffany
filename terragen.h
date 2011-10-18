@@ -13,11 +13,11 @@ class TerrainGenerator {
 
 	public:
 
-		void generateChunk(int3 const &position, ChunkDataPtr chunkData) const;
+		void generateChunk(int3 const &position, RawChunkData &rawChunkData) const;
 
 	private:
 
-		virtual void doGenerateChunk(int3 const &pos, ChunkDataPtr data) const = 0;
+		virtual void doGenerateChunk(int3 const &pos, RawChunkData &rawData) const = 0;
 
 };
 
@@ -39,7 +39,7 @@ class PerlinTerrainGenerator
 		Octaves buildOctaves2D(unsigned seed) const;
 		Octaves buildOctaves3D(unsigned seed) const;
 
-		virtual void doGenerateChunk(int3 const &pos, ChunkDataPtr data) const;
+		virtual void doGenerateChunk(int3 const &pos, RawChunkData &rawChunkData) const;
 
 };
 
@@ -50,7 +50,7 @@ class SineTerrainGenerator
 
 	private:
 
-		virtual void doGenerateChunk(int3 const &pos, ChunkDataPtr data) const;
+		virtual void doGenerateChunk(int3 const &pos, RawChunkData &rawChunkData) const;
 
 };
 

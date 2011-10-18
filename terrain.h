@@ -3,6 +3,7 @@
 
 #include "camera.h"
 #include "chunk.h"
+#include "octree.h"
 #include "terragen.h"
 #include "threadpool.h"
 
@@ -124,7 +125,7 @@ class ChunkManager {
 		bool isJobIrrelevant(Job const &job);
 
 		void generate(int3 index);
-		void finalizeGeneration(int3 index, ChunkDataPtr chunkData);
+		void finalizeGeneration(int3 index, ChunkDataPtr chunkData, OctreePtr octree);
 		void tesselate(int3 index, ChunkDataPtr chunkData, NeighbourChunkData neighbourChunkData);
 		void finalizeTesselation(int3 index, ChunkGeometryPtr chunkGeometry);
 
