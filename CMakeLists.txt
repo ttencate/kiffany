@@ -19,6 +19,7 @@ set(sources
 	gl.cc gl.h
 	main.cc
 	maths.cc maths.h
+	octree.cc octree.h
 	perlin.cc perlin.h
 	queues.cc queues.h
 	stats.cc stats.h

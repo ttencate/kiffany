@@ -7,7 +7,8 @@ typedef uint32_t Block;
 
 enum {
 	AIR_BLOCK = 0,
-	STONE_BLOCK = 1
+	STONE_BLOCK = 1,
+	INVALID_BLOCK = 0xFFFF
 };
 
 inline bool needsDrawing(Block block) {
