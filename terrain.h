@@ -10,6 +10,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/thread.hpp>
 #include <boost/unordered_map.hpp>
 
 #include <list>
@@ -43,6 +44,7 @@ class ChunkMap
 	typedef boost::unordered_map<int3, ChunkPtr, CoordsHasher> PositionMap;
 	typedef DynamicPriorityQueue<int3> EvictionQueue;
 
+	boost::shared_mutex mutable mapMutex;
 	PositionMap map;
 	EvictionQueue evictionQueue;
 

@@ -23,6 +23,7 @@ ChunkMap::ChunkMap(unsigned maxSize)
 }
 
 ChunkPtr ChunkMap::operator[](int3 index) {
+	boost::upgrade_lock<boost::shared_mutex> readLock(mapMutex);
 	PositionMap::iterator i = map.find(index);
 	if (i == map.end()) {
 		float priority = evictionQueue.priority(index);
@@ -33,9 +34,13 @@ ChunkPtr ChunkMap::operator[](int3 index) {
 		ChunkPtr chunk(new Chunk(index));
 		stats.chunksCreated.increment();
 
-		map[index] = chunk;
-		evictionQueue.insert(index);
-		trim();
+		{
+			boost::upgrade_to_unique_lock<boost::shared_mutex> writeLock(readLock);
+
+			map[index] = chunk;
+			evictionQueue.insert(index);
+			trim();
+		}
 
 		return chunk;
 	}
@@ -43,6 +48,7 @@ ChunkPtr ChunkMap::operator[](int3 index) {
 }
 
 bool ChunkMap::contains(int3 index) const {
+	boost::shared_lock<boost::shared_mutex> readLock(mapMutex);
 	return map.find(index) != map.end();
 }
 
@@ -51,6 +57,7 @@ void ChunkMap::setPriorityFunction(ChunkPriorityFunction const &priorityFunction
 }
 
 void ChunkMap::trim() {
+	// Caution: assumes that we hold the write lock!
 	while (overCapacity()) {
 		stats.chunksEvicted.increment();
 		int3 index = evictionQueue.back();
