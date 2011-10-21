@@ -14,6 +14,7 @@ set(sources
 	camera.cc camera.h
 	chunk.cc chunk.h
 	chunkdata.cc chunkdata.h
+	chunkmap.cc chunkmap.h
 	coords.cc coords.h
 	flags.cc flags.h
 	gl.cc gl.h
@@ -22,6 +23,7 @@ set(sources
 	octree.cc octree.h
 	perlin.cc perlin.h
 	queues.cc queues.h
+	raycaster.cc raycaster.h
 	stats.cc stats.h
 	terrain.cc terrain.h
 	terragen.cc terragen.h
