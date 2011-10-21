@@ -4,17 +4,13 @@
 #include "stats.h"
 #include "terragen.h"
 
-ChunkManager::ChunkManager(unsigned maxNumChunks, TerrainGenerator *terrainGenerator)
+ChunkManager::ChunkManager(ChunkMap &chunkMap, TerrainGenerator *terrainGenerator)
 :
-	chunkMap(maxNumChunks),
+	chunkMap(chunkMap),
 	terrainGenerator(terrainGenerator),
 	finalizerQueue(JobThreadPool::defaultNumThreads()),
 	threadPool(0)
 {
-}
-
-ChunkPtr ChunkManager::chunkOrNull(int3 index) {
-	return chunkMap[index];
 }
 
 void ChunkManager::requestGeneration(ChunkPtr chunk) {
@@ -47,8 +43,6 @@ void ChunkManager::requestTesselation(ChunkPtr chunk) {
 }
 
 void ChunkManager::setPriorityFunction(ChunkPriorityFunction const &priorityFunction) {
-	this->chunkPriorityFunction = priorityFunction;
-	chunkMap.setPriorityFunction(priorityFunction);
 	threadPool.setPriorityFunction(
 			JobThreadPool::PriorityFunction(JobPriorityFunction(priorityFunction)));
 }
@@ -60,7 +54,7 @@ void ChunkManager::gather() {
 }
 
 ChunkDataPtr ChunkManager::chunkDataOrNull(int3 index) {
-	ChunkPtr chunk = chunkOrNull(index);
+	ChunkPtr chunk = chunkMap[index];
 	if (!chunk) {
 		return ChunkDataPtr();
 	}
@@ -100,7 +94,7 @@ void ChunkManager::generate(int3 index) {
 }
 
 void ChunkManager::finalizeGeneration(int3 index, ChunkDataPtr chunkData, OctreePtr octree) {
-	ChunkPtr chunk = chunkOrNull(index);
+	ChunkPtr chunk = chunkMap[index];
 	if (!chunk) {
 		stats.irrelevantJobsRun.increment();
 		return;
@@ -118,7 +112,7 @@ void ChunkManager::tesselate(int3 index, ChunkDataPtr chunkData, NeighbourChunkD
 }
 
 void ChunkManager::finalizeTesselation(int3 index, ChunkGeometryPtr chunkGeometry) {
-	ChunkPtr chunk = chunkOrNull(index);
+	ChunkPtr chunk = chunkMap[index];
 	if (!chunk) {
 		stats.irrelevantJobsRun.increment();
 		return;
@@ -128,7 +122,8 @@ void ChunkManager::finalizeTesselation(int3 index, ChunkGeometryPtr chunkGeometr
 
 Terrain::Terrain(TerrainGenerator *terrainGenerator)
 :
-	chunkManager(computeMaxNumChunks(), terrainGenerator)
+	chunkMap(computeMaxNumChunks()),
+	chunkManager(chunkMap, terrainGenerator)
 {
 }
 
@@ -140,7 +135,9 @@ void Terrain::update(float dt) {
 }
 
 void Terrain::render(Camera const &camera) {
-	chunkManager.setPriorityFunction(ChunkPriorityFunction(camera));
+	ChunkPriorityFunction priorityFunction(camera);
+	chunkMap.setPriorityFunction(priorityFunction);
+	chunkManager.setPriorityFunction(priorityFunction);
 
 	int3 center = chunkIndexFromPosition(camera.getPosition());
 	int radius = flags.viewDistance / CHUNK_SIZE;
@@ -163,7 +160,7 @@ unsigned Terrain::computeMaxNumChunks() const {
 }
 
 void Terrain::renderChunk(Camera const &camera, int3 const &index) {
-	ChunkPtr chunk = chunkManager.chunkOrNull(index);
+	ChunkPtr chunk = chunkMap[index];
 	if (!chunk) {
 		return;
 	}

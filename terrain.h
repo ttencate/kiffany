@@ -43,20 +43,17 @@ class ChunkManager {
 	typedef boost::function<void(void)> Finalizer;
 	typedef WorkQueue<Finalizer> FinalizerQueue;
 
-	ChunkMap chunkMap;
+	ChunkMap &chunkMap;
 
 	boost::scoped_ptr<TerrainGenerator> terrainGenerator;
-
-	ChunkPriorityFunction chunkPriorityFunction;
 
 	FinalizerQueue finalizerQueue;
 	JobThreadPool threadPool;
 
 	public:
 
-		ChunkManager(unsigned maxNumChunks, TerrainGenerator *terrainGenerator);
+		ChunkManager(ChunkMap &chunkMap, TerrainGenerator *terrainGenerator);
 
-		ChunkPtr chunkOrNull(int3 index);
 		void requestGeneration(ChunkPtr chunk);
 		void requestTesselation(ChunkPtr chunk);
 
@@ -82,12 +79,15 @@ class Terrain
 	boost::noncopyable
 {
 
+	ChunkMap chunkMap;
 	ChunkManager chunkManager;
 
 	public:
 
 		Terrain(TerrainGenerator *terrainGenerator);
 		~Terrain();
+
+		ChunkMap const &getChunkMap() const { return chunkMap; }
 
 		void update(float dt);
 		void render(Camera const &camera);
