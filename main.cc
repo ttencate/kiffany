@@ -1,6 +1,7 @@
 #include "camera.h"
 #include "flags.h"
 #include "maths.h"
+#include "raycaster.h"
 #include "stats.h"
 #include "terragen.h"
 #include "world.h"
@@ -14,6 +15,56 @@ Camera *camera = 0;
 bool mouseLook;
 int2 mousePos;
 bool running = true;
+
+struct Marker {
+	vec3 position;
+	void render() {
+		float const s = 0.5f;
+		float const a = 1024.0f;
+
+		glDisable(GL_LIGHTING);
+		glColor3f(1.0f, 0.0f, 0.0f);
+		glPushMatrix();
+		glTranslatef(position.x, position.y, position.z);
+
+		glLineWidth(2.0f);
+		glBegin(GL_LINES);
+		glVertex3f(-s, -s, -s);
+		glVertex3f(s, s, s);
+		glVertex3f(s, -s, -s);
+		glVertex3f(-s, s, s);
+		glVertex3f(-s, s, -s);
+		glVertex3f(s, -s, s);
+		glVertex3f(s, s, -s);
+		glVertex3f(-s, -s, s);
+		glEnd();
+
+		glLineWidth(1.0f);
+		glBegin(GL_LINES);
+		glVertex3f(-a, 0, 0);
+		glVertex3f(a, 0, 0);
+		glVertex3f(0, -a, 0);
+		glVertex3f(0, a, 0);
+		glVertex3f(0, 0, -a);
+		glVertex3f(0, 0, a);
+		glEnd();
+
+		glPopMatrix();
+		glEnable(GL_LIGHTING);
+	}
+};
+
+Marker marker;
+
+void testRaycast() {
+	vec3 origin = camera->getPosition();
+	vec3 direction = camera->getFrontVector();
+
+	Raycaster raycaster(world->getTerrain().getChunkMap(), 1024.0f, STONE_BLOCK);
+	RaycastResult result = raycaster(origin, direction);
+
+	marker.position = result.end;
+}
 
 void setMouseLook(bool mouseLook) {
 	::mouseLook = mouseLook;
@@ -43,6 +94,7 @@ void GLFWCALL mouseButtonCallback(int button, int action) {
 	if (action == GLFW_PRESS) {
 		switch (button) {
 			case GLFW_MOUSE_BUTTON_LEFT:
+				testRaycast();
 				break;
 			case GLFW_MOUSE_BUTTON_RIGHT:
 				setMouseLook(!mouseLook);
@@ -123,6 +175,7 @@ void render() {
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 
 	world->render();
+	marker.render();
 }
 
 void run() {

@@ -30,7 +30,7 @@ class Raycaster {
 
 	public:
 
-		Raycaster(ChunkMap const &chunkMap, float cutoff, Block block, Block mask);
+		Raycaster(ChunkMap const &chunkMap, float cutoff, Block block, Block mask = BLOCK_MASK);
 
 		RaycastResult operator()(vec3 origin, vec3 direction) const;
 

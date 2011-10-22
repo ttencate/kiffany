@@ -15,6 +15,9 @@ class World {
 
 		World(Camera *camera, TerrainGenerator *terrainGenerator);
 
+		Terrain &getTerrain() { return terrain; }
+		Terrain const &getTerrain() const { return terrain; }
+
 		void update(float dt);
 		void render();
 

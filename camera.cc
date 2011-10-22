@@ -34,6 +34,11 @@ void Camera::moveRelative(vec3 const &delta) {
 	update();
 }
 
+vec3 Camera::getFrontVector() const {
+	vec3 localFront(0.0f, 0.0f, -1.0f);
+	return mat3(viewMatrixInverse) * localFront;
+}
+
 bool Camera::isSphereInView(vec3 const &center, float radius) const {
 	vec4 const p = vec4(center, 1.0f);
 	for (unsigned i = 0; i < 6; ++i) {
@@ -50,6 +55,8 @@ void Camera::update() {
 	mat4 rotationX = rotate(-elevation, X_AXIS);
 	mat4 rotateCoords = rotate(-90.0f, X_AXIS);
 	viewMatrix = rotateCoords * rotationX * rotationZ * translation;
+
+	viewMatrixInverse = inverse(viewMatrix);
 
 	viewProjectionMatrix = projectionMatrix * viewMatrix;
 

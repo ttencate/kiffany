@@ -8,6 +8,7 @@ class Camera {
 	mat4 projectionMatrix;
 	mat4 viewMatrix;
 
+	mat4 viewMatrixInverse;
 	mat4 viewProjectionMatrix;
 	mat4 viewProjectionMatrixInverse;
 	vec4 frustum[6];
@@ -36,6 +37,7 @@ class Camera {
 		mat4 const &getProjectionMatrix() const { return projectionMatrix; }
 		mat4 const &getViewMatrix() const { return viewMatrix; }
 
+		vec3 getFrontVector() const;
 		bool isSphereInView(vec3 const &center, float radius) const;
 
 	private:
