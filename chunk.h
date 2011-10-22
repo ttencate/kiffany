@@ -133,7 +133,8 @@ class Chunk
 		void setGeometry(ChunkGeometryPtr geometry);
 
 		ChunkDataPtr getData() const { return data; }
-		OctreePtr getOctree() const { return octree; }
+		OctreePtr getOctree() { return octree; }
+		OctreeConstPtr getOctree() const { return octree; }
 
 		void render();
 
@@ -144,5 +145,6 @@ class Chunk
 };
 
 typedef boost::shared_ptr<Chunk> ChunkPtr;
+typedef boost::shared_ptr<Chunk const> ChunkConstPtr;
 
 #endif

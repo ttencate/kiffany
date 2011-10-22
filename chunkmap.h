@@ -46,6 +46,7 @@ class ChunkMap
 		ChunkMap(unsigned maxSize);
 
 		ChunkPtr operator[](int3 index);
+		ChunkConstPtr operator[](int3 index) const;
 		bool contains(int3 index) const;
 
 		void setPriorityFunction(ChunkPriorityFunction const &priorityFunction);

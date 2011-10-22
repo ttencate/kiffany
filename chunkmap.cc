@@ -45,6 +45,15 @@ ChunkPtr ChunkMap::operator[](int3 index) {
 	return i->second;
 }
 
+ChunkConstPtr ChunkMap::operator[](int3 index) const {
+	boost::shared_lock<boost::shared_mutex> readLock(mapMutex);
+	PositionMap::const_iterator i = map.find(index);
+	if (i == map.end()) {
+		return ChunkConstPtr();
+	}
+	return i->second;
+}
+
 bool ChunkMap::contains(int3 index) const {
 	boost::shared_lock<boost::shared_mutex> readLock(mapMutex);
 	return map.find(index) != map.end();
