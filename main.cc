@@ -11,10 +11,21 @@
 World *world = 0;
 Camera *camera = 0;
 
+bool mouseLook;
 int2 mousePos;
 bool running = true;
 
-void keyCallback(int key, int state) {
+void setMouseLook(bool mouseLook) {
+	::mouseLook = mouseLook;
+	if (mouseLook) {
+		glfwGetMousePos(&mousePos[0], &mousePos[1]);
+		glfwDisable(GLFW_MOUSE_CURSOR);
+	} else {
+		glfwEnable(GLFW_MOUSE_CURSOR);
+	}
+}
+
+void GLFWCALL keyCallback(int key, int state) {
 	if (state == GLFW_PRESS) {
 		switch (key) {
 			case 'Q':
@@ -28,8 +39,20 @@ void keyCallback(int key, int state) {
 	}
 }
 
-void mousePosCallback(int x, int y) {
-	if (flags.autoflySpeed == 0) {
+void GLFWCALL mouseButtonCallback(int button, int action) {
+	if (action == GLFW_PRESS) {
+		switch (button) {
+			case GLFW_MOUSE_BUTTON_LEFT:
+				break;
+			case GLFW_MOUSE_BUTTON_RIGHT:
+				setMouseLook(!mouseLook);
+				break;
+		}
+	}
+}
+
+void GLFWCALL mousePosCallback(int x, int y) {
+	if (mouseLook) {
 		int2 newMousePos(x, y);
 		int2 delta = newMousePos - mousePos;
 
@@ -41,7 +64,7 @@ void mousePosCallback(int x, int y) {
 	}
 }
 
-void windowSizeCallback(int width, int height) {
+void GLFWCALL windowSizeCallback(int width, int height) {
 	glViewport(0, 0, width, height);
 	mat4 projectionMatrix = perspective(45.0f, (float)width / height, 0.1f, 1000.0f);
 	camera->setProjectionMatrix(projectionMatrix);
@@ -105,11 +128,9 @@ void render() {
 void run() {
 	glfwSetWindowSizeCallback(windowSizeCallback); // also calls it immediately
 	glfwSetKeyCallback(keyCallback);
+	glfwSetMouseButtonCallback(mouseButtonCallback);
 	glfwSetMousePosCallback(mousePosCallback);
-	if (flags.autoflySpeed == 0) {
-		glfwDisable(GLFW_MOUSE_CURSOR);
-	}
-	glfwGetMousePos(&mousePos[0], &mousePos[1]);
+	setMouseLook(flags.mouseLook);
 
 	setup();
 

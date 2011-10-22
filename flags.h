@@ -3,6 +3,7 @@
 
 struct Flags {
 	bool help;
+	bool mouseLook;
 	float autoflySpeed;
 	bool vsync;
 	unsigned fixedTimestep;

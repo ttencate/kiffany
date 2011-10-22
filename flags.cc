@@ -12,6 +12,7 @@ bool parseCommandLine(int argc, char **argv) {
 	po::options_description desc("Available options");
 	desc.add_options()
 		("help", po::bool_switch(&flags.help), "print list of options and exit")
+		("mouse_look", po::value<bool>(&flags.mouseLook)->default_value(true), "use mouse to look around")
 		("autofly_speed", po::value<float>(&flags.autoflySpeed)->default_value(0), "automatically fly forward")
 		("vsync", po::bool_switch(&flags.vsync), "synchronize on vertical blank")
 		("fixed_timestep", po::value<unsigned>(&flags.fixedTimestep)->default_value(0), "fixed simulation timestep value (ms)")
