@@ -39,8 +39,7 @@ class Octree {
 		OctreeNodes &getNodes() { return nodes; }
 		OctreeNodes const &getNodes() const { return nodes; }
 
-		OctreeNode const *getNode(int3 position) const;
-		Block getBlock(int3 position) const;
+		void getBlock(int3 position, Block *block, int3 *base, unsigned *size) const;
 
 };
 

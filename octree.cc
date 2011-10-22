@@ -3,34 +3,39 @@
 #include "chunkdata.h"
 #include "stats.h"
 
-OctreeNode const *Octree::getNode(int3 position) const {
+#include <iostream>
+
+void Octree::getBlock(int3 position, Block *block, int3 *base, unsigned *size) const {
+	*base = int3(0, 0, 0);
+	*size = CHUNK_SIZE;
 	if (nodes.size() == 0) {
-		return NULL;
+		*block = AIR_BLOCK;
+		return;
 	}
 	unsigned nodeIndex = 0;
 	for (int mask = CHUNK_SIZE >> 1; mask; mask >>= 1) {
+		std::cout << mask << ' ';
 		OctreeNode const &node = nodes[nodeIndex];
 		if (node.block != INVALID_BLOCK) {
-			return &node;
+			*block = node.block;
+			break;
 		}
 		unsigned childIndexInParent =
 			((position.x & mask) ? 1 : 0) |
 			((position.y & mask) ? 2 : 0) |
 			((position.z & mask) ? 4 : 0);
 		nodeIndex = node.children[childIndexInParent];
+		*size >>= 1;
+		*base += int3(
+				(position.x & mask) ? *size : 0,
+				(position.y & mask) ? *size : 0,
+				(position.z & mask) ? *size : 0);
 		if (!nodeIndex) {
-			return NULL;
+			*block = AIR_BLOCK;
+			break;
 		}
 	}
-	return &nodes[nodeIndex]; // should never be used
-}
-
-Block Octree::getBlock(int3 position) const {
-	OctreeNode const *node = getNode(position);
-	if (!node) {
-		return AIR_BLOCK;
-	}
-	return node->block;
+	std::cout << '\n';
 }
 
 inline Block determineType(unsigned size, Block const *base) {

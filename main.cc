@@ -95,7 +95,6 @@ void GLFWCALL mouseButtonCallback(int button, int action) {
 	if (action == GLFW_PRESS) {
 		switch (button) {
 			case GLFW_MOUSE_BUTTON_LEFT:
-				testRaycast();
 				break;
 			case GLFW_MOUSE_BUTTON_RIGHT:
 				setMouseLook(!mouseLook);
@@ -162,6 +161,7 @@ void update(float dt) {
 	}
 
 	world->update(dt);
+	testRaycast();
 }
 
 void render() {
