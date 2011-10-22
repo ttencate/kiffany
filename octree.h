@@ -2,6 +2,7 @@
 #define OCTREE_H
 
 #include "block.h"
+#include "maths.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -38,9 +39,13 @@ class Octree {
 		OctreeNodes &getNodes() { return nodes; }
 		OctreeNodes const &getNodes() const { return nodes; }
 
+		OctreeNode const *getNode(int3 position) const;
+		Block getBlock(int3 position) const;
+
 };
 
 typedef boost::shared_ptr<Octree> OctreePtr;
+typedef boost::shared_ptr<Octree const> OctreeConstPtr;
 
 class RawChunkData;
 

@@ -21,6 +21,10 @@ inline vec3 blockCenter(int3 const &pos) {
 	return vec3(pos.x + 0.5f, pos.y + 0.5f, pos.z + 0.5f);
 }
 
+inline int3 blockPosition(vec3 const &pos) {
+	return int3(pos);
+}
+
 inline int3 chunkIndexFromPosition(vec3 const &position) {
 	return int3(floor(position / (float)CHUNK_SIZE));
 }

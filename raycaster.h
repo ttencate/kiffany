@@ -11,11 +11,12 @@ struct RaycastResult {
 	enum Status {
 		CUTOFF,
 		HIT,
-		UNKNOWN
+		INDETERMINATE
 	};
 
 	Status status;
 	float length;
+	int3 endChunkIndex;
 	vec3 end;
 	Block block;
 
@@ -32,7 +33,7 @@ class Raycaster {
 
 		Raycaster(ChunkMap const &chunkMap, float cutoff, Block block, Block mask = BLOCK_MASK);
 
-		RaycastResult operator()(vec3 origin, vec3 direction) const;
+		RaycastResult operator()(int3 chunkIndex, vec3 origin, vec3 direction) const;
 
 	private:
 

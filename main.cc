@@ -57,13 +57,14 @@ struct Marker {
 Marker marker;
 
 void testRaycast() {
-	vec3 origin = camera->getPosition();
+	int3 chunkIndex = chunkIndexFromPosition(camera->getPosition()); // TODO use chunk-relative in camera
+	vec3 origin = camera->getPosition() - chunkMin(chunkIndex);
 	vec3 direction = camera->getFrontVector();
 
 	Raycaster raycaster(world->getTerrain().getChunkMap(), 1024.0f, STONE_BLOCK);
-	RaycastResult result = raycaster(origin, direction);
+	RaycastResult result = raycaster(chunkIndex, origin, direction);
 
-	marker.position = result.end;
+	marker.position = chunkMin(result.endChunkIndex) + result.end;
 }
 
 void setMouseLook(bool mouseLook) {
