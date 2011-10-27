@@ -136,28 +136,48 @@ void update(float dt) {
 		float const s = flags.autoflySpeed * dt;
 		camera->moveRelative(s * Y_AXIS);
 	} else {
-		float const s = 100.0f * dt;
-		vec3 delta;
+		float const acc = 10.0f;
+		float const minV = 5.0f;
+		float const maxV = 100.0f;
+		static float v = 0.0f;
+		vec3 relDelta;
+		vec3 absDelta;
+		bool pressed = false;
+
 		if (glfwGetKey('O')) {
-			delta += s * -X_AXIS;
+			relDelta += -X_AXIS;
+			pressed = true;
 		}
 		if (glfwGetKey('U')) {
-			delta += s * X_AXIS;
+			relDelta += X_AXIS;
+			pressed = true;
 		}
 		if (glfwGetKey('E')) {
-			delta += s * -Y_AXIS;
+			relDelta += -Y_AXIS;
+			pressed = true;
 		}
 		if (glfwGetKey('.')) {
-			delta += s * Y_AXIS;
+			relDelta += Y_AXIS;
+			pressed = true;
 		}
-		camera->moveRelative(delta);
-
 		if (glfwGetKey(GLFW_KEY_LSHIFT)) {
-			camera->setPosition(camera->getPosition() + s * -Z_AXIS);
+			absDelta -= Z_AXIS;
+			pressed = true;
 		}
 		if (glfwGetKey(' ')) {
-			camera->setPosition(camera->getPosition() + s * Z_AXIS);
+			absDelta += Z_AXIS;
+			pressed = true;
 		}
+
+		if (!pressed) {
+			v = 0.0f;
+		} else {
+			v = std::min(maxV, std::max(minV, v + acc * dt));
+		}
+		float d = v * dt;
+
+		camera->moveRelative(d * relDelta);
+		camera->setPosition(camera->getPosition() + d * absDelta);
 	}
 
 	world->update(dt);
