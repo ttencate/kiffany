@@ -38,7 +38,7 @@ set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_DETAILED_FAILURE_MSG TRUE)
 
-find_package(Boost 1.47.0 REQUIRED COMPONENTS program_options system thread)
+find_package(Boost 1.46.0 REQUIRED COMPONENTS program_options system thread)
 find_package(OpenGL REQUIRED)
 
 target_link_libraries(kiffany
@@ -50,9 +50,6 @@ include_directories(
 	${Boost_INCLUDE_DIRS}
 	)
 
-if (EXISTS /usr/bin/colorgcc)
-	set(CMAKE_CXX_COMPILER /usr/bin/colorgcc)
-endif ()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-strict-aliasing -ansi -pedantic -Wall -Wextra -Wno-long-long -Wno-unused-parameter -Wno-type-limits")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_FLAGS_DEBUG "-O2 -g -DASSERTIONS -DDEBUG=1")
