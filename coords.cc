@@ -1,7 +1,7 @@
 #include "coords.h"
 
-// This must be a power of two to keep Octree happy.
-const unsigned CHUNK_SIZE = 128;
+const unsigned CHUNK_POWER = 7;
+const unsigned CHUNK_SIZE = 1 << CHUNK_POWER;
 
 const unsigned BLOCKS_PER_CHUNK = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
 

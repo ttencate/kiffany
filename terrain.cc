@@ -139,7 +139,7 @@ void Terrain::render(Camera const &camera) {
 	chunkMap.setPriorityFunction(priorityFunction);
 	chunkManager.setPriorityFunction(priorityFunction);
 
-	int3 center = chunkIndexFromPosition(camera.getPosition());
+	int3 center = chunkIndexFromPoint(camera.getPosition());
 	int radius = flags.viewDistance / CHUNK_SIZE;
 	for (int z = -radius; z <= radius; ++z) {
 		for (int y = -radius; y <= radius; ++y) {
