@@ -11,8 +11,9 @@ void Octree::getBlock(int3 position, Block *block, int3 *base, unsigned *size) c
 		return;
 	}
 	unsigned nodeIndex = 0;
-	for (int mask = CHUNK_SIZE >> 1; mask; mask >>= 1) {
+	for (int mask = CHUNK_SIZE >> 1;; mask >>= 1) {
 		OctreeNode const &node = nodes[nodeIndex];
+		// TODO: If !mask, we must find a valid block; assert this.
 		if (node.block != INVALID_BLOCK) {
 			*block = node.block;
 			break;

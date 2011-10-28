@@ -1,6 +1,7 @@
 *.o
 callgrind.out.*
 kiffany
+kiffany_test
 CMakeFiles/
 CMakeCache.txt
 *.cmake
