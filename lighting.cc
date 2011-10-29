@@ -16,7 +16,7 @@ void computeLighting(int3 index, ChunkMap const &chunkMap, ChunkGeometryPtr geom
 
 		vec3 const center = 0.5f * (a + c);
 
-		RaycastResult result = raycast(index, center, baseNormal);
+		RaycastResult result = raycast(index, center + 0.1f * baseNormal, baseNormal);
 		vec3 normal = baseNormal;
 		if (result.status == RaycastResult::HIT) {
 			normal *= result.length / cutoff;

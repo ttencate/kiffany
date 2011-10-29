@@ -15,9 +15,10 @@ RaycastResult Raycaster::operator()(int3 const startChunkIndex, vec3 const start
 	int3 const startChunkPosition = chunkPositionFromIndex(startChunkIndex);
 
 	float length = 0.0f;
-	int3 currentChunkIndex = startChunkIndex;
-	int3 currentChunkOffset(0, 0, 0);
 	int3 currentPositionInStartChunk = blockPositionFromPoint(startPointInStartChunk);
+	// The start point need not be in the start chunk.
+	int3 currentChunkIndex = chunkIndexFromPosition(startChunkPosition + currentPositionInStartChunk);
+	int3 currentChunkOffset = chunkPositionFromIndex(currentChunkIndex) - chunkPositionFromIndex(startChunkIndex);
 
 	OctreeConstPtr octree = getOctreeOrNull(currentChunkIndex);
 	if (!octree) {
