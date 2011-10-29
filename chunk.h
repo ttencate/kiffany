@@ -28,10 +28,7 @@ class Ranges {
 typedef std::vector<short> VertexArray;
 typedef std::vector<char> NormalArray;
 
-class ChunkGeometry
-:
-	boost::noncopyable
-{
+class ChunkGeometry {
 
 	VertexArray vertexData;
 	NormalArray normalData;
@@ -53,6 +50,7 @@ class ChunkGeometry
 };
 
 typedef boost::shared_ptr<ChunkGeometry> ChunkGeometryPtr;
+typedef boost::shared_ptr<ChunkGeometry const> ChunkGeometryConstPtr;
 
 struct NeighbourChunkData {
 	ChunkDataPtr xn;
@@ -135,6 +133,7 @@ class Chunk
 		ChunkDataPtr getData() const { return data; }
 		OctreePtr getOctree() { return octree; }
 		OctreeConstPtr getOctree() const { return octree; }
+		ChunkGeometryConstPtr getGeometry() const { return geometry; }
 
 		void render();
 

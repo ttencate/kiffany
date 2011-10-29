@@ -71,6 +71,8 @@ class ChunkManager {
 		void finalizeGeneration(int3 index, ChunkDataPtr chunkData, OctreePtr octree);
 		void tesselate(int3 index, ChunkDataPtr chunkData, NeighbourChunkData neighbourChunkData);
 		void finalizeTesselation(int3 index, ChunkGeometryPtr chunkGeometry);
+		void computeLighting(int3 index);
+		void finalizeLighting(int3 index, ChunkGeometryPtr chunkGeometry);
 
 };
 

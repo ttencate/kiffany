@@ -1,6 +1,7 @@
 #include "terrain.h"
 
 #include "flags.h"
+#include "lighting.h"
 #include "stats.h"
 #include "terragen.h"
 
@@ -112,6 +113,28 @@ void ChunkManager::tesselate(int3 index, ChunkDataPtr chunkData, NeighbourChunkD
 }
 
 void ChunkManager::finalizeTesselation(int3 index, ChunkGeometryPtr chunkGeometry) {
+	ChunkPtr chunk = chunkMap[index];
+	if (!chunk) {
+		stats.irrelevantJobsRun.increment();
+		return;
+	}
+	chunk->setGeometry(chunkGeometry);
+}
+
+void ChunkManager::computeLighting(int3 index) {
+	ChunkMap const &chunkMap = this->chunkMap;
+	ChunkConstPtr chunk = chunkMap[index];
+	ChunkGeometryConstPtr chunkGeometry = chunk->getGeometry();
+
+	// TODO Split out vertex and normal data
+	ChunkGeometryPtr newGeometry(new ChunkGeometry(*chunkGeometry));
+	::computeLighting(index, chunkMap, newGeometry);
+
+	finalizerQueue.post(boost::bind(
+				&ChunkManager::finalizeLighting, this, index, newGeometry));
+}
+
+void ChunkManager::finalizeLighting(int3 index, ChunkGeometryPtr chunkGeometry) {
 	ChunkPtr chunk = chunkMap[index];
 	if (!chunk) {
 		stats.irrelevantJobsRun.increment();
