@@ -44,6 +44,7 @@ class ChunkGeometry {
 		Ranges const &getRanges() const { return ranges; }
 		void setRanges(Ranges const &ranges) { this->ranges = ranges; }
 		void setRange(unsigned index, Range const &range) { ranges[index] = range; }
+		unsigned getNumQuads() const { return vertexData.size() / (3 * 4); };
 
 		bool isEmpty() const { return vertexData.size() == 0; }
 

@@ -15,6 +15,7 @@ using glm::vec3;
 using glm::vec4;
 
 using glm::clamp;
+using glm::cross;
 using glm::dot;
 using glm::floor;
 using glm::fract;
@@ -23,6 +24,7 @@ using glm::mix;
 using glm::length;
 using glm::normalize;
 using glm::perspective;
+using glm::round;
 using glm::translate;
 using glm::transpose;
 using glm::rotate;
