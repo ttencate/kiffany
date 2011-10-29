@@ -2,7 +2,8 @@
 #include "raycaster.h"
 
 void computeLighting(int3 index, ChunkMap const &chunkMap, ChunkGeometryPtr geometry) {
-	Raycaster raycast(chunkMap, CHUNK_SIZE, STONE_BLOCK, BLOCK_MASK);
+	float const cutoff = CHUNK_SIZE;
+	Raycaster raycast(chunkMap, cutoff, STONE_BLOCK, BLOCK_MASK);
 
 	VertexArray::value_type const *vertices = &geometry->getVertexData()[0];
 	NormalArray::value_type *normals = &geometry->getNormalData()[0];
@@ -18,7 +19,7 @@ void computeLighting(int3 index, ChunkMap const &chunkMap, ChunkGeometryPtr geom
 		RaycastResult result = raycast(index, center, baseNormal);
 		vec3 normal = baseNormal;
 		if (result.status == RaycastResult::HIT) {
-			normal *= 0.5f;
+			normal *= result.length / cutoff;
 		}
 
 		normals[0] = (int)(0x7F * normal.x);

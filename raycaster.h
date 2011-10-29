@@ -16,26 +16,28 @@ struct RaycastResult {
 	};
 
 	Status const status;
+	float const length;
 	vec3 const endPointInStartChunk;
 	Block const block;
 
 	static inline RaycastResult cutoff(vec3 startPointInStartChunk, vec3 direction, float length) {
-		return RaycastResult(CUTOFF, startPointInStartChunk + length * direction, INVALID_BLOCK);
+		return RaycastResult(CUTOFF, length, startPointInStartChunk + length * direction, INVALID_BLOCK);
 	}
 
 	static inline RaycastResult hit(vec3 startPointInStartChunk, vec3 direction, float length, Block block) {
-		return RaycastResult(HIT, startPointInStartChunk + length * direction, block);
+		return RaycastResult(HIT, length, startPointInStartChunk + length * direction, block);
 	}
 
 	static inline RaycastResult indeterminate(vec3 startPointInStartChunk, vec3 direction, float length) {
-		return RaycastResult(INDETERMINATE, startPointInStartChunk + length * direction, INVALID_BLOCK);
+		return RaycastResult(INDETERMINATE, length, startPointInStartChunk + length * direction, INVALID_BLOCK);
 	}
 
 	private:
 
-		inline RaycastResult(Status status, vec3 endPointInStartChunk, Block block)
+		inline RaycastResult(Status status, float length, vec3 endPointInStartChunk, Block block)
 		:
 			status(status),
+			length(length),
 			endPointInStartChunk(endPointInStartChunk),
 			block(block)
 		{
