@@ -102,7 +102,7 @@ Block RleDecompressor::get() {
 
 void compress(RawChunkData const &rawChunkData, ChunkData &chunkData) {
 	{
-		SafeTimer::Timed timed = stats.chunkCompressionTime.timed();
+		TimerStat::Timed timed = stats.chunkCompressionTime.timed();
 
 		Block const *data = rawChunkData.raw();
 		Block const *const end = data + BLOCKS_PER_CHUNK;

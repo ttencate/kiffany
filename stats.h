@@ -7,37 +7,14 @@
 #include <ctime>
 
 template<typename T>
-class UnsafeStat {
-
-	T value;
-
-	public:
-
-		UnsafeStat()
-		:
-			value(0)
-		{
-		}
-
-		void increment(T delta = 1) {
-			value += delta;
-		}
-
-		T get() const {
-			return value;
-		}
-
-};
-
-template<typename T>
-class SafeStat {
+class Stat {
 
 	boost::shared_mutex mutable mutex;
 	T value;
 
 	public:
 
-		SafeStat()
+		Stat()
 		:
 			value(0)
 		{
@@ -55,22 +32,20 @@ class SafeStat {
 
 };
 
-typedef UnsafeStat<long> UnsafeCounter;
-typedef SafeStat<long> SafeCounter;
+typedef Stat<long> CounterStat;
 
-template<typename StatType>
 class TimerStat
 :
-	StatType
+	Stat<double>
 {
 
 	public:
 
 		class Timed {
 
-			friend class TimerStat<StatType>;
+			friend class TimerStat;
 
-			mutable TimerStat<StatType> *parent;
+			mutable TimerStat *parent;
 			timespec start;
 
 			public:
@@ -94,7 +69,7 @@ class TimerStat
 
 			private:
 
-				Timed(TimerStat<StatType> *parent)
+				Timed(TimerStat *parent)
 				:
 					parent(parent)
 				{
@@ -108,45 +83,42 @@ class TimerStat
 			return Timed(this);
 		}
 
-		using StatType::get;
+		using Stat<double>::get;
 
 };
 
-typedef TimerStat<UnsafeStat<double> > UnsafeTimer;
-typedef TimerStat<SafeStat<double> > SafeTimer;
-
 struct Stats {
-	UnsafeTimer runningTime;
+	TimerStat runningTime;
 
-	UnsafeCounter buffersCreated;
-	UnsafeCounter buffersDeleted;
+	CounterStat buffersCreated;
+	CounterStat buffersDeleted;
 
-	SafeCounter octreeNodes;
-	SafeCounter runs;
-	SafeCounter quadsGenerated;
+	CounterStat octreeNodes;
+	CounterStat runs;
+	CounterStat quadsGenerated;
 
-	SafeCounter chunksCreated;
-	SafeCounter chunksEvicted;
+	CounterStat chunksCreated;
+	CounterStat chunksEvicted;
 
-	SafeCounter chunksGenerated;
-	SafeTimer chunkGenerationTime;
-	SafeCounter chunksCompressed;
-	SafeTimer chunkCompressionTime;
-	SafeCounter octreesBuilt;
-	SafeTimer octreeBuildTime;
-	SafeCounter chunksTesselated;
-	SafeTimer chunkTesselationTime;
+	CounterStat chunksGenerated;
+	TimerStat chunkGenerationTime;
+	CounterStat chunksCompressed;
+	TimerStat chunkCompressionTime;
+	CounterStat octreesBuilt;
+	TimerStat octreeBuildTime;
+	CounterStat chunksTesselated;
+	TimerStat chunkTesselationTime;
 
-	SafeCounter irrelevantJobsSkipped;
-	SafeCounter irrelevantJobsRun;
+	CounterStat irrelevantJobsSkipped;
+	CounterStat irrelevantJobsRun;
 
-	UnsafeCounter framesRendered;
-	UnsafeCounter chunksConsidered;
-	UnsafeCounter chunksSkipped;
-	UnsafeCounter chunksCulled;
-	UnsafeCounter chunksEmpty;
-	UnsafeCounter chunksRendered;
-	UnsafeCounter quadsRendered;
+	CounterStat framesRendered;
+	CounterStat chunksConsidered;
+	CounterStat chunksSkipped;
+	CounterStat chunksCulled;
+	CounterStat chunksEmpty;
+	CounterStat chunksRendered;
+	CounterStat quadsRendered;
 
 	void print() const;
 };

@@ -221,7 +221,7 @@ void run() {
 		timespec lastUpdate;
 		clock_gettime(CLOCK_MONOTONIC, &lastUpdate);
 		while (running && glfwGetWindowParam(GLFW_OPENED)) {
-			UnsafeTimer::Timed t = stats.runningTime.timed();
+			TimerStat::Timed t = stats.runningTime.timed();
 
 			float dt;
 			if (flags.fixedTimestep) {

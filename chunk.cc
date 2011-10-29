@@ -177,7 +177,7 @@ void tesselateFace(Block const *rawData, Block const *rawNeighData, ChunkGeometr
 }
 
 void tesselate(ChunkDataPtr data, NeighbourChunkData const &neighbourData, ChunkGeometryPtr geometry) {
-	SafeTimer::Timed t = stats.chunkTesselationTime.timed();
+	TimerStat::Timed t = stats.chunkTesselationTime.timed();
 
 	if (!data->isEmpty()) {
 		boost::scoped_ptr<RawChunkData> rawData(new RawChunkData());

@@ -92,7 +92,7 @@ unsigned subdivideOctree(unsigned size, Block const *base, OctreeNodes &nodes) {
 }
 
 void buildOctree(RawChunkData const &rawChunkData, Octree &octree) {
-	SafeTimer::Timed timed = stats.octreeBuildTime.timed();
+	TimerStat::Timed timed = stats.octreeBuildTime.timed();
 	octree = Octree();
 	Block const *raw = rawChunkData.raw();
 	subdivideOctree(CHUNK_SIZE, raw, octree.getNodes());
