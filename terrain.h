@@ -56,6 +56,7 @@ class ChunkManager {
 
 		void requestGeneration(ChunkPtr chunk);
 		void requestTesselation(ChunkPtr chunk);
+		void requestLighting(ChunkPtr chunk);
 
 		void setPriorityFunction(ChunkPriorityFunction const &priorityFunction);
 		void gather();
@@ -71,7 +72,7 @@ class ChunkManager {
 		void finalizeGeneration(int3 index, ChunkDataPtr chunkData, OctreePtr octree);
 		void tesselate(int3 index, ChunkDataPtr chunkData, NeighbourChunkData neighbourChunkData);
 		void finalizeTesselation(int3 index, ChunkGeometryPtr chunkGeometry);
-		void computeLighting(int3 index);
+		void computeLighting(int3 index, ChunkMap const &chunkMap, ChunkGeometryConstPtr chunkGeometry);
 		void finalizeLighting(int3 index, ChunkGeometryPtr chunkGeometry);
 
 };

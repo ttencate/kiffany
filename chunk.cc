@@ -262,23 +262,25 @@ void Chunk::setGeometry(ChunkGeometryPtr geometry) {
 	state = TESSELATED;
 }
 
+void Chunk::setLighting() {
+	state = LIGHTING;
+}
+
 void Chunk::render() {
 	if (state < TESSELATED) {
 		return;
 	}
-	if (state == TESSELATED) {
+	if (state == TESSELATED || state == LIGHTED) {
 		upload();
 	}
-	if (state == UPLOADED) {
-		if (buffers) {
-			glPushMatrix();
-			glTranslated(position.x, position.y, position.z);
-			::render(*buffers);
-			glPopMatrix();
-			stats.chunksRendered.increment();
-		} else {
-			stats.chunksEmpty.increment();
-		}
+	if (buffers) {
+		glPushMatrix();
+		glTranslated(position.x, position.y, position.z);
+		::render(*buffers);
+		glPopMatrix();
+		stats.chunksRendered.increment();
+	} else {
+		stats.chunksEmpty.increment();
 	}
 }
 
@@ -288,7 +290,6 @@ void Chunk::upload() {
 			buffers.reset(new ChunkBuffers());
 			::upload(*geometry, buffers.get());
 		}
-		geometry.reset();
 	}
 	state = UPLOADED;
 }

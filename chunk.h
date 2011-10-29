@@ -100,6 +100,8 @@ class Chunk
 			GENERATED,
 			TESSELATING,
 			TESSELATED,
+			LIGHTING,
+			LIGHTED,
 			UPLOADED
 		};
 
@@ -129,6 +131,7 @@ class Chunk
 		void setOctree(OctreePtr octree);
 		void setTesselating();
 		void setGeometry(ChunkGeometryPtr geometry);
+		void setLighting();
 
 		ChunkDataPtr getData() const { return data; }
 		OctreePtr getOctree() { return octree; }

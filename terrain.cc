@@ -43,6 +43,20 @@ void ChunkManager::requestTesselation(ChunkPtr chunk) {
 	}
 }
 
+void ChunkManager::requestLighting(ChunkPtr chunk) {
+	if (chunk->getState() >= Chunk::TESSELATED && chunk->getState() != Chunk::LIGHTING) {
+		int3 index = chunk->getIndex();
+		chunk->setLighting();
+		ChunkGeometryConstPtr chunkGeometry = chunk->getGeometry();
+		threadPool.enqueue(Job(
+					index,
+					1.0e-6f,
+					boost::bind(
+						&ChunkManager::computeLighting, this,
+						index, boost::cref(chunkMap), chunkGeometry)));
+	}
+}
+
 void ChunkManager::setPriorityFunction(ChunkPriorityFunction const &priorityFunction) {
 	threadPool.setPriorityFunction(
 			JobThreadPool::PriorityFunction(JobPriorityFunction(priorityFunction)));
@@ -102,6 +116,18 @@ void ChunkManager::finalizeGeneration(int3 index, ChunkDataPtr chunkData, Octree
 	}
 	chunk->setData(chunkData);
 	chunk->setOctree(octree);
+
+	int const R = 1;
+	for (int z = -R; z <= R; ++z) {
+		for (int y = -R; y <= R; ++y) {
+			for (int x = -R; x <= R; ++x) {
+				ChunkPtr chunk = chunkMap[index + int3(x, y, z)];
+				if (chunk) {
+					requestLighting(chunk);
+				}
+			}
+		}
+	}
 }
 
 void ChunkManager::tesselate(int3 index, ChunkDataPtr chunkData, NeighbourChunkData neighbourChunkData) {
@@ -121,11 +147,7 @@ void ChunkManager::finalizeTesselation(int3 index, ChunkGeometryPtr chunkGeometr
 	chunk->setGeometry(chunkGeometry);
 }
 
-void ChunkManager::computeLighting(int3 index) {
-	ChunkMap const &chunkMap = this->chunkMap;
-	ChunkConstPtr chunk = chunkMap[index];
-	ChunkGeometryConstPtr chunkGeometry = chunk->getGeometry();
-
+void ChunkManager::computeLighting(int3 index, ChunkMap const &chunkMap, ChunkGeometryConstPtr chunkGeometry) {
 	// TODO Split out vertex and normal data
 	ChunkGeometryPtr newGeometry(new ChunkGeometry(*chunkGeometry));
 	::computeLighting(index, chunkMap, newGeometry);
