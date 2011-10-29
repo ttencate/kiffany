@@ -129,6 +129,8 @@ void setup() {
 
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
+	float globalAmbient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, globalAmbient);
 }
 
 void update(float dt) {
@@ -192,10 +194,17 @@ void render() {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixf(value_ptr(camera->getViewMatrix()));
 
-	float lightPos[] = { 1, 2, 3, 0 };
+	float ambient[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	float lightPos[] = { 1.0f, 2.0f, 3.0f, 0.0f };
+	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 
+	float ambientColor[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	float diffuseColor[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambientColor);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuseColor);
 	world->render();
+
 	marker.render();
 }
 
