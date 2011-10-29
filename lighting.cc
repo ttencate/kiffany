@@ -1,7 +1,10 @@
 #include "lighting.h"
 #include "raycaster.h"
+#include "stats.h"
 
 void computeLighting(int3 index, ChunkMap const &chunkMap, ChunkGeometryPtr geometry) {
+	TimerStat::Timed t(stats.chunkLightingTime.timed());
+
 	float const cutoff = CHUNK_SIZE;
 	Raycaster raycast(chunkMap, cutoff, STONE_BLOCK, BLOCK_MASK);
 
@@ -38,4 +41,7 @@ void computeLighting(int3 index, ChunkMap const &chunkMap, ChunkGeometryPtr geom
 		vertices += 12;
 		normals += 12;
 	}
+
+	stats.quadsLit.increment(numQuads);
+	stats.chunksLit.increment();
 }

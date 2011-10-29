@@ -96,6 +96,7 @@ struct Stats {
 	CounterStat octreeNodes;
 	CounterStat runs;
 	CounterStat quadsGenerated;
+	CounterStat quadsLit;
 
 	CounterStat chunksCreated;
 	CounterStat chunksEvicted;
@@ -108,6 +109,8 @@ struct Stats {
 	TimerStat octreeBuildTime;
 	CounterStat chunksTesselated;
 	TimerStat chunkTesselationTime;
+	CounterStat chunksLit;
+	TimerStat chunkLightingTime;
 
 	CounterStat irrelevantJobsSkipped;
 	CounterStat irrelevantJobsRun;
