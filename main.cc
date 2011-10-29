@@ -194,9 +194,11 @@ void render() {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixf(value_ptr(camera->getViewMatrix()));
 
-	float ambient[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	float ambientLight[] = { 0.45f, 0.5f, 0.55f, 1.0f };
+	float diffuseLight[] = { 1.0f, 0.95f, 0.9f, 1.0f };
 	float lightPos[] = { 1.0f, 2.0f, 3.0f, 0.0f };
-	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 
 	float ambientColor[] = { 0.5f, 0.5f, 0.5f, 1.0f };
