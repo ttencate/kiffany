@@ -136,7 +136,7 @@ void update(float dt) {
 		float const s = flags.autoflySpeed * dt;
 		camera->moveRelative(s * Y_AXIS);
 	} else {
-		float const acc = 10.0f;
+		float const acc = 200.0f;
 		float const minV = 5.0f;
 		float const maxV = 100.0f;
 		static float v = 0.0f;
