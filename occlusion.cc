@@ -1,4 +1,4 @@
-#include "lighting.h"
+#include "occlusion.h"
 #include "raycaster.h"
 #include "stats.h"
 
