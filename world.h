@@ -1,6 +1,7 @@
 #ifndef WORLD_H
 #define WORLD_H
 
+#include "lighting.h"
 #include "terrain.h"
 
 class Camera;
@@ -10,6 +11,7 @@ class World {
 
 	Camera *camera;
 	Terrain terrain;
+	Lighting lighting;
 
 	public:
 

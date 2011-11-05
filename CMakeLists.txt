@@ -29,6 +29,7 @@ set(sources
 	coords.cc coords.h
 	flags.cc flags.h
 	gl.cc gl.h
+	lighting.cc lighting.h
 	maths.cc maths.h
 	occlusion.cc occlusion.h
 	octree.cc octree.h

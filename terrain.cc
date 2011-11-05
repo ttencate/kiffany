@@ -180,6 +180,11 @@ void Terrain::update(float dt) {
 }
 
 void Terrain::render(Camera const &camera) {
+	float ambientColor[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	float diffuseColor[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambientColor);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuseColor);
+
 	ChunkPriorityFunction priorityFunction(camera);
 	chunkMap.setPriorityFunction(priorityFunction);
 	chunkManager.setPriorityFunction(priorityFunction);
