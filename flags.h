@@ -14,6 +14,11 @@ struct Flags {
 	float startX;
 	float startY;
 	float startZ;
+	float startTime;
+	float dayLength;
+	unsigned dayOfYear;
+	float latitude;
+	float axialTilt;
 };
 
 extern Flags flags;

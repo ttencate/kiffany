@@ -1,18 +1,19 @@
 #include "world.h"
 
-World::World(Camera *camera, TerrainGenerator *terrainGenerator)
+World::World(Camera *camera, TerrainGenerator *terrainGenerator, Lighting *lighting)
 :
 	camera(camera),
-	terrain(terrainGenerator)
+	terrain(terrainGenerator),
+	lighting(lighting)
 {
 }
 
 void World::update(float dt) {
 	terrain.update(dt);
-	lighting.update(dt);
+	lighting->update(dt);
 }
 
 void World::render() {
-	lighting.setup();
+	lighting->setup();
 	terrain.render(*camera);
 }

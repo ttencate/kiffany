@@ -4,6 +4,8 @@
 #include "lighting.h"
 #include "terrain.h"
 
+#include <boost/scoped_ptr.hpp>
+
 class Camera;
 class TerrainGenerator;
 
@@ -11,11 +13,11 @@ class World {
 
 	Camera *camera;
 	Terrain terrain;
-	Lighting lighting;
+	boost::scoped_ptr<Lighting> lighting;
 
 	public:
 
-		World(Camera *camera, TerrainGenerator *terrainGenerator);
+		World(Camera *camera, TerrainGenerator *terrainGenerator, Lighting *lighting);
 
 		Terrain &getTerrain() { return terrain; }
 		Terrain const &getTerrain() const { return terrain; }

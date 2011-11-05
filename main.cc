@@ -178,7 +178,7 @@ void update(float dt) {
 	}
 
 	world->update(dt);
-	testRaycast();
+	// testRaycast();
 }
 
 void render() {
@@ -191,7 +191,7 @@ void render() {
 
 	world->render();
 
-	marker.render();
+	// marker.render();
 }
 
 void run() {
@@ -246,7 +246,13 @@ int main(int argc, char **argv) {
 	Camera camera;
 	camera.setPosition(vec3(flags.startX, flags.startY, flags.startZ));
 	::camera = &camera;
-	World world(&camera, new PerlinTerrainGenerator(32, flags.seed));
+
+
+	World world(
+			&camera,
+			new PerlinTerrainGenerator(32, flags.seed),
+			new Lighting(flags.startTime / 24.0f, flags.dayLength,
+				Sun((flags.dayOfYear - 1.0f) / 365.0f, toRadians(flags.latitude), toRadians(flags.axialTilt))));
 	::world = &world;
 
 	glfwOpenWindow(1024, 768, 8, 8, 8, 8, 16, 0, GLFW_WINDOW);

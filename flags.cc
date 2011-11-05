@@ -23,6 +23,11 @@ bool parseCommandLine(int argc, char **argv) {
 		("start_x", po::value<float>(&flags.startX)->default_value(0.0f), "x coordinate of start point")
 		("start_y", po::value<float>(&flags.startY)->default_value(0.0f), "y coordinate of start point")
 		("start_z", po::value<float>(&flags.startZ)->default_value(0.0f), "z coordinate of start point")
+		("start_time", po::value<float>(&flags.startTime)->default_value(12.0f), "start time of day (0-24)")
+		("day_length", po::value<float>(&flags.dayLength)->default_value(0.0f), "day length (seconds)")
+		("day_of_year", po::value<unsigned>(&flags.dayOfYear)->default_value(183), "day of year (1-365)")
+		("latitude", po::value<float>(&flags.latitude)->default_value(51.5f), "latitude (degrees)")
+		("axial_tilt", po::value<float>(&flags.axialTilt)->default_value(23.5f), "axial tilt (degrees)")
 	;
 	po::variables_map vm;
 	po::store(po::parse_command_line(argc, argv, desc), vm);

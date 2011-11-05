@@ -25,6 +25,7 @@ using glm::length;
 using glm::normalize;
 using glm::perspective;
 using glm::round;
+using glm::smoothstep;
 using glm::translate;
 using glm::transpose;
 using glm::rotate;
@@ -42,6 +43,11 @@ template<typename T>
 T mod(T const &a, T const &b) {
 	T r = a % b;
 	return r < 0 ? r + b : r;
+}
+
+template<typename T>
+T toRadians(T degrees) {
+	return degrees / (2 * M_PI);
 }
 
 #endif
