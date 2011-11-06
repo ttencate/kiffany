@@ -22,6 +22,9 @@ struct Marker {
 		float const s = 0.5f;
 		float const a = 1024.0f;
 
+		glDisableClientState(GL_VERTEX_ARRAY);
+		glDisableClientState(GL_NORMAL_ARRAY);	
+
 		glDisable(GL_LIGHTING);
 		glColor3f(1.0f, 0.0f, 0.0f);
 		glPushMatrix();
@@ -123,9 +126,9 @@ void GLFWCALL windowSizeCallback(int width, int height) {
 }
 
 void setup() {
-	glClearColor(0.7f, 0.8f, 1.0f, 1);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 }
 
 void update(float dt) {
@@ -182,12 +185,10 @@ void update(float dt) {
 }
 
 void render() {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadMatrixf(value_ptr(camera->getProjectionMatrix()));
-	glMatrixMode(GL_MODELVIEW);
-	glLoadMatrixf(value_ptr(camera->getViewMatrix()));
 
 	world->render();
 
@@ -243,18 +244,6 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	Camera camera;
-	camera.setPosition(vec3(flags.startX, flags.startY, flags.startZ));
-	::camera = &camera;
-
-
-	World world(
-			&camera,
-			new PerlinTerrainGenerator(32, flags.seed),
-			new Lighting(flags.startTime / 24.0f, flags.dayLength,
-				Sun((flags.dayOfYear - 1.0f) / 365.0f, toRadians(flags.latitude), toRadians(flags.axialTilt))));
-	::world = &world;
-
 	glfwOpenWindow(1024, 768, 8, 8, 8, 8, 16, 0, GLFW_WINDOW);
 	glfwSwapInterval(flags.vsync ? 1 : 0);
 	glfwSetWindowTitle("Kiffany");
@@ -269,8 +258,22 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
+	Camera camera;
+	camera.setPosition(vec3(flags.startX, flags.startY, flags.startZ));
+	::camera = &camera;
+
+	World world(
+			&camera,
+			new PerlinTerrainGenerator(32, flags.seed),
+			new Lighting(flags.startTime / 24.0f, flags.dayLength,
+				Sun((flags.dayOfYear - 1.0f) / 365.0f, toRadians(flags.latitude), toRadians(flags.axialTilt))),
+			new Sky());
+	::world = &world;
+
 	run();
 
 	stats.print();
 	glfwTerminate();
+
+	return EXIT_SUCCESS;
 }

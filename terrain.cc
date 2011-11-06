@@ -185,6 +185,9 @@ void Terrain::render(Camera const &camera) {
 	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambientColor);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuseColor);
 
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_NORMAL_ARRAY);
+
 	ChunkPriorityFunction priorityFunction(camera);
 	chunkMap.setPriorityFunction(priorityFunction);
 	chunkManager.setPriorityFunction(priorityFunction);

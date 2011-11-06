@@ -62,6 +62,9 @@ void Camera::update() {
 
 	viewProjectionMatrixInverse = inverse(viewProjectionMatrix);
 
+	rotationMatrix = viewMatrix;
+	rotationMatrix[3] = vec4(0, 0, 0, 1);
+
 	mat4 const m = transpose(viewProjectionMatrix);
 	frustum[0] = m[3] - m[0];
 	frustum[1] = m[3] + m[0];
