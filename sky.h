@@ -2,6 +2,7 @@
 #define SKY_H
 
 #include "gl.h"
+#include "maths.h"
 
 #include <boost/scoped_array.hpp>
 
@@ -14,7 +15,8 @@ class Sky {
 
 	boost::scoped_array<unsigned char> textureImage;
 
-	void generateFace(GLenum face);
+	vec3 computeColor(vec3 direction);
+	void generateFace(GLenum face, vec3 base, vec3 xBasis, vec3 yBasis);
 	void generateFaces();
 
 	public:

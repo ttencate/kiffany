@@ -45,38 +45,38 @@ Sky::Sky()
 	generateFaces();
 }
 
-void Sky::generateFace(GLenum face) {
-	unsigned char nx[] = { 0x0, 0x7F, 0x7F };
-	unsigned char px[] = { 0xFF, 0x7F, 0x7F };
-	unsigned char ny[] = { 0x7F, 0x0, 0x7F };
-	unsigned char py[] = { 0x7F, 0xFF, 0x7F };
-	unsigned char nz[] = { 0x7F, 0x7F, 0x0 };
-	unsigned char pz[] = { 0x7F, 0x7F, 0xFF };
-	unsigned char *p = 0;
-	switch (face) {
-		case GL_TEXTURE_CUBE_MAP_NEGATIVE_X: p = nx; break;
-		case GL_TEXTURE_CUBE_MAP_POSITIVE_X: p = px; break;
-		case GL_TEXTURE_CUBE_MAP_NEGATIVE_Y: p = ny; break;
-		case GL_TEXTURE_CUBE_MAP_POSITIVE_Y: p = py; break;
-		case GL_TEXTURE_CUBE_MAP_NEGATIVE_Z: p = nz; break;
-		case GL_TEXTURE_CUBE_MAP_POSITIVE_Z: p = pz; break;
-	}
-	for (unsigned i = 0; i < size * size * 3;) {
-		textureImage[i++] = p[0];
-		textureImage[i++] = p[1];
-		textureImage[i++] = p[2];
+vec3 Sky::computeColor(vec3 direction) {
+	return normalize(direction) * 0.5f + 0.5f;
+}
+
+void Sky::generateFace(GLenum face, vec3 base, vec3 xBasis, vec3 yBasis) {
+	unsigned char *p = textureImage.get();
+	for (unsigned y = 0; y < size; ++y) {
+		for (unsigned x = 0; x < size; ++x) {
+			vec3 direction =
+				base +
+				(x + 0.5f) / size * xBasis +
+				(y + 0.5f) / size * yBasis;
+			vec3 color = computeColor(direction);
+			p[0] = (unsigned char)(0xFF * color[0]);
+			p[1] = (unsigned char)(0xFF * color[1]);
+			p[2] = (unsigned char)(0xFF * color[2]);
+			p += 3;
+		}
 	}
 	glTexImage2D(face, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, textureImage.get());
 }
 
 void Sky::generateFaces() {
+	float const N = -0.5f;
+	float const P = 0.5f;
 	glBindTexture(GL_TEXTURE_CUBE_MAP, texture.getName());
-	generateFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_X);
-	generateFace(GL_TEXTURE_CUBE_MAP_POSITIVE_X);
-	generateFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y);
-	generateFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Y);
-	generateFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
-	generateFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Z);
+	generateFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, vec3(N, P, N), vec3(0, 0, 1), vec3(0, -1, 0));
+	generateFace(GL_TEXTURE_CUBE_MAP_POSITIVE_X, vec3(P, P, P), vec3(0, 0, -1), vec3(0, -1, 0));
+	generateFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, vec3(N, N, P), vec3(1, 0, 0), vec3(0, 0, -1));
+	generateFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, vec3(N, P, N), vec3(1, 0, 0), vec3(0, 0, 1));
+	generateFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, vec3(P, P, N), vec3(-1, 0, 0), vec3(0, -1, 0));
+	generateFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, vec3(N, P, P), vec3(1, 0, 0), vec3(0, -1, 0));
 }
 
 void Sky::update(float dt) {
