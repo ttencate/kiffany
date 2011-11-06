@@ -32,3 +32,15 @@ unsigned GLBuffer::getSizeInBytes() const {
 unsigned GLBuffer::getName() const {
 	return name;
 }
+
+GLTexture::GLTexture() {
+	glGenTextures(1, &name);
+}
+
+GLTexture::~GLTexture() {
+	glDeleteTextures(1, &name);
+}
+
+unsigned GLTexture::getName() const {
+	return name;
+}

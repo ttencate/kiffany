@@ -28,4 +28,20 @@ class GLBuffer
 
 };
 
+class GLTexture
+:
+	boost::noncopyable
+{
+
+	unsigned name;
+
+	public:
+
+		GLTexture();
+		~GLTexture();
+
+		unsigned getName() const;
+
+};
+
 #endif
