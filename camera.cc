@@ -2,7 +2,7 @@
 
 Camera::Camera()
 :
-	azimuth(0),
+	azimuth(-90.0f),
 	elevation(0)
 {
 	update();
