@@ -4,6 +4,9 @@
 #include "glm/glm.hpp"
 #include "glm/ext.hpp"
 
+using glm::dvec2;
+using glm::dvec3;
+using glm::dvec4;
 using glm::int2;
 using glm::int3;
 using glm::int4;
@@ -17,6 +20,7 @@ using glm::vec4;
 using glm::clamp;
 using glm::cross;
 using glm::dot;
+using glm::exp;
 using glm::floor;
 using glm::fract;
 using glm::inverse;
@@ -48,6 +52,11 @@ T mod(T const &a, T const &b) {
 template<typename T>
 T toRadians(T degrees) {
 	return degrees / (2 * M_PI);
+}
+
+template<typename T>
+inline T sqr(T x) {
+	return x * x;
 }
 
 #endif
