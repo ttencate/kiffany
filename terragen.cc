@@ -19,8 +19,8 @@ void TerrainGenerator::generateChunk(int3 const &position, RawChunkData &rawChun
 // TODO don't reuse seed
 PerlinTerrainGenerator::PerlinTerrainGenerator(unsigned size, unsigned seed)
 :
-	perlin2D(Noise2D(size, seed), buildOctaves2D(seed)),
-	perlin3D(Noise3D(size, seed), buildOctaves3D(seed))
+	perlin2D(buildNoise2D<float>(size, size, seed), buildOctaves2D(seed)),
+	perlin3D(buildNoise3D<float>(size, size, size, seed), buildOctaves3D(seed))
 {
 }
 

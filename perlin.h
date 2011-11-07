@@ -2,58 +2,35 @@
 #define PERLIN_H
 
 #include "maths.h"
+#include "table.h"
+
+#include <boost/random.hpp>
 
 #include <vector>
 
-class Noise {
+template<typename T>
+void fillWithNoise(Table<T> &table, unsigned seed) {
+	boost::mt11213b engine(seed);
+	boost::uniform_01<T> uniform;
+	T const *const end = table.raw() + table.getSize();
+	for (T *p = table.raw(); p < end; ++p) {
+		*p = 2 * uniform(engine) - 1;
+	}
+}
 
-	protected:
+template<typename T>
+Table2D<T> buildNoise2D(unsigned nx, unsigned ny, unsigned seed) {
+	Table2D<T> noise(nx, ny);
+	fillWithNoise(noise, seed);
+	return noise;
+}
 
-		std::vector<float> noise;
-
-	public:
-
-		Noise(unsigned count, unsigned seed);
-
-};
-
-class Noise2D
-:
-	Noise
-{
-
-	unsigned const size;
-
-	public:
-
-		typedef vec2 Coords;
-
-		Noise2D(unsigned size, unsigned seed);
-
-		unsigned getSize() const { return size; }
-
-		float operator()(vec2 pos) const;
-
-};
-
-class Noise3D
-:
-	Noise
-{
-
-	unsigned const size;
-
-	public:
-
-		typedef vec3 Coords;
-
-		Noise3D(unsigned size, unsigned seed);
-
-		unsigned getSize() const { return size; }
-
-		float operator()(vec3 pos) const;
-
-};
+template<typename T>
+Table3D<T> buildNoise3D(unsigned nx, unsigned ny, unsigned nz, unsigned seed) {
+	Table3D<T> noise(nx, ny, nz);
+	fillWithNoise(noise, seed);
+	return noise;
+}
 
 struct Octave {
 	float frequency;
@@ -68,26 +45,25 @@ struct Octave {
 
 typedef std::vector<Octave> Octaves;
 
-template<typename NoiseType>
+template<typename TableType>
 class Perlin {
 
-	NoiseType noise;
+	TableType noise;
 	Octaves octaves;
 
 	float amplitude;
 
 	public:
 
-		typedef typename NoiseType::Coords Coords;
+		typedef typename TableType::Coords Coords;
 
-		Perlin(NoiseType const &noise, Octaves const &octaves)
+		Perlin(TableType const &table, Octaves const &octaves)
 		:
-			noise(noise),
+			noise(table),
 			octaves(octaves)
 		{
 			amplitude = 0;
 			for (unsigned i = 0; i < octaves.size(); ++i) {
-				this->octaves[i].frequency /= noise.getSize();
 				amplitude += this->octaves[i].amplitude;
 			}
 		}
@@ -106,5 +82,8 @@ class Perlin {
 		}
 
 };
+
+typedef Perlin<Table2D<float> > Perlin2D;
+typedef Perlin<Table3D<float> > Perlin3D;
 
 #endif

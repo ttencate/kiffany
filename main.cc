@@ -128,7 +128,7 @@ void GLFWCALL windowSizeCallback(int width, int height) {
 void setup() {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
-	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+	//glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 }
 
 void update(float dt) {
@@ -266,7 +266,7 @@ int main(int argc, char **argv) {
 			&camera,
 			new PerlinTerrainGenerator(32, flags.seed),
 			new Lighting(flags.startTime / 24.0f, flags.dayLength,
-				Sun((flags.dayOfYear - 1.0f) / 365.0f, toRadians(flags.latitude), toRadians(flags.axialTilt))),
+				Sun((flags.dayOfYear - 1.0f) / 365.0f, radians(flags.latitude), radians(flags.axialTilt))),
 			new Sky());
 	::world = &world;
 

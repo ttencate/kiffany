@@ -25,9 +25,11 @@ using glm::floor;
 using glm::fract;
 using glm::inverse;
 using glm::mix;
+using glm::mod;
 using glm::length;
 using glm::normalize;
 using glm::perspective;
+using glm::radians;
 using glm::round;
 using glm::smoothstep;
 using glm::translate;
@@ -42,17 +44,6 @@ extern vec3 const Z_AXIS;
 extern int3 const X_STEP;
 extern int3 const Y_STEP;
 extern int3 const Z_STEP;
-
-template<typename T>
-T mod(T const &a, T const &b) {
-	T r = a % b;
-	return r < 0 ? r + b : r;
-}
-
-template<typename T>
-T toRadians(T degrees) {
-	return degrees / (2 * M_PI);
-}
 
 template<typename T>
 inline T sqr(T x) {

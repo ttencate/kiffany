@@ -38,6 +38,7 @@ set(sources
 	raycaster.cc raycaster.h
 	sky.cc sky.h
 	stats.cc stats.h
+	table.cc table.h
 	terrain.cc terrain.h
 	terragen.cc terragen.h
 	threading.cc threading.h
@@ -62,6 +63,9 @@ include_directories(
 
 set(test_sources
 	octree_test.cc
+	perlin_test.cc
+	sky_test.cc
+	table_test.cc
 	)
 
 add_executable(kiffany_test ${sources} ${test_sources} main_test.cc)

@@ -27,8 +27,8 @@ class PerlinTerrainGenerator
 	public TerrainGenerator
 {
 
-	Perlin<Noise2D> perlin2D;
-	Perlin<Noise3D> perlin3D;
+	Perlin2D perlin2D;
+	Perlin3D perlin3D;
 
 	public:
 
