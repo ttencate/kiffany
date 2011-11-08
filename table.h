@@ -6,123 +6,74 @@
 #include <boost/scoped_array.hpp>
 
 template<typename T>
-class Table {
+class Array {
 
-	protected:
-
-		unsigned const size;
-		boost::scoped_array<T> const values;
+	unsigned const numCells;
+	boost::scoped_array<T> const values;
 
 	public:
 
-		Table(unsigned size)
+		typedef T value_type;
+
+		Array(unsigned numCells)
 		:
-			size(size),
-			values(new T[size])
+			numCells(numCells),
+			values(new T[numCells])
 		{
 		}
 
-		Table(Table const &other)
+		Array(Array<T> const &other)
 		:
-			size(other.size),
-			values(new T[size])
+			numCells(other.numCells),
+			values(new T[numCells])
 		{
-			for (unsigned i = 0; i < size; ++i) {
+			for (unsigned i = 0; i < numCells; ++i) {
 				values[i] = other.values[i];
 			}
 		}
 
-		unsigned getSize() const { return size; }
+		unsigned getNumCells() const { return numCells; }
 
 		T &operator[](unsigned index) { return values[index]; }
 		T const &operator[](unsigned index) const { return values[index]; }
+
+		T *begin() { return &values[0]; }
+		T *end() { return &values[numCells]; }
+		T const *begin() const { return &values[0]; }
+		T const *end() const { return &values[numCells]; }
 
 		T *raw() { return values.get(); }
 		T const *raw() const { return values.get(); }
 
 };
 
-template<typename T>
-class Table2D
-:
-	public Table<T>
-{
-
-	unsigned const nx;
-	unsigned const ny;
-
-	public:
-
-		typedef vec2 Coords;
-
-		Table2D(unsigned nx, unsigned ny)
-		:
-			Table<T>(nx * ny),
-			nx(nx),
-			ny(ny)
-		{
-		}
-
-		T operator()(vec2 pos) const;
-
-};
-
-template<typename T>
-class Table3D
-:
-	public Table<T>
-{
-
-	unsigned const nx;
-	unsigned const ny;
-	unsigned const nz;
-
-	public:
-
-		typedef vec3 Coords;
-
-		Table3D(unsigned nx, unsigned ny, unsigned nz)
-		:
-			Table<T>(nx * ny * nz),
-			nx(nx),
-			ny(ny),
-			nz(nz)
-		{
-		}
-
-		T operator()(vec3 pos) const;
-
-};
-
-template<typename T>
-T Table2D<T>::operator()(vec2 pos) const {
-	int const FY = nx;
-	vec2 p = mod(pos - 0.5f, vec2(nx, ny));
+template<typename T, typename C>
+inline T lerp(C pos, uvec2 size, T const *values) {
+	int const FY = size[0];
+	C p = mod(pos, C(size));
 	int xa = (int)p.x;
-	int xb = (xa + 1) % nx;
+	int xb = (xa + 1) % size[0];
 	int ya = (int)p.y;
-	int yb = (ya + 1) % ny;
-	vec2 f = fract(p);
-	T const *values = this->raw();
+	int yb = (ya + 1) % size[1];
+	C f = fract(p);
 	return mix(
 			mix(values[xa + FY * ya], values[xb + FY * ya], f.x),
 			mix(values[xa + FY * yb], values[xb + FY * yb], f.x),
 			f.y);
 }
 
-template<typename T>
-T Table3D<T>::operator()(vec3 pos) const {
-	int const FY = nx;
-	int const FZ = nx * ny;
-	vec3 p = mod(pos - 0.5f, vec3(nx, ny, nz));
+template<typename T, typename C>
+inline T lerp(C pos, uvec3 size, T const *values) {
+	int const FY = size[0];
+	int const FZ = size[0] * size[1];
+	C p = mod(pos, C(size));
 	int xa = (int)p.x;
-	int xb = (xa + 1) % nx;
+	int xb = (xa + 1) % size[0];
 	int ya = (int)p.y;
-	int yb = (ya + 1) % ny;
+	int yb = (ya + 1) % size[1];
 	int za = (int)p.z;
-	int zb = (za + 1) % nz;
-	vec3 f = fract(p);
-	T const *values = this->raw();
+	int zb = (za + 1) % size[2];
+	C f = fract(p);
 	return mix(
 			mix(
 				mix(values[xa + FY * ya + FZ * za], values[xb + FY * ya + FZ * za], f.x),
@@ -134,5 +85,72 @@ T Table3D<T>::operator()(vec3 pos) const {
 				f.y),
 			f.z);
 }
+
+template<typename T, typename S, typename C>
+class Table
+:
+	public Array<T>
+{
+
+	public:
+
+		typedef S size_type;
+		typedef C coords_type;
+
+	private:
+
+		size_type const size;
+		coords_type const scale;
+		coords_type const offset;
+
+		static unsigned computeNumCells(uvec2 size) { return size.x * size.y; }
+		static unsigned computeNumCells(uvec3 size) { return size.x * size.y * size.z; }
+
+	public:
+
+		Table(size_type size, coords_type scale = coords_type(1), coords_type offset = coords_type(0.5))
+		:
+			Array<T>(computeNumCells(size)),
+			size(size),
+			scale(scale),
+			offset(offset)
+		{
+		}
+
+		Table(Table<T, S, C> const &other)
+		:
+			Array<T>(other),
+			size(other.size),
+			scale(other.scale),
+			offset(other.offset)
+		{
+		}
+
+		static Table<T, S, C> createWithCoordsSize(size_type size, coords_type coordsSize) {
+			return Table<T, S, C>(size, size / coordsSize);
+		}
+
+		static Table<T, S, C> createWithCoordsSizeAndOffset(size_type size, coords_type coordsSize, coords_type offset) {
+			return Table<T, S, C>(size, size / coordsSize, offset);
+		}
+
+		T operator()(coords_type pos) const {
+			return lerp(pos * scale - offset, size, this->raw());
+		}
+
+};
+
+template<typename T>
+struct Table2D {
+	typedef Table<T, uvec2, vec2> type;
+};
+
+template<typename T>
+struct Table3D {
+	typedef Table<T, uvec3, vec3> type;
+};
+
+typedef Table2D<float>::type FloatTable2D;
+typedef Table3D<float>::type FloatTable3D;
 
 #endif

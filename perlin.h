@@ -9,26 +9,25 @@
 #include <vector>
 
 template<typename T>
-void fillWithNoise(Table<T> &table, unsigned seed) {
-	boost::mt11213b engine(seed);
-	boost::uniform_01<T> uniform;
-	T const *const end = table.raw() + table.getSize();
-	for (T *p = table.raw(); p < end; ++p) {
-		*p = 2 * uniform(engine) - 1;
-	}
-}
+class NoiseGenerator {
+	mutable boost::mt11213b engine;
+	mutable boost::uniform_01<T> uniform;
+	public:
+		NoiseGenerator(unsigned seed)
+		:
+			engine(seed)
+		{
+		}
+		T operator()() const {
+			return 2 * uniform(engine) - 1;
+		}
+};
 
-template<typename T>
-Table2D<T> buildNoise2D(unsigned nx, unsigned ny, unsigned seed) {
-	Table2D<T> noise(nx, ny);
-	fillWithNoise(noise, seed);
-	return noise;
-}
-
-template<typename T>
-Table3D<T> buildNoise3D(unsigned nx, unsigned ny, unsigned nz, unsigned seed) {
-	Table3D<T> noise(nx, ny, nz);
-	fillWithNoise(noise, seed);
+template<typename TableType>
+TableType buildNoiseTable(typename TableType::size_type size, unsigned seed) {
+	TableType noise(size);
+	NoiseGenerator<typename TableType::value_type> gen(seed);
+	std::generate(noise.begin(), noise.end(), gen);
 	return noise;
 }
 
@@ -55,7 +54,7 @@ class Perlin {
 
 	public:
 
-		typedef typename TableType::Coords Coords;
+		typedef typename TableType::coords_type coords_type;
 
 		Perlin(TableType const &table, Octaves const &octaves)
 		:
@@ -68,7 +67,7 @@ class Perlin {
 			}
 		}
 
-		float operator()(Coords pos) const {
+		float operator()(coords_type pos) const {
 			float out = 0;
 			for (unsigned i = 0; i < octaves.size(); ++i) {
 				Octave const &octave = octaves[i];
@@ -83,7 +82,7 @@ class Perlin {
 
 };
 
-typedef Perlin<Table2D<float> > Perlin2D;
-typedef Perlin<Table3D<float> > Perlin3D;
+typedef Perlin<Table2D<float>::type> Perlin2D;
+typedef Perlin<Table3D<float>::type> Perlin3D;
 
 #endif

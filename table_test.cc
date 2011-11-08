@@ -5,28 +5,28 @@
 
 BOOST_AUTO_TEST_SUITE(TableTest)
 
-BOOST_AUTO_TEST_CASE(TestTable) {
-	Table<int> table(2);
-	table[0] = 5;
-	table[1] = 10;
-	Table<int> const &ref = table;
-	BOOST_CHECK_EQUAL(2, table.getSize());
+BOOST_AUTO_TEST_CASE(TestArray) {
+	Array<int> array(2);
+	array[0] = 5;
+	array[1] = 10;
+	Array<int> const &ref = array;
+	BOOST_CHECK_EQUAL(2, array.getNumCells());
 	BOOST_CHECK_EQUAL(5, ref[0]);
 	BOOST_CHECK_EQUAL(10, ref[1]);
 }
 
-BOOST_AUTO_TEST_CASE(TestCopyTable) {
-	Table<int> table(2);
-	table[0] = 5;
-	table[1] = 10;
-	Table<int> copy(table);
-	BOOST_CHECK_EQUAL(table.getSize(), copy.getSize());
-	BOOST_CHECK_EQUAL(table[0], copy[0]);
-	BOOST_CHECK_EQUAL(table[1], copy[1]);
+BOOST_AUTO_TEST_CASE(TestCopyArray) {
+	Array<int> array(2);
+	array[0] = 5;
+	array[1] = 10;
+	Array<int> copy(array);
+	BOOST_CHECK_EQUAL(2, copy.getNumCells());
+	BOOST_CHECK_EQUAL(array[0], copy[0]);
+	BOOST_CHECK_EQUAL(array[1], copy[1]);
 }
 
 BOOST_AUTO_TEST_CASE(TestInterpolation2D) {
-	Table2D<float> table(2, 2);
+	FloatTable2D table(uvec2(2, 2));
 	table[0] = 1;
 	table[1] = 2;
 	table[2] = 3;
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(TestInterpolation2D) {
 }
 
 BOOST_AUTO_TEST_CASE(TestInterpolation3D) {
-	Table3D<float> table(2, 2, 2);
+	FloatTable3D table(uvec3(2, 2, 2));
 	table[0] = 1;
 	table[1] = 2;
 	table[2] = 3;
