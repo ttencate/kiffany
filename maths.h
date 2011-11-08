@@ -32,6 +32,7 @@ using glm::mod;
 using glm::length;
 using glm::normalize;
 using glm::perspective;
+using glm::pow;
 using glm::radians;
 using glm::round;
 using glm::smoothstep;

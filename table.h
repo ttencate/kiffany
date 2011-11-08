@@ -138,8 +138,16 @@ class Table
 			return Table<T, S, C>(size, C(size) / coordsSize, offset);
 		}
 
+		size_type getSize() const {
+			return size;
+		}
+
 		T operator()(coords_type pos) const {
 			return lerp(pos * scale - offset, size, this->raw());
+		}
+
+		coords_type coordsFromIndex(size_type index) const {
+			return (coords_type(index) + offset) / scale;
 		}
 
 		T get(size_type index) const {

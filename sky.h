@@ -3,17 +3,61 @@
 
 #include "gl.h"
 #include "maths.h"
+#include "table.h"
 
-#include <boost/scoped_array.hpp>
+#include <vector>
+
+typedef std::vector<double> LayerHeights;
+
+class Atmosphere {
+
+	dvec3 rayleighAttenuationFactor;
+
+	double earthRadius;
+	double rayleighHeight;
+	double mieHeight;
+	double atmosphereHeight;
+	unsigned numAngles;
+	LayerHeights layerHeights;
+
+	void updateLayerHeights(unsigned numLayers);
+
+	public:
+
+		Atmosphere();
+
+		dvec3 getRayleighAttenuationFactor() const { return rayleighAttenuationFactor; }
+		double getEarthRadius() const { return earthRadius; }
+		double getRayleighHeight() const { return rayleighHeight; }
+		double getMieHeight() const { return mieHeight; }
+
+		unsigned getNumAngles() const { return numAngles; }
+		unsigned getNumLayers() const { return layerHeights.size(); }
+		LayerHeights const &getLayerHeights() const { return layerHeights; }
+
+		double rayleighDensityAtHeight(double height) const;
+		double rayleighDensityAtLayer(unsigned layer) const;
+		double rayLengthToHeight(double angle, double height) const;
+		double rayLengthToLayer(double angle, unsigned layer) const;
+
+		dvec3 attenuationFromOpticalLength(double opticalLength) const;
+
+};
+
+typedef Table<dvec3, uvec2, dvec2> Dvec3Table2D;
+
+DoubleTable2D buildOpticalLengthTable(Atmosphere const &atmosphere);
+Dvec3Table2D buildSunAttenuationTable(Atmosphere const &atmosphere, DoubleTable2D const &opticalLengthTable);
 
 class Sky {
 
+	Atmosphere const atmosphere;
+
 	unsigned const size;
+	boost::scoped_array<unsigned char> textureImage;
 
 	GLBuffer vertices;
 	GLTexture texture;
-
-	boost::scoped_array<unsigned char> textureImage;
 
 	vec3 computeColor(vec3 direction);
 	void generateFace(GLenum face, vec3 base, vec3 xBasis, vec3 yBasis);
@@ -21,7 +65,7 @@ class Sky {
 
 	public:
 
-		Sky();
+		Sky(Atmosphere const &atmosphere);
 
 		void update(float dt);
 		void render();
