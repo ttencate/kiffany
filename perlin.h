@@ -82,7 +82,7 @@ class Perlin {
 
 };
 
-typedef Perlin<Table2D<float>::type> Perlin2D;
-typedef Perlin<Table3D<float>::type> Perlin3D;
+typedef Perlin<FloatTable2D> Perlin2D;
+typedef Perlin<FloatTable3D> Perlin3D;
 
 #endif

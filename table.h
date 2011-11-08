@@ -8,8 +8,10 @@
 template<typename T>
 class Array {
 
-	unsigned const numCells;
-	boost::scoped_array<T> const values;
+	protected:
+
+		unsigned const numCells;
+		boost::scoped_array<T> const values;
 
 	public:
 
@@ -105,6 +107,8 @@ class Table
 
 		static unsigned computeNumCells(uvec2 size) { return size.x * size.y; }
 		static unsigned computeNumCells(uvec3 size) { return size.x * size.y * size.z; }
+		inline unsigned arrayIndex(uvec2 index) const { return index.x + size.x * index.y; }
+		inline unsigned arrayIndex(uvec3 index) const { return index.x + size.x * index.y + size.x * size.y * index.z; }
 
 	public:
 
@@ -127,30 +131,30 @@ class Table
 		}
 
 		static Table<T, S, C> createWithCoordsSize(size_type size, coords_type coordsSize) {
-			return Table<T, S, C>(size, size / coordsSize);
+			return Table<T, S, C>(size, C(size) / coordsSize);
 		}
 
 		static Table<T, S, C> createWithCoordsSizeAndOffset(size_type size, coords_type coordsSize, coords_type offset) {
-			return Table<T, S, C>(size, size / coordsSize, offset);
+			return Table<T, S, C>(size, C(size) / coordsSize, offset);
 		}
 
 		T operator()(coords_type pos) const {
 			return lerp(pos * scale - offset, size, this->raw());
 		}
 
+		T get(size_type index) const {
+			return this->values[arrayIndex(index)];
+		}
+
+		void set(size_type index, T value) {
+			this->values[arrayIndex(index)] = value;
+		}
+
 };
 
-template<typename T>
-struct Table2D {
-	typedef Table<T, uvec2, vec2> type;
-};
-
-template<typename T>
-struct Table3D {
-	typedef Table<T, uvec3, vec3> type;
-};
-
-typedef Table2D<float>::type FloatTable2D;
-typedef Table3D<float>::type FloatTable3D;
+typedef Table<float, uvec2, vec2> FloatTable2D;
+typedef Table<float, uvec3, vec3> FloatTable3D;
+typedef Table<double, uvec2, dvec2> DoubleTable2D;
+typedef Table<double, uvec3, dvec3> DoubleTable3D;
 
 #endif
