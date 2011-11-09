@@ -12,6 +12,7 @@ typedef std::vector<double> LayerHeights;
 class Atmosphere {
 
 	dvec3 rayleighAttenuationFactor;
+	dvec3 rayleighScatteringFactor;
 
 	double earthRadius;
 	double rayleighHeight;
@@ -37,8 +38,17 @@ class Atmosphere {
 
 		double rayleighDensityAtHeight(double height) const;
 		double rayleighDensityAtLayer(unsigned layer) const;
+
+		double rayLengthBetweenHeights(double angle, double lowerHeight, double upperHeight) const;
+		double rayLengthBetweenLayers(double angle, unsigned lowerLayer, unsigned upperLayer) const;
+
 		double rayLengthToHeight(double angle, double height) const;
 		double rayLengthToLayer(double angle, unsigned layer) const;
+
+		double rayleighPhaseFunction(double angle) const;
+
+		dvec3 rayleighScatteringAtHeight(double angle, double height) const;
+		dvec3 rayleighScatteringAtLayer(double angle, unsigned layer) const;
 
 		dvec3 attenuationFromOpticalLength(double opticalLength) const;
 
@@ -46,6 +56,7 @@ class Atmosphere {
 
 typedef Table<dvec3, uvec2, dvec2> Dvec3Table2D;
 
+DoubleTable2D buildOpticalDepthTable(Atmosphere const &atmosphere);
 DoubleTable2D buildOpticalLengthTable(Atmosphere const &atmosphere);
 Dvec3Table2D buildSunAttenuationTable(Atmosphere const &atmosphere, DoubleTable2D const &opticalLengthTable);
 

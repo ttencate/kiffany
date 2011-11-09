@@ -6,8 +6,8 @@
 void Atmosphere::updateLayerHeights(unsigned numLayers) {
 	layerHeights.resize(numLayers);
 	for (unsigned i = 0; i < numLayers - 1; ++i) {
-		double const rho = 1.0f - (double)i / numLayers;
-		layerHeights[i] = -rayleighHeight * log(rho);
+		double const cumulativeDensity = 1.0f - (double)i / numLayers;
+		layerHeights[i] = -rayleighHeight * log(cumulativeDensity);
 	}
 	layerHeights[numLayers - 1] = std::max(layerHeights[numLayers] * 1.01f, atmosphereHeight);
 }
@@ -24,7 +24,8 @@ Atmosphere::Atmosphere()
 	double const n = 1.000293; // index of refraction of air
 	double const Ns = 2.5e25; // number density in standard atmosphere (molecules/m^3)
 	double const K = 2.0f * M_PI * M_PI * (n * n - 1.0f) * (n * n - 1.0f) / (3.0f * Ns);
-	rayleighAttenuationFactor = 4.0 * M_PI * K / pow(lambda, dvec3(4.0)); // extinction ratio per unit of optical length
+	rayleighScatteringFactor = K / pow(lambda, dvec3(4.0)); // scattering per unit of optical length
+	rayleighAttenuationFactor = 4.0 * M_PI * rayleighScatteringFactor; // extinction ratio per unit of optical length
 
 	updateLayerHeights(8);
 }
@@ -37,12 +38,36 @@ double Atmosphere::rayleighDensityAtLayer(unsigned layer) const {
 	return rayleighDensityAtHeight(layerHeights[layer]);
 }
 
+double Atmosphere::rayLengthBetweenHeights(double angle, double lowerHeight, double upperHeight) const {
+	double cosAngle = cos(angle);
+	return /*+-*/sqrt(
+			sqr(earthRadius + lowerHeight) * (sqr(cosAngle) - 1.0) +
+			sqr(earthRadius + upperHeight)) -
+		(earthRadius + lowerHeight) * cosAngle;
+}
+
+double Atmosphere::rayLengthBetweenLayers(double angle, unsigned lowerLayer, unsigned upperLayer) const {
+	return rayLengthBetweenHeights(angle, layerHeights[lowerLayer], layerHeights[upperLayer]);
+}
+
 double Atmosphere::rayLengthToHeight(double angle, double height) const {
-	return sqrt(-sqr(sin(angle) * earthRadius) + sqr(earthRadius + height));
+	return rayLengthBetweenHeights(angle, 0, height);
 }
 
 double Atmosphere::rayLengthToLayer(double angle, unsigned layer) const {
 	return rayLengthToHeight(angle, layerHeights[layer]);
+}
+
+double Atmosphere::rayleighPhaseFunction(double angle) const {
+	return 0.75 * (1.0 + sqr(cos(angle)));
+}
+
+dvec3 Atmosphere::rayleighScatteringAtHeight(double angle, double height) const {
+	return rayleighScatteringFactor * rayleighDensityAtHeight(height) * rayleighPhaseFunction(angle);
+}
+
+dvec3 Atmosphere::rayleighScatteringAtLayer(double angle, unsigned layer) const {
+	return rayleighScatteringAtHeight(angle, layerHeights[layer]);
 }
 
 dvec3 Atmosphere::attenuationFromOpticalLength(double opticalLength) const {
@@ -65,8 +90,41 @@ DoubleTable2D buildOpticalLengthTable(Atmosphere const &atmosphere) {
 				opticalLengthTable.set(uvec2(layer, a), std::numeric_limits<double>::infinity());
 			}
 		} else {
-			// Cumulatively integrate over all layers
+			// Compute optical length between this layer and next
+			for (unsigned layer = 0; layer < numLayers - 1; ++layer) {
+				double const length =
+					atmosphere.rayLengthToLayer(angle, layer + 1) -
+					atmosphere.rayLengthToLayer(angle, layer);
+				double const opticalLength = length * 0.5 * (
+						atmosphere.rayleighDensityAtLayer(layer + 1) +
+						atmosphere.rayleighDensityAtLayer(layer));
+				opticalLengthTable.set(uvec2(layer, a), opticalLength);
+			}
 			opticalLengthTable.set(uvec2(numLayers - 1, a), 0);
+		}
+	}
+
+	return opticalLengthTable;
+}
+
+DoubleTable2D buildOpticalDepthTable(Atmosphere const &atmosphere) {
+	unsigned const numAngles = atmosphere.getNumAngles();
+	unsigned const numLayers = atmosphere.getNumLayers();
+
+	DoubleTable2D opticalDepthTable = DoubleTable2D::createWithCoordsSizeAndOffset(
+			uvec2(numLayers, numAngles),
+			dvec2(numLayers, M_PI * numAngles / (numAngles - 1)),
+			dvec2(0.0, 0.0));
+	for (unsigned a = 0; a < numAngles; ++a) {
+		double const angle = M_PI * a / (numAngles - 1);
+		if (angle >= M_PI / 2) {
+			// Ray goes into the ground
+			for (unsigned layer = 0; layer <= numLayers; ++layer) {
+				opticalDepthTable.set(uvec2(layer, a), std::numeric_limits<double>::infinity());
+			}
+		} else {
+			// Cumulatively integrate over all layers
+			opticalDepthTable.set(uvec2(numLayers - 1, a), 0);
 			for (int layer = numLayers - 2; layer >= 0; --layer) {
 				double const length =
 					atmosphere.rayLengthToLayer(angle, layer + 1) -
@@ -74,13 +132,13 @@ DoubleTable2D buildOpticalLengthTable(Atmosphere const &atmosphere) {
 				double const segment = length * 0.5 * (
 						atmosphere.rayleighDensityAtLayer(layer + 1) +
 						atmosphere.rayleighDensityAtLayer(layer));
-				double const sum = opticalLengthTable.get(uvec2(layer + 1, a)) + segment;
-				opticalLengthTable.set(uvec2(layer, a), sum);
+				double const opticalDepth = opticalDepthTable.get(uvec2(layer + 1, a)) + segment;
+				opticalDepthTable.set(uvec2(layer, a), opticalDepth);
 			}
 		}
 	}
 
-	return opticalLengthTable;
+	return opticalDepthTable;
 }
 
 Dvec3Table2D buildSunAttenuationTable(Atmosphere const &atmosphere, DoubleTable2D const &opticalLengthTable) {
