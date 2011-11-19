@@ -1,6 +1,6 @@
-#include <boost/test/unit_test.hpp>
-
 #include "sky.h"
+
+#include <boost/test/unit_test.hpp>
 
 #include <limits>
 

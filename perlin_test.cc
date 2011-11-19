@@ -1,7 +1,7 @@
+#include "perlin.h"
+
 #include <boost/test/unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
-
-#include "perlin.h"
 
 BOOST_AUTO_TEST_SUITE(PerlinTest)
 

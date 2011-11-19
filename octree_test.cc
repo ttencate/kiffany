@@ -1,7 +1,7 @@
-#include <boost/test/unit_test.hpp>
-
 #include "chunkdata.h"
 #include "octree.h"
+
+#include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_SUITE(OctreeTest)
 
