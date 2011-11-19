@@ -5,6 +5,8 @@
 
 #include <boost/scoped_array.hpp>
 
+#include <iostream>
+
 template<typename T>
 class Array {
 
@@ -159,6 +161,17 @@ class Table
 		}
 
 };
+
+template<typename T, typename C>
+std::ostream &operator<<(std::ostream &stream, Table<T, uvec2, C> table) {
+	for (unsigned y = 0; y < table.getSize().y; ++y) {
+		for (unsigned x = 0; x < table.getSize().x; ++x) {
+			stream << table.get(uvec2(x, y)) << ' ';
+		}
+		stream << '\n';
+	}
+	return stream;
+}
 
 typedef Table<float, uvec2, vec2> FloatTable2D;
 typedef Table<float, uvec3, vec3> FloatTable3D;

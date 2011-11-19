@@ -267,7 +267,7 @@ int main(int argc, char **argv) {
 			new PerlinTerrainGenerator(32, flags.seed),
 			new Lighting(flags.startTime / 24.0f, flags.dayLength,
 				Sun((flags.dayOfYear - 1.0f) / 365.0f, radians(flags.latitude), radians(flags.axialTilt))),
-			new Sky());
+			new Sky(Atmosphere()));
 	::world = &world;
 
 	run();

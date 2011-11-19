@@ -4,6 +4,8 @@
 #include "glm/glm.hpp"
 #include "glm/ext.hpp"
 
+#include <iostream>
+
 using glm::dvec2;
 using glm::dvec3;
 using glm::dvec4;
