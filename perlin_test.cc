@@ -36,8 +36,8 @@ BOOST_AUTO_TEST_CASE(TestPerlin2DSingleOctave) {
 
 	float const EPS = 1e-6;
 	BOOST_CHECK_CLOSE(1.0f, perlin.getAmplitude(), EPS);
-	BOOST_CHECK_CLOSE(0.5f, perlin(vec2(0.5f, 0.25f)), EPS);
-	BOOST_CHECK_CLOSE(0.5f, perlin(vec2(0.0f, 0.25f)), EPS);
+	BOOST_CHECK_CLOSE(0.5f, perlin(vec2(1.0f, 0.5f)), EPS);
+	BOOST_CHECK_CLOSE(0.5f, perlin(vec2(0.0f, 0.5f)), EPS);
 }
 
 BOOST_AUTO_TEST_CASE(TestPerlin2DMultipleOctaves) {
@@ -49,8 +49,8 @@ BOOST_AUTO_TEST_CASE(TestPerlin2DMultipleOctaves) {
 
 	float const EPS = 1e-6;
 	BOOST_CHECK_CLOSE(1.5f, perlin.getAmplitude(), EPS);
-	BOOST_CHECK_CLOSE(0.75f, perlin(vec2(0.5f, 0.25f)), EPS);
-	BOOST_CHECK_CLOSE(0.75f, perlin(vec2(0.0f, 0.25f)), EPS);
+	BOOST_CHECK_CLOSE(0.75f, perlin(vec2(1.0f, 0.5f)), EPS);
+	BOOST_CHECK_CLOSE(0.75f, perlin(vec2(0.0f, 0.5f)), EPS);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
