@@ -13,7 +13,13 @@
 #define BOOST_REQUIRE_LE_3(a, b) BOOST_LEVEL_COMP_3(REQUIRE, LE, a, b)
 #define BOOST_REQUIRE_GE_3(a, b) BOOST_LEVEL_COMP_3(REQUIRE, GE, a, b)
 
-BOOST_AUTO_TEST_SUITE(SkyTest)
+namespace {
+	struct Fixture {
+		Atmosphere atmosphere;
+	};
+}
+
+BOOST_FIXTURE_TEST_SUITE(SkyTest, Fixture)
 
 BOOST_AUTO_TEST_CASE(TestComputeLayerHeights) {
 	unsigned const numLayers = 10;
@@ -33,7 +39,6 @@ BOOST_AUTO_TEST_CASE(TestComputeLayerHeights) {
 }
 
 BOOST_AUTO_TEST_CASE(TestRayLength) {
-	Atmosphere atmosphere;
 	LayerHeights const &layerHeights = atmosphere.getLayerHeights();
 	double EPS = 1e-6;
 	BOOST_CHECK_CLOSE(350.0, atmosphere.rayLengthToHeight(0.0, 350.0), EPS);
@@ -45,7 +50,6 @@ BOOST_AUTO_TEST_CASE(TestRayLength) {
 }
 
 BOOST_AUTO_TEST_CASE(TestBuildOpticalLengthTable) {
-	Atmosphere atmosphere;
 	Dvec3Table2D opticalLengthTable = buildOpticalLengthTable(atmosphere);
 	unsigned numLayers = atmosphere.getNumLayers();
 	unsigned numAngles = atmosphere.getNumAngles();
@@ -66,7 +70,6 @@ BOOST_AUTO_TEST_CASE(TestBuildOpticalLengthTable) {
 }
 
 BOOST_AUTO_TEST_CASE(TestBuildOpticalDepthTable) {
-	Atmosphere atmosphere;
 	Dvec3Table2D opticalDepthTable = buildOpticalDepthTable(atmosphere);
 	unsigned numLayers = atmosphere.getNumLayers();
 	unsigned numAngles = atmosphere.getNumAngles();
@@ -91,7 +94,6 @@ BOOST_AUTO_TEST_CASE(TestBuildOpticalDepthTable) {
 }
 
 BOOST_AUTO_TEST_CASE(TestBuildSunAttenuationTable) {
-	Atmosphere atmosphere;
 	Dvec3Table2D opticalDepthTable = buildOpticalDepthTable(atmosphere);
 	Dvec3Table2D sunAttenuationTable = buildSunAttenuationTable(atmosphere, opticalDepthTable);
 	unsigned numLayers = atmosphere.getNumLayers();
@@ -118,7 +120,6 @@ BOOST_AUTO_TEST_CASE(TestBuildSunAttenuationTable) {
 }
 
 BOOST_AUTO_TEST_CASE(TestScatterer) {
-	Atmosphere atmosphere;
 	Scatterer scatterer(atmosphere);
 	dvec3 intoSunFactor = scatterer.scatteredLightFactor(dvec3(0.0, 0.0, 1.0), dvec3(0.0, 0.0, 1.0));
 	dvec3 nextToSunFactor = scatterer.scatteredLightFactor(normalize(dvec3(1.0, 0.0, 1.0)), dvec3(0.0, 0.0, 1.0));
