@@ -175,7 +175,5 @@ std::ostream &operator<<(std::ostream &stream, Table<T, uvec2, C> table) {
 
 typedef Table<float, uvec2, vec2> FloatTable2D;
 typedef Table<float, uvec3, vec3> FloatTable3D;
-typedef Table<double, uvec2, dvec2> DoubleTable2D;
-typedef Table<double, uvec3, dvec3> DoubleTable3D;
 
 #endif

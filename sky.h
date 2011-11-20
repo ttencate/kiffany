@@ -55,21 +55,21 @@ class Atmosphere {
 		dvec3 rayleighScatteringAtHeight(double angle, double height) const;
 		dvec3 rayleighScatteringAtLayer(double angle, unsigned layer) const;
 
-		dvec3 attenuationFromOpticalLength(double opticalLength) const;
+		dvec3 attenuationFromOpticalLength(dvec3 opticalLength) const;
 
 };
 
 typedef Table<dvec3, uvec2, dvec2> Dvec3Table2D;
 
-DoubleTable2D buildOpticalLengthTable(Atmosphere const &atmosphere);
-DoubleTable2D buildOpticalDepthTable(Atmosphere const &atmosphere);
-Dvec3Table2D buildSunAttenuationTable(Atmosphere const &atmosphere, DoubleTable2D const &opticalLengthTable);
+Dvec3Table2D buildOpticalLengthTable(Atmosphere const &atmosphere);
+Dvec3Table2D buildOpticalDepthTable(Atmosphere const &atmosphere);
+Dvec3Table2D buildSunAttenuationTable(Atmosphere const &atmosphere, Dvec3Table2D const &opticalLengthTable);
 
 class Scatterer {
 
 	Atmosphere atmosphere;
 
-	DoubleTable2D opticalLengthTable;
+	Dvec3Table2D opticalLengthTable;
 	Dvec3Table2D sunAttenuationTable;
 
 	public:
@@ -90,7 +90,7 @@ class Sky {
 	GLBuffer vertices;
 	GLTexture texture;
 
-	vec3 computeColor(vec3 direction);
+	dvec3 computeColor(vec3 direction);
 	void generateFace(GLenum face, vec3 base, vec3 xBasis, vec3 yBasis);
 	void generateFaces();
 

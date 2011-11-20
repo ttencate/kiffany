@@ -9,7 +9,7 @@ LayerHeights computeLayerHeights(unsigned numLayers, double rayleighHeight, doub
 		double const cumulativeDensity = 1.0f - (double)i / numLayers;
 		layerHeights[i] = -rayleighHeight * log(cumulativeDensity);
 	}
-	layerHeights[numLayers - 1] = std::max(layerHeights[numLayers] * 1.01f, atmosphereHeight);
+	layerHeights[numLayers - 1] = std::max(layerHeights[numLayers - 1] * 1.01f, atmosphereHeight);
 	return layerHeights;
 }
 
@@ -91,15 +91,16 @@ dvec3 Atmosphere::rayleighScatteringAtLayer(double angle, unsigned layer) const 
 	return rayleighScatteringAtHeight(angle, layerHeights[layer]);
 }
 
-dvec3 Atmosphere::attenuationFromOpticalLength(double opticalLength) const {
+dvec3 Atmosphere::attenuationFromOpticalLength(dvec3 opticalLength) const {
 	return exp(-rayleighAttenuationFactor * opticalLength);
 }
 
-DoubleTable2D buildOpticalLengthTable(Atmosphere const &atmosphere) {
+Dvec3Table2D buildOpticalLengthTable(Atmosphere const &atmosphere) {
 	unsigned const numAngles = atmosphere.getNumAngles();
 	unsigned const numLayers = atmosphere.getNumLayers();
+	dvec3 const rayleighAttenuationFactor = atmosphere.getRayleighAttenuationFactor();
 
-	DoubleTable2D opticalLengthTable = DoubleTable2D::createWithCoordsSizeAndOffset(
+	Dvec3Table2D opticalLengthTable = Dvec3Table2D::createWithCoordsSizeAndOffset(
 			uvec2(numLayers, numAngles),
 			dvec2(numLayers, M_PI * numAngles / (numAngles - 1)),
 			dvec2(0.0, 0.0));
@@ -107,8 +108,8 @@ DoubleTable2D buildOpticalLengthTable(Atmosphere const &atmosphere) {
 		double const angle = M_PI * a / (numAngles - 1);
 		if (angle >= M_PI / 2) {
 			// Ray goes into the ground
-			for (unsigned layer = 0; layer <= numLayers; ++layer) {
-				opticalLengthTable.set(uvec2(layer, a), std::numeric_limits<double>::infinity());
+			for (unsigned layer = 0; layer < numLayers; ++layer) {
+				opticalLengthTable.set(uvec2(layer, a), opticalLengthTable.get(uvec2(layer, a - 1)));
 			}
 		} else {
 			// Compute optical length between this layer and next
@@ -116,23 +117,25 @@ DoubleTable2D buildOpticalLengthTable(Atmosphere const &atmosphere) {
 				double const length =
 					atmosphere.rayLengthToLayer(angle, layer + 1) -
 					atmosphere.rayLengthToLayer(angle, layer);
-				double const opticalLength = length * 0.5 * (
+				double const airMass = length * 0.5 * (
 						atmosphere.rayleighDensityAtLayer(layer + 1) +
 						atmosphere.rayleighDensityAtLayer(layer));
-				opticalLengthTable.set(uvec2(layer, a), opticalLength);
+				dvec3 const segment = rayleighAttenuationFactor * airMass;
+				opticalLengthTable.set(uvec2(layer, a), segment);
 			}
-			opticalLengthTable.set(uvec2(numLayers - 1, a), 0);
+			opticalLengthTable.set(uvec2(numLayers - 1, a), dvec3(0.0));
 		}
 	}
 
 	return opticalLengthTable;
 }
 
-DoubleTable2D buildOpticalDepthTable(Atmosphere const &atmosphere) {
+Dvec3Table2D buildOpticalDepthTable(Atmosphere const &atmosphere) {
 	unsigned const numAngles = atmosphere.getNumAngles();
 	unsigned const numLayers = atmosphere.getNumLayers();
+	dvec3 const rayleighAttenuationFactor = atmosphere.getRayleighAttenuationFactor();
 
-	DoubleTable2D opticalDepthTable = DoubleTable2D::createWithCoordsSizeAndOffset(
+	Dvec3Table2D opticalDepthTable = Dvec3Table2D::createWithCoordsSizeAndOffset(
 			uvec2(numLayers, numAngles),
 			dvec2(numLayers, M_PI * numAngles / (numAngles - 1)),
 			dvec2(0.0, 0.0));
@@ -140,20 +143,21 @@ DoubleTable2D buildOpticalDepthTable(Atmosphere const &atmosphere) {
 		double const angle = M_PI * a / (numAngles - 1);
 		if (angle >= M_PI / 2) {
 			// Ray goes into the ground
-			for (unsigned layer = 0; layer <= numLayers; ++layer) {
-				opticalDepthTable.set(uvec2(layer, a), std::numeric_limits<double>::infinity());
+			for (unsigned layer = 0; layer < numLayers; ++layer) {
+				opticalDepthTable.set(uvec2(layer, a), opticalDepthTable.get(uvec2(layer, a - 1)));
 			}
 		} else {
 			// Cumulatively sum over all layers
-			opticalDepthTable.set(uvec2(numLayers - 1, a), 0);
+			opticalDepthTable.set(uvec2(numLayers - 1, a), dvec3(0.0));
 			for (int layer = numLayers - 2; layer >= 0; --layer) {
 				double const length =
 					atmosphere.rayLengthToLayer(angle, layer + 1) -
 					atmosphere.rayLengthToLayer(angle, layer);
-				double const segment = length * 0.5 * (
+				double const airMass = length * 0.5 * (
 						atmosphere.rayleighDensityAtLayer(layer + 1) +
 						atmosphere.rayleighDensityAtLayer(layer));
-				double const opticalDepth = opticalDepthTable.get(uvec2(layer + 1, a)) + segment;
+				dvec3 const segment = rayleighAttenuationFactor * airMass;
+				dvec3 const opticalDepth = opticalDepthTable.get(uvec2(layer + 1, a)) + segment;
 				opticalDepthTable.set(uvec2(layer, a), opticalDepth);
 			}
 		}
@@ -162,7 +166,7 @@ DoubleTable2D buildOpticalDepthTable(Atmosphere const &atmosphere) {
 	return opticalDepthTable;
 }
 
-Dvec3Table2D buildSunAttenuationTable(Atmosphere const &atmosphere, DoubleTable2D const &opticalLengthTable) {
+Dvec3Table2D buildSunAttenuationTable(Atmosphere const &atmosphere, Dvec3Table2D const &opticalLengthTable) {
 	unsigned const numLayers = atmosphere.getNumLayers();
 	unsigned const numAngles = atmosphere.getNumAngles();
 
@@ -174,7 +178,7 @@ Dvec3Table2D buildSunAttenuationTable(Atmosphere const &atmosphere, DoubleTable2
 	for (unsigned a = 0; a < numAngles; ++a) {
 		for (unsigned layer = 0; layer < numLayers; ++layer) {
 			uvec2 index(layer, a);
-			double const opticalLength = opticalLengthTable.get(index);
+			dvec3 const opticalLength = opticalLengthTable.get(index);
 			dvec3 const sunAttenuation = atmosphere.attenuationFromOpticalLength(opticalLength);
 			sunAttenuationTable.set(index, sunAttenuation);
 		}
@@ -198,10 +202,9 @@ dvec3 Scatterer::scatteredLightFactor(dvec3 direction, dvec3 sunDirection) const
 	for (int layer = atmosphere.getNumLayers() - 1; layer >= 0; --layer) {
 		scatteredLightFactor +=
 			sunAttenuationTable(dvec2(layer, groundAngle)) * atmosphere.rayleighScatteringAtLayer(lightAngle, layer);
-		//double angle = atmosphere.rayAngleAtLayer(groundAngle, layer);
-		//std::cout << "factor *= " << exp(-opticalLengthTable(dvec2(layer, angle))) << '\n';
-		//scatteredLightFactor *=
-		//	exp(-opticalLengthTable(dvec2(layer, angle)));
+		double angle = atmosphere.rayAngleAtLayer(groundAngle, layer);
+		scatteredLightFactor *=
+			exp(-opticalLengthTable(dvec2(layer, angle)));
 	}
 	return scatteredLightFactor;
 }
@@ -253,14 +256,14 @@ Sky::Sky(Atmosphere const &atmosphere)
 	generateFaces();
 }
 
-vec3 Sky::computeColor(vec3 dir) {
+dvec3 Sky::computeColor(vec3 dir) {
 	// TODO get from sun
 	dvec3 const direction(dir);
 	dvec3 const sunColor = 2.0e5 * dvec3(1.0, 1.0, 1.0);
 	dvec3 const sunDirection = normalize(dvec3(1.0, 0.0, 1.0));
 
 	dvec3 color = sunColor * scatterer.scatteredLightFactor(direction, sunDirection);
-	return clamp(vec3(color), 0.0f, 1.0f);
+	return color;
 }
 
 void Sky::generateFace(GLenum face, vec3 base, vec3 xBasis, vec3 yBasis) {
@@ -271,8 +274,7 @@ void Sky::generateFace(GLenum face, vec3 base, vec3 xBasis, vec3 yBasis) {
 				base +
 				(x + 0.5f) / size * xBasis +
 				(y + 0.5f) / size * yBasis);
-			vec3 color = computeColor(direction);
-			color = clamp(color, 0.0f, 1.0f);
+			vec3 color = clamp(vec3(computeColor(direction)), 0.0f, 1.0f);
 			p[0] = (unsigned char)(0xFF * color[0]);
 			p[1] = (unsigned char)(0xFF * color[1]);
 			p[2] = (unsigned char)(0xFF * color[2]);
