@@ -38,30 +38,20 @@ class Atmosphere {
 		unsigned getNumAngles() const { return numAngles; }
 		unsigned getNumLayers() const { return layerHeights.size(); }
 		LayerHeights const &getLayerHeights() const { return layerHeights; }
+		double getLayerHeight(unsigned layer) const { return layerHeights[layer]; }
 
 		double rayleighDensityAtHeight(double height) const;
-		double rayleighDensityAtLayer(unsigned layer) const;
-
 		double mieDensityAtHeight(double height) const;
-		double mieDensityAtLayer(unsigned layer) const;
 
 		double rayAngleAtHeight(double angle, double height) const;
-		double rayAngleAtLayer(double angle, unsigned layer) const;
-
 		double rayLengthBetweenHeights(double angle, double lowerHeight, double upperHeight) const;
-		double rayLengthBetweenLayers(double angle, unsigned lowerLayer, unsigned upperLayer) const;
-
 		double rayLengthToHeight(double angle, double height) const;
-		double rayLengthToLayer(double angle, unsigned layer) const;
 
 		double rayleighPhaseFunction(double angle) const;
 		double miePhaseFunction(double angle) const;
 
 		dvec3 rayleighScatteringAtHeight(double angle, double height) const;
-		dvec3 rayleighScatteringAtLayer(double angle, unsigned layer) const;
-
 		dvec3 mieScatteringAtHeight(double angle, double height) const;
-		dvec3 mieScatteringAtLayer(double angle, unsigned layer) const;
 
 		dvec3 attenuationFromOpticalLength(dvec3 opticalLength) const;
 

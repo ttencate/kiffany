@@ -43,10 +43,10 @@ BOOST_AUTO_TEST_CASE(TestRayLength) {
 	double EPS = 1e-6;
 	BOOST_CHECK_CLOSE(350.0, atmosphere.rayLengthToHeight(0.0, 350.0), EPS);
 	BOOST_CHECK_LT(350.0, atmosphere.rayLengthToHeight(0.1, 350.0));
-	BOOST_CHECK_CLOSE(layerHeights[5], atmosphere.rayLengthToLayer(0.0, 5), EPS);
-	BOOST_CHECK_LT(5, atmosphere.rayLengthToLayer(0.1, 5));
-	BOOST_CHECK_CLOSE(layerHeights[6] - layerHeights[2], atmosphere.rayLengthBetweenLayers(0.0, 2, 6), EPS);
-	BOOST_CHECK_LT(layerHeights[6] - layerHeights[2], atmosphere.rayLengthBetweenLayers(0.1, 2, 6));
+	BOOST_CHECK_CLOSE(layerHeights[5], atmosphere.rayLengthToHeight(0.0, atmosphere.getLayerHeight(5)), EPS);
+	BOOST_CHECK_LT(5, atmosphere.rayLengthToHeight(0.1, atmosphere.getLayerHeight(5)));
+	BOOST_CHECK_CLOSE(layerHeights[6] - layerHeights[2], atmosphere.rayLengthBetweenHeights(0.0, atmosphere.getLayerHeight(2), atmosphere.getLayerHeight(6)), EPS);
+	BOOST_CHECK_LT(layerHeights[6] - layerHeights[2], atmosphere.rayLengthBetweenHeights(0.1, atmosphere.getLayerHeight(2), atmosphere.getLayerHeight(6)));
 }
 
 BOOST_AUTO_TEST_CASE(TestBuildOpticalLengthTable) {
