@@ -4,6 +4,15 @@
 
 #include <limits>
 
+#define BOOST_LEVEL_COMP_3(level, comp, a, b) \
+	BOOST_##level##_##comp(dvec3(a).x, dvec3(b).x); \
+	BOOST_##level##_##comp(dvec3(a).y, dvec3(b).y); \
+	BOOST_##level##_##comp(dvec3(a).z, dvec3(b).z)
+#define BOOST_CHECK_LE_3(a, b) BOOST_LEVEL_COMP_3(CHECK, LE, a, b)
+#define BOOST_CHECK_GE_3(a, b) BOOST_LEVEL_COMP_3(CHECK, GE, a, b)
+#define BOOST_REQUIRE_LE_3(a, b) BOOST_LEVEL_COMP_3(REQUIRE, LE, a, b)
+#define BOOST_REQUIRE_GE_3(a, b) BOOST_LEVEL_COMP_3(REQUIRE, GE, a, b)
+
 BOOST_AUTO_TEST_SUITE(SkyTest)
 
 BOOST_AUTO_TEST_CASE(TestComputeLayerHeights) {
@@ -47,14 +56,10 @@ BOOST_AUTO_TEST_CASE(TestBuildOpticalLengthTable) {
 			uvec2 index = uvec2(layer, a);
 			dvec3 opticalLength = opticalLengthTable.get(index);
 			// Optical length is never negative
-			BOOST_REQUIRE_LE(0, opticalLength.r);
-			BOOST_REQUIRE_LE(0, opticalLength.g);
-			BOOST_REQUIRE_LE(0, opticalLength.b);
+			BOOST_REQUIRE_LE_3(0.0, opticalLength);
 			// Larger angles mean longer travel distance, hence larger optical length
 			if (a > 0) {
-				BOOST_REQUIRE_GE(opticalLength.r, opticalLengthTable.get(uvec2(layer, a - 1)).r);
-				BOOST_REQUIRE_GE(opticalLength.g, opticalLengthTable.get(uvec2(layer, a - 1)).g);
-				BOOST_REQUIRE_GE(opticalLength.b, opticalLengthTable.get(uvec2(layer, a - 1)).b);
+				BOOST_REQUIRE_GE_3(opticalLength, opticalLengthTable.get(uvec2(layer, a - 1)));
 			}
 		}
 	}
@@ -72,20 +77,14 @@ BOOST_AUTO_TEST_CASE(TestBuildOpticalDepthTable) {
 			uvec2 index = uvec2(layer, a);
 			dvec3 opticalDepth = opticalDepthTable.get(index);
 			// Optical length is never negative
-			BOOST_REQUIRE_LE(0, opticalDepth.r);
-			BOOST_REQUIRE_LE(0, opticalDepth.g);
-			BOOST_REQUIRE_LE(0, opticalDepth.b);
+			BOOST_REQUIRE_LE_3(0, opticalDepth);
 			// Larger angles mean longer travel distance, hence larger optical length
 			if (a > 0) {
-				BOOST_REQUIRE_GE(opticalDepth.r, opticalDepthTable.get(uvec2(layer, a - 1)).r);
-				BOOST_REQUIRE_GE(opticalDepth.g, opticalDepthTable.get(uvec2(layer, a - 1)).g);
-				BOOST_REQUIRE_GE(opticalDepth.b, opticalDepthTable.get(uvec2(layer, a - 1)).b);
+				BOOST_REQUIRE_GE_3(opticalDepth, opticalDepthTable.get(uvec2(layer, a - 1)));
 			}
 			// Higher layers mean shorter travel distance, hence smaller optical length
 			if (layer > 0) {
-				BOOST_REQUIRE_LE(opticalDepth.r, opticalDepthTable.get(uvec2(layer - 1, a)).r);
-				BOOST_REQUIRE_LE(opticalDepth.g, opticalDepthTable.get(uvec2(layer - 1, a)).g);
-				BOOST_REQUIRE_LE(opticalDepth.b, opticalDepthTable.get(uvec2(layer - 1, a)).b);
+				BOOST_REQUIRE_LE_3(opticalDepth, opticalDepthTable.get(uvec2(layer - 1, a)));
 			}
 		}
 	}
@@ -104,23 +103,15 @@ BOOST_AUTO_TEST_CASE(TestBuildSunAttenuationTable) {
 			uvec2 index = uvec2(layer, a);
 			dvec3 sunAttenuation = sunAttenuationTable.get(index);
 			// Attenuation factor should be 0 <= f <= 1
-			BOOST_REQUIRE_LE(0, sunAttenuation.r);
-			BOOST_REQUIRE_LE(0, sunAttenuation.g);
-			BOOST_REQUIRE_LE(0, sunAttenuation.b);
-			BOOST_REQUIRE_GE(1, sunAttenuation.r);
-			BOOST_REQUIRE_GE(1, sunAttenuation.g);
-			BOOST_REQUIRE_GE(1, sunAttenuation.b);
+			BOOST_REQUIRE_LE_3(0.0, sunAttenuation);
+			BOOST_REQUIRE_GE_3(1.0, sunAttenuation);
 			// Larger angles mean longer travel distance, hence smaller attenuation factor
 			if (a > 0) {
-				BOOST_REQUIRE_LE(sunAttenuation.r, sunAttenuationTable.get(uvec2(layer, a - 1)).r);
-				BOOST_REQUIRE_LE(sunAttenuation.g, sunAttenuationTable.get(uvec2(layer, a - 1)).g);
-				BOOST_REQUIRE_LE(sunAttenuation.b, sunAttenuationTable.get(uvec2(layer, a - 1)).b);
+				BOOST_REQUIRE_LE_3(sunAttenuation, sunAttenuationTable.get(uvec2(layer, a - 1)));
 			}
 			// Higher layers mean shorter travel distance, hence larger attenuation factor
 			if (layer > 0) {
-				BOOST_REQUIRE_GE(sunAttenuation.r, sunAttenuationTable.get(uvec2(layer - 1, a)).x);
-				BOOST_REQUIRE_GE(sunAttenuation.g, sunAttenuationTable.get(uvec2(layer - 1, a)).y);
-				BOOST_REQUIRE_GE(sunAttenuation.b, sunAttenuationTable.get(uvec2(layer - 1, a)).b);
+				BOOST_REQUIRE_GE_3(sunAttenuation, sunAttenuationTable.get(uvec2(layer - 1, a)));
 			}
 		}
 	}
@@ -132,29 +123,15 @@ BOOST_AUTO_TEST_CASE(TestScatterer) {
 	dvec3 intoSunFactor = scatterer.scatteredLightFactor(dvec3(0.0, 0.0, 1.0), dvec3(0.0, 0.0, 1.0));
 	dvec3 nextToSunFactor = scatterer.scatteredLightFactor(normalize(dvec3(1.0, 0.0, 1.0)), dvec3(0.0, 0.0, 1.0));
 	dvec3 closeToHorizonFactor = scatterer.scatteredLightFactor(normalize(dvec3(100.0, 0.0, 1.0)), dvec3(0.0, 0.0, 1.0));
-	BOOST_CHECK_LE(0.0, intoSunFactor.r);
-	BOOST_CHECK_LE(0.0, intoSunFactor.g);
-	BOOST_CHECK_LE(0.0, intoSunFactor.b);
-	BOOST_CHECK_GE(1.0, intoSunFactor.r);
-	BOOST_CHECK_GE(1.0, intoSunFactor.g);
-	BOOST_CHECK_GE(1.0, intoSunFactor.b);
-	BOOST_CHECK_LE(0.0, nextToSunFactor.r);
-	BOOST_CHECK_LE(0.0, nextToSunFactor.g);
-	BOOST_CHECK_LE(0.0, nextToSunFactor.b);
-	BOOST_CHECK_GE(1.0, nextToSunFactor.r);
-	BOOST_CHECK_GE(1.0, nextToSunFactor.g);
-	BOOST_CHECK_GE(1.0, nextToSunFactor.b);
-	BOOST_CHECK_GE(intoSunFactor.r, nextToSunFactor.r);
-	BOOST_CHECK_GE(intoSunFactor.g, nextToSunFactor.g);
-	BOOST_CHECK_GE(intoSunFactor.b, nextToSunFactor.b);
+	BOOST_CHECK_LE_3(0.0, intoSunFactor);
+	BOOST_CHECK_GE_3(1.0, intoSunFactor);
+	BOOST_CHECK_LE_3(0.0, nextToSunFactor);
+	BOOST_CHECK_GE_3(1.0, nextToSunFactor);
+	BOOST_CHECK_GE_3(intoSunFactor, nextToSunFactor);
 	BOOST_CHECK_LE(nextToSunFactor.r, nextToSunFactor.g);
 	BOOST_CHECK_LE(nextToSunFactor.g, nextToSunFactor.b);
-	BOOST_CHECK_LE(0.0, closeToHorizonFactor.r);
-	BOOST_CHECK_LE(0.0, closeToHorizonFactor.g);
-	BOOST_CHECK_LE(0.0, closeToHorizonFactor.b);
-	BOOST_CHECK_GE(1.0, closeToHorizonFactor.r);
-	BOOST_CHECK_GE(1.0, closeToHorizonFactor.g);
-	BOOST_CHECK_GE(1.0, closeToHorizonFactor.b);
+	BOOST_CHECK_LE_3(0.0, closeToHorizonFactor);
+	BOOST_CHECK_GE_3(1.0, closeToHorizonFactor);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
