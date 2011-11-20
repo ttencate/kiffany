@@ -16,43 +16,43 @@
 namespace {
 	struct Fixture {
 		Atmosphere atmosphere;
+		AtmosphereLayers layers;
+		Fixture()
+		:
+			layers(atmosphere)
+		{
+		}
 	};
 }
 
 BOOST_FIXTURE_TEST_SUITE(SkyTest, Fixture)
 
-BOOST_AUTO_TEST_CASE(TestComputeLayerHeights) {
-	unsigned const numLayers = 10;
-	double const rayleighHeight = 50.0;
-	double const atmosphereHeight = 1.0e3;
-	LayerHeights layerHeights = computeLayerHeights(numLayers, rayleighHeight, atmosphereHeight);
-	BOOST_CHECK_EQUAL(numLayers, layerHeights.size());
-	double const EPS = 1e-4;
-	BOOST_CHECK_EQUAL(0.0, layerHeights[0]);
-	for (unsigned i = 0; i < layerHeights.size() - 1; ++i) {
-		BOOST_CHECK_LE(0.0, layerHeights[i]);
-		BOOST_CHECK_LT(layerHeights[i], layerHeights[i + 1]);
-		double cumulativeDensity = rayleighHeight * (1.0 - exp(-layerHeights[i] / rayleighHeight));
-		BOOST_CHECK_CLOSE((double)i / layerHeights.size() * rayleighHeight, cumulativeDensity, EPS);
-	}
-	BOOST_CHECK_EQUAL(atmosphereHeight, layerHeights[numLayers - 1]);
-}
-
 BOOST_AUTO_TEST_CASE(TestRayLength) {
-	LayerHeights const &layerHeights = atmosphere.getLayerHeights();
 	double EPS = 1e-6;
 	BOOST_CHECK_CLOSE(350.0, atmosphere.rayLengthToHeight(0.0, 350.0), EPS);
 	BOOST_CHECK_LT(350.0, atmosphere.rayLengthToHeight(0.1, 350.0));
-	BOOST_CHECK_CLOSE(layerHeights[5], atmosphere.rayLengthToHeight(0.0, atmosphere.getLayerHeight(5)), EPS);
-	BOOST_CHECK_LT(5, atmosphere.rayLengthToHeight(0.1, atmosphere.getLayerHeight(5)));
-	BOOST_CHECK_CLOSE(layerHeights[6] - layerHeights[2], atmosphere.rayLengthBetweenHeights(0.0, atmosphere.getLayerHeight(2), atmosphere.getLayerHeight(6)), EPS);
-	BOOST_CHECK_LT(layerHeights[6] - layerHeights[2], atmosphere.rayLengthBetweenHeights(0.1, atmosphere.getLayerHeight(2), atmosphere.getLayerHeight(6)));
+	BOOST_CHECK_CLOSE(layers.heights[5], atmosphere.rayLengthToHeight(0.0, layers.heights[5]), EPS);
+	BOOST_CHECK_LT(5, atmosphere.rayLengthToHeight(0.1, layers.heights[5]));
+	BOOST_CHECK_CLOSE(layers.heights[6] - layers.heights[2], atmosphere.rayLengthBetweenHeights(0.0, layers.heights[2], layers.heights[6]), EPS);
+	BOOST_CHECK_LT(layers.heights[6] - layers.heights[2], atmosphere.rayLengthBetweenHeights(0.1, layers.heights[2], layers.heights[6]));
+}
+
+BOOST_AUTO_TEST_CASE(TestLayers) {
+	double const EPS = 1e-4;
+	BOOST_CHECK_EQUAL(0.0, layers.heights[0]);
+	for (unsigned i = 0; i < layers.numLayers - 1; ++i) {
+		BOOST_CHECK_LE(0.0, layers.heights[i]);
+		BOOST_CHECK_LT(layers.heights[i], layers.heights[i + 1]);
+		double cumulativeDensity = atmosphere.rayleighHeight * (1.0 - exp(-layers.heights[i] / atmosphere.rayleighHeight));
+		BOOST_CHECK_CLOSE((double)i / layers.numLayers * atmosphere.rayleighHeight, cumulativeDensity, EPS);
+	}
+	BOOST_CHECK_EQUAL(atmosphere.atmosphereHeight, layers.heights[layers.numLayers - 1]);
 }
 
 BOOST_AUTO_TEST_CASE(TestBuildOpticalLengthTable) {
-	Dvec3Table2D opticalLengthTable = buildOpticalLengthTable(atmosphere);
-	unsigned numLayers = atmosphere.getNumLayers();
-	unsigned numAngles = atmosphere.getNumAngles();
+	Dvec3Table2D opticalLengthTable = buildOpticalLengthTable(atmosphere, layers);
+	unsigned numLayers = layers.numLayers;
+	unsigned numAngles = layers.numAngles;
 	BOOST_REQUIRE_EQUAL(numLayers, opticalLengthTable.getSize().x);
 	BOOST_REQUIRE_EQUAL(numAngles, opticalLengthTable.getSize().y);
 	for (unsigned a = 0; a < numAngles; ++a) {
@@ -70,9 +70,9 @@ BOOST_AUTO_TEST_CASE(TestBuildOpticalLengthTable) {
 }
 
 BOOST_AUTO_TEST_CASE(TestBuildOpticalDepthTable) {
-	Dvec3Table2D opticalDepthTable = buildOpticalDepthTable(atmosphere);
-	unsigned numLayers = atmosphere.getNumLayers();
-	unsigned numAngles = atmosphere.getNumAngles();
+	Dvec3Table2D opticalDepthTable = buildOpticalDepthTable(atmosphere, layers);
+	unsigned numLayers = layers.numLayers;
+	unsigned numAngles = layers.numAngles;
 	BOOST_REQUIRE_EQUAL(numLayers, opticalDepthTable.getSize().x);
 	BOOST_REQUIRE_EQUAL(numAngles, opticalDepthTable.getSize().y);
 	for (unsigned a = 0; a < numAngles; ++a) {
@@ -94,10 +94,10 @@ BOOST_AUTO_TEST_CASE(TestBuildOpticalDepthTable) {
 }
 
 BOOST_AUTO_TEST_CASE(TestBuildSunAttenuationTable) {
-	Dvec3Table2D opticalDepthTable = buildOpticalDepthTable(atmosphere);
-	Dvec3Table2D sunAttenuationTable = buildSunAttenuationTable(atmosphere, opticalDepthTable);
-	unsigned numLayers = atmosphere.getNumLayers();
-	unsigned numAngles = atmosphere.getNumAngles();
+	Dvec3Table2D opticalDepthTable = buildOpticalDepthTable(atmosphere, layers);
+	Dvec3Table2D sunAttenuationTable = buildSunAttenuationTable(atmosphere, layers, opticalDepthTable);
+	unsigned numLayers = layers.numLayers;
+	unsigned numAngles = layers.numAngles;
 	BOOST_REQUIRE_EQUAL(numLayers, sunAttenuationTable.getSize().x);
 	BOOST_REQUIRE_EQUAL(numAngles, sunAttenuationTable.getSize().y);
 	for (unsigned a = 0; a < numAngles; ++a) {
@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE(TestBuildSunAttenuationTable) {
 }
 
 BOOST_AUTO_TEST_CASE(TestScatterer) {
-	Scatterer scatterer(atmosphere);
+	Scatterer scatterer(atmosphere, layers);
 	dvec3 intoSunFactor = scatterer.scatteredLightFactor(dvec3(0.0, 0.0, 1.0), dvec3(0.0, 0.0, 1.0));
 	dvec3 nextToSunFactor = scatterer.scatteredLightFactor(normalize(dvec3(1.0, 0.0, 1.0)), dvec3(0.0, 0.0, 1.0));
 	dvec3 closeToHorizonFactor = scatterer.scatteredLightFactor(normalize(dvec3(100.0, 0.0, 1.0)), dvec3(0.0, 0.0, 1.0));

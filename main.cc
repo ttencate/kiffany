@@ -262,12 +262,13 @@ int main(int argc, char **argv) {
 	camera.setPosition(vec3(flags.startX, flags.startY, flags.startZ));
 	::camera = &camera;
 
+	Atmosphere atmosphere;
 	World world(
 			&camera,
 			new PerlinTerrainGenerator(32, flags.seed),
 			new Lighting(flags.startTime / 24.0f, flags.dayLength,
 				Sun((flags.dayOfYear - 1.0f) / 365.0f, radians(flags.latitude), radians(flags.axialTilt))),
-			new Sky(Atmosphere()));
+			new Sky(Scatterer(atmosphere, AtmosphereLayers(atmosphere))));
 	::world = &world;
 
 	run();

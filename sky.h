@@ -7,38 +7,24 @@
 
 #include <vector>
 
-typedef std::vector<double> LayerHeights;
-
-LayerHeights computeLayerHeights(unsigned numLayers, double rayleighHeight, double atmosphereHeight);
-
 class Atmosphere {
 
-	dvec3 rayleighScatteringCoefficient;
-	dvec3 mieScatteringCoefficient;
+	static dvec3 const lambda;
 
-	double earthRadius;
-	double rayleighHeight;
-	double mieHeight;
-	double atmosphereHeight;
-	unsigned numAngles;
-	LayerHeights layerHeights;
-
-	void updateLayerHeights(unsigned numLayers);
+	dvec3 computeRayleighScatteringCoefficient() const;
+	dvec3 computeMieScatteringCoefficient() const;
 
 	public:
 
+		double const earthRadius;
+		double const rayleighHeight;
+		double const mieHeight;
+		double const atmosphereHeight;
+
+		dvec3 const rayleighScatteringCoefficient;
+		dvec3 const mieScatteringCoefficient;
+
 		Atmosphere();
-
-		dvec3 getRayleighScatteringCoefficient() const { return rayleighScatteringCoefficient; }
-		dvec3 getMieScatteringCoefficient() const { return mieScatteringCoefficient; }
-		double getEarthRadius() const { return earthRadius; }
-		double getRayleighHeight() const { return rayleighHeight; }
-		double getMieHeight() const { return mieHeight; }
-
-		unsigned getNumAngles() const { return numAngles; }
-		unsigned getNumLayers() const { return layerHeights.size(); }
-		LayerHeights const &getLayerHeights() const { return layerHeights; }
-		double getLayerHeight(unsigned layer) const { return layerHeights[layer]; }
 
 		double rayleighDensityAtHeight(double height) const;
 		double mieDensityAtHeight(double height) const;
@@ -57,22 +43,42 @@ class Atmosphere {
 
 };
 
+class AtmosphereLayers {
+
+	public:
+
+		typedef std::vector<double> Heights;
+	
+	private:
+
+		Heights computeHeights(double rayleighHeight, double atmosphereHeight);
+
+	public:
+
+		unsigned const numLayers;
+		unsigned const numAngles;
+		Heights const heights;
+
+		AtmosphereLayers(Atmosphere const &atmosphere);
+};
+
 typedef Table<dvec3, uvec2, dvec2> Dvec3Table2D;
 
-Dvec3Table2D buildOpticalLengthTable(Atmosphere const &atmosphere);
-Dvec3Table2D buildOpticalDepthTable(Atmosphere const &atmosphere);
-Dvec3Table2D buildSunAttenuationTable(Atmosphere const &atmosphere, Dvec3Table2D const &opticalLengthTable);
+Dvec3Table2D buildOpticalLengthTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers);
+Dvec3Table2D buildOpticalDepthTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers);
+Dvec3Table2D buildSunAttenuationTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers, Dvec3Table2D const &opticalLengthTable);
 
 class Scatterer {
 
 	Atmosphere atmosphere;
+	AtmosphereLayers layers;
 
 	Dvec3Table2D opticalLengthTable;
 	Dvec3Table2D sunAttenuationTable;
 
 	public:
 
-		Scatterer(Atmosphere const &atmosphere);
+		Scatterer(Atmosphere const &atmosphere, AtmosphereLayers const &layers);
 
 		dvec3 scatteredLightFactor(dvec3 direction, dvec3 sunDirection) const;
 
@@ -94,7 +100,7 @@ class Sky {
 
 	public:
 
-		Sky(Atmosphere const &atmosphere);
+		Sky(Scatterer const &scatterer);
 
 		void update(float dt);
 		void render();

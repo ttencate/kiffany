@@ -13,18 +13,21 @@
  * http://developer.amd.com/media/gpu_assets/PreethamSig2003CourseNotes.pdf
  */
 
-LayerHeights computeLayerHeights(unsigned numLayers, double rayleighHeight, double atmosphereHeight) {
-	LayerHeights layerHeights(numLayers);
-	for (unsigned i = 0; i < numLayers - 1; ++i) {
-		double const cumulativeDensity = 1.0f - (double)i / numLayers;
-		layerHeights[i] = -rayleighHeight * log(cumulativeDensity);
-	}
-	layerHeights[numLayers - 1] = std::max(layerHeights[numLayers - 1] * 1.01f, atmosphereHeight);
-	return layerHeights;
+dvec3 const Atmosphere::lambda = dvec3(680e-9, 550e-9, 440e-9); // wavelengths of RGB (metres)
+
+dvec3 Atmosphere::computeRayleighScatteringCoefficient() const {
+	double const n = 1.000293; // index of refraction of air
+	double const Ns = 2.5e25; // number density in standard atmosphere (molecules/m^3)
+	double const K = 2.0 * M_PI * M_PI * sqr(sqr(n) - 1.0) / (3.0 * Ns);
+	return 4.0 * M_PI * K / pow(lambda, dvec3(4.0));
 }
 
-void Atmosphere::updateLayerHeights(unsigned numLayers) {
-	layerHeights = computeLayerHeights(numLayers, rayleighHeight, atmosphereHeight);
+dvec3 Atmosphere::computeMieScatteringCoefficient() const {
+	// TODO why is this off by 4 orders of magnitude?
+	double const c = 10e-20; // 6e-17 for clear, 25e-17 for overcast
+	double const nu = 4.0;
+	dvec3 K(0.68, 0.673, 0.663); // Preetham, Table 2
+	return 0.434 * c * M_PI * pow(2 * M_PI / lambda, dvec3(nu - 2.0)) * K;
 }
 
 Atmosphere::Atmosphere()
@@ -33,25 +36,9 @@ Atmosphere::Atmosphere()
 	rayleighHeight(7994),
 	mieHeight(1200),
 	atmosphereHeight(100e3),
-	numAngles(32)
+	rayleighScatteringCoefficient(computeRayleighScatteringCoefficient()),
+	mieScatteringCoefficient(computeMieScatteringCoefficient())
 {
-	dvec3 const lambda = dvec3(680e-9, 550e-9, 440e-9); // wavelengths of RGB (metres)
-	{
-		double const n = 1.000293; // index of refraction of air
-		double const Ns = 2.5e25; // number density in standard atmosphere (molecules/m^3)
-		double const K = 2.0 * M_PI * M_PI * sqr(sqr(n) - 1.0) / (3.0 * Ns);
-		rayleighScatteringCoefficient = 4.0 * M_PI * K / pow(lambda, dvec3(4.0));
-	}
-
-	{
-		// TODO why is this off by 4 orders of magnitude?
-		double const c = 10e-20; // 6e-17 for clear, 25e-17 for overcast
-		double const nu = 4.0;
-		dvec3 K(0.68, 0.673, 0.663); // Preetham, Table 2
-		mieScatteringCoefficient = 0.434 * c * M_PI * pow(2 * M_PI / lambda, dvec3(nu - 2.0)) * K;
-	}
-
-	updateLayerHeights(16);
 }
 
 double Atmosphere::rayleighDensityAtHeight(double height) const {
@@ -112,11 +99,29 @@ dvec3 Atmosphere::attenuationFromOpticalLength(dvec3 opticalLength) const {
 	return exp(-opticalLength);
 }
 
-Dvec3Table2D buildOpticalLengthTable(Atmosphere const &atmosphere) {
-	unsigned const numAngles = atmosphere.getNumAngles();
-	unsigned const numLayers = atmosphere.getNumLayers();
-	dvec3 const rayleighScatteringCoefficient = atmosphere.getRayleighScatteringCoefficient();
-	dvec3 const mieScatteringCoefficient = atmosphere.getMieScatteringCoefficient();
+AtmosphereLayers::Heights AtmosphereLayers::computeHeights(double rayleighHeight, double atmosphereHeight) {
+	Heights heights(numLayers);
+	for (unsigned i = 0; i < numLayers - 1; ++i) {
+		double const cumulativeDensity = 1.0f - (double)i / numLayers;
+		heights[i] = -rayleighHeight * log(cumulativeDensity);
+	}
+	heights[numLayers - 1] = std::max(heights[numLayers - 1] * 1.01f, atmosphereHeight);
+	return heights;
+}
+
+AtmosphereLayers::AtmosphereLayers(Atmosphere const &atmosphere)
+:
+	numLayers(16),
+	numAngles(32),
+	heights(computeHeights(atmosphere.rayleighHeight, atmosphere.atmosphereHeight))
+{
+}
+
+Dvec3Table2D buildOpticalLengthTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers) {
+	unsigned const numAngles = layers.numAngles;
+	unsigned const numLayers = layers.numLayers;
+	dvec3 const rayleighScatteringCoefficient = atmosphere.rayleighScatteringCoefficient;
+	dvec3 const mieScatteringCoefficient = atmosphere.mieScatteringCoefficient;
 
 	Dvec3Table2D opticalLengthTable = Dvec3Table2D::createWithCoordsSizeAndOffset(
 			uvec2(numLayers, numAngles),
@@ -132,8 +137,8 @@ Dvec3Table2D buildOpticalLengthTable(Atmosphere const &atmosphere) {
 		} else {
 			// Compute optical length between this layer and next
 			for (unsigned layer = 0; layer < numLayers - 1; ++layer) {
-				double const lowerHeight = atmosphere.getLayerHeight(layer);
-				double const upperHeight = atmosphere.getLayerHeight(layer + 1);
+				double const lowerHeight = layers.heights[layer];
+				double const upperHeight = layers.heights[layer + 1];
 				double const length =
 					atmosphere.rayLengthToHeight(angle, upperHeight) -
 					atmosphere.rayLengthToHeight(angle, lowerHeight);
@@ -155,11 +160,11 @@ Dvec3Table2D buildOpticalLengthTable(Atmosphere const &atmosphere) {
 	return opticalLengthTable;
 }
 
-Dvec3Table2D buildOpticalDepthTable(Atmosphere const &atmosphere) {
-	unsigned const numAngles = atmosphere.getNumAngles();
-	unsigned const numLayers = atmosphere.getNumLayers();
-	dvec3 const rayleighScatteringCoefficient = atmosphere.getRayleighScatteringCoefficient();
-	dvec3 const mieScatteringCoefficient = atmosphere.getRayleighScatteringCoefficient();
+Dvec3Table2D buildOpticalDepthTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers) {
+	unsigned const numAngles = layers.numAngles;
+	unsigned const numLayers = layers.numLayers;
+	dvec3 const rayleighScatteringCoefficient = atmosphere.rayleighScatteringCoefficient;
+	dvec3 const mieScatteringCoefficient = atmosphere.mieScatteringCoefficient;
 
 	Dvec3Table2D opticalDepthTable = Dvec3Table2D::createWithCoordsSizeAndOffset(
 			uvec2(numLayers, numAngles),
@@ -176,8 +181,8 @@ Dvec3Table2D buildOpticalDepthTable(Atmosphere const &atmosphere) {
 			// Cumulatively sum over all layers
 			opticalDepthTable.set(uvec2(numLayers - 1, a), dvec3(0.0));
 			for (int layer = numLayers - 2; layer >= 0; --layer) {
-				double const lowerHeight = atmosphere.getLayerHeight(layer);
-				double const upperHeight = atmosphere.getLayerHeight(layer + 1);
+				double const lowerHeight = layers.heights[layer];
+				double const upperHeight = layers.heights[layer + 1];
 				double const length =
 					atmosphere.rayLengthToHeight(angle, upperHeight) -
 					atmosphere.rayLengthToHeight(angle, lowerHeight);
@@ -199,9 +204,9 @@ Dvec3Table2D buildOpticalDepthTable(Atmosphere const &atmosphere) {
 	return opticalDepthTable;
 }
 
-Dvec3Table2D buildSunAttenuationTable(Atmosphere const &atmosphere, Dvec3Table2D const &opticalLengthTable) {
-	unsigned const numLayers = atmosphere.getNumLayers();
-	unsigned const numAngles = atmosphere.getNumAngles();
+Dvec3Table2D buildSunAttenuationTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers, Dvec3Table2D const &opticalLengthTable) {
+	unsigned const numLayers = layers.numLayers;
+	unsigned const numAngles = layers.numAngles;
 
 	// Convert to attenuation factor
 	Dvec3Table2D sunAttenuationTable = Dvec3Table2D::createWithCoordsSizeAndOffset(
@@ -220,11 +225,12 @@ Dvec3Table2D buildSunAttenuationTable(Atmosphere const &atmosphere, Dvec3Table2D
 	return sunAttenuationTable;
 }
 
-Scatterer::Scatterer(Atmosphere const &atmosphere)
+Scatterer::Scatterer(Atmosphere const &atmosphere, AtmosphereLayers const &layers)
 :
 	atmosphere(atmosphere),
-	opticalLengthTable(buildOpticalLengthTable(atmosphere)),
-	sunAttenuationTable(buildSunAttenuationTable(atmosphere, buildOpticalDepthTable(atmosphere)))
+	layers(layers),
+	opticalLengthTable(buildOpticalLengthTable(atmosphere, layers)),
+	sunAttenuationTable(buildSunAttenuationTable(atmosphere, layers, buildOpticalDepthTable(atmosphere, layers)))
 {
 }
 
@@ -232,8 +238,8 @@ dvec3 Scatterer::scatteredLightFactor(dvec3 direction, dvec3 sunDirection) const
 	dvec3 scatteredLightFactor(0.0);
 	double const lightAngle = acos(dot(direction, sunDirection));
 	double const groundAngle = acos(direction.z);
-	for (int layer = atmosphere.getNumLayers() - 1; layer >= 0; --layer) {
-		double const height = atmosphere.getLayerHeight(layer);
+	for (int layer = layers.numLayers - 1; layer >= 0; --layer) {
+		double const height = layers.heights[layer];
 		scatteredLightFactor +=
 			sunAttenuationTable(dvec2(layer, groundAngle)) * (
 					atmosphere.rayleighScatteringAtHeight(lightAngle, height) +
@@ -245,9 +251,9 @@ dvec3 Scatterer::scatteredLightFactor(dvec3 direction, dvec3 sunDirection) const
 	return scatteredLightFactor;
 }
 
-Sky::Sky(Atmosphere const &atmosphere)
+Sky::Sky(Scatterer const &scatterer)
 :
-	scatterer(atmosphere),
+	scatterer(scatterer),
 	size(128),
 	textureImage(new unsigned char[size * size * 3])
 {
