@@ -128,7 +128,7 @@ void GLFWCALL windowSizeCallback(int width, int height) {
 void setup() {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
-	//glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 }
 
 void update(float dt) {

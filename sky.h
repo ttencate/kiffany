@@ -13,8 +13,8 @@ LayerHeights computeLayerHeights(unsigned numLayers, double rayleighHeight, doub
 
 class Atmosphere {
 
-	dvec3 rayleighAttenuationFactor;
-	dvec3 rayleighScatteringFactor;
+	dvec3 rayleighScatteringCoefficient;
+	dvec3 mieScatteringCoefficient;
 
 	double earthRadius;
 	double rayleighHeight;
@@ -29,7 +29,8 @@ class Atmosphere {
 
 		Atmosphere();
 
-		dvec3 getRayleighAttenuationFactor() const { return rayleighAttenuationFactor; }
+		dvec3 getRayleighScatteringCoefficient() const { return rayleighScatteringCoefficient; }
+		dvec3 getMieScatteringCoefficient() const { return mieScatteringCoefficient; }
 		double getEarthRadius() const { return earthRadius; }
 		double getRayleighHeight() const { return rayleighHeight; }
 		double getMieHeight() const { return mieHeight; }
@@ -41,6 +42,9 @@ class Atmosphere {
 		double rayleighDensityAtHeight(double height) const;
 		double rayleighDensityAtLayer(unsigned layer) const;
 
+		double mieDensityAtHeight(double height) const;
+		double mieDensityAtLayer(unsigned layer) const;
+
 		double rayAngleAtHeight(double angle, double height) const;
 		double rayAngleAtLayer(double angle, unsigned layer) const;
 
@@ -51,9 +55,13 @@ class Atmosphere {
 		double rayLengthToLayer(double angle, unsigned layer) const;
 
 		double rayleighPhaseFunction(double angle) const;
+		double miePhaseFunction(double angle) const;
 
 		dvec3 rayleighScatteringAtHeight(double angle, double height) const;
 		dvec3 rayleighScatteringAtLayer(double angle, unsigned layer) const;
+
+		dvec3 mieScatteringAtHeight(double angle, double height) const;
+		dvec3 mieScatteringAtLayer(double angle, unsigned layer) const;
 
 		dvec3 attenuationFromOpticalLength(dvec3 opticalLength) const;
 

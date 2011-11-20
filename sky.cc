@@ -3,6 +3,16 @@
 #include <algorithm>
 #include <limits>
 
+/* References:
+ * Preetham, Shirley, Smits, "A practical model for daylight",
+ *     http://www.cs.utah.edu/~shirley/papers/sunsky/sunsky.pdf
+ * Nishita, Sirai, Tadamura, Nakamae, "Display of the Earth taking into account atmospheric scattering",
+ *     http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.145.5229&rep=rep1&type=pdf
+ * http://developer.amd.com/media/gpu_assets/ATI-LightScattering.pdf
+ * http://hal.archives-ouvertes.fr/docs/00/28/87/58/PDF/article.pdf !!!
+ * http://developer.amd.com/media/gpu_assets/PreethamSig2003CourseNotes.pdf
+ */
+
 LayerHeights computeLayerHeights(unsigned numLayers, double rayleighHeight, double atmosphereHeight) {
 	LayerHeights layerHeights(numLayers);
 	for (unsigned i = 0; i < numLayers - 1; ++i) {
@@ -25,22 +35,23 @@ Atmosphere::Atmosphere()
 	atmosphereHeight(100e3),
 	numAngles(32)
 {
-	dvec3 const lambda = dvec3(642e-9, 508e-9, 436e-9); // wavelengths of RGB (metres)
-	double const n = 1.000293; // index of refraction of air
-	double const Ns = 2.5e25; // number density in standard atmosphere (molecules/m^3)
-	double const K = 2.0f * M_PI * M_PI * (n * n - 1.0f) * (n * n - 1.0f) / (3.0f * Ns);
-	rayleighScatteringFactor = K / pow(lambda, dvec3(4.0)); // scattering per unit of optical length
-	rayleighAttenuationFactor = 4.0 * M_PI * rayleighScatteringFactor; // extinction ratio per unit of optical length
+	dvec3 const lambda = dvec3(680e-9, 550e-9, 440e-9); // wavelengths of RGB (metres)
+	{
+		double const n = 1.000293; // index of refraction of air
+		double const Ns = 2.5e25; // number density in standard atmosphere (molecules/m^3)
+		double const K = 2.0 * M_PI * M_PI * sqr(sqr(n) - 1.0) / (3.0 * Ns);
+		rayleighScatteringCoefficient = 4.0 * M_PI * K / pow(lambda, dvec3(4.0));
+	}
 
-	updateLayerHeights(8);
+	{
+		// TODO why is this off by 4 orders of magnitude?
+		double const c = 10e-20; // 6e-17 for clear, 25e-17 for overcast
+		double const nu = 4.0;
+		dvec3 K(0.68, 0.673, 0.663); // Preetham, Table 2
+		mieScatteringCoefficient = 0.434 * c * M_PI * pow(2 * M_PI / lambda, dvec3(nu - 2.0)) * K;
+	}
 
-	// Mie parameters
-	/*
-	double const u = 0.75; // Mie scattering parameter (0.7-0.85)
-	double const x = 5.0/9.0 * u + 125.0/729.0 * u*u*u + sqrt(64.0/27.0 - 325.0/243.0 * u*u + 1250.0/2187.0 * u*u*u*u);
-	double const g = 5.0/9.0 * u - (4.0/3.0 - 25.0/81.0 * u*u) * pow(x, -1.0/3.0) + pow(x, 1.0/3.0);
-	double const FM = 3.0 * (1.0 - g*g) * (1.0 + cosPhi*cosPhi) /(2.0 * (2.0 + g*g) * pow(1.0 + g*g - 2.0 * g * cosPhi, 3.0/2.0));
-	*/
+	updateLayerHeights(16);
 }
 
 double Atmosphere::rayleighDensityAtHeight(double height) const {
@@ -51,6 +62,14 @@ double Atmosphere::rayleighDensityAtLayer(unsigned layer) const {
 	return rayleighDensityAtHeight(layerHeights[layer]);
 }
 
+double Atmosphere::mieDensityAtHeight(double height) const {
+	return exp(-height / mieHeight);
+}
+
+double Atmosphere::mieDensityAtLayer(unsigned layer) const {
+	return mieDensityAtHeight(layerHeights[layer]);
+}
+
 double Atmosphere::rayAngleAtHeight(double angle, double height) const {
 	return asin(earthRadius * sin(angle) / (earthRadius + height));
 }
@@ -59,6 +78,7 @@ double Atmosphere::rayAngleAtLayer(double angle, unsigned layer) const {
 	return rayAngleAtHeight(angle, layerHeights[layer]);
 }
 
+// TODO handle downward angles correctly
 double Atmosphere::rayLengthBetweenHeights(double angle, double lowerHeight, double upperHeight) const {
 	double cosAngle = cos(angle);
 	return /*+-*/sqrt(
@@ -80,25 +100,51 @@ double Atmosphere::rayLengthToLayer(double angle, unsigned layer) const {
 }
 
 double Atmosphere::rayleighPhaseFunction(double angle) const {
-	return 0.75 * (1.0 + sqr(cos(angle)));
+	return 3.0 / (16.0 * M_PI) * (1.0 + sqr(cos(angle)));
+}
+
+double Atmosphere::miePhaseFunction(double angle) const {
+	/*
+	double const u = 0.75; // Mie scattering parameter (0.7-0.85)
+	double const x = 5.0/9.0 * u + 125.0/729.0 * u*u*u + sqrt(64.0/27.0 - 325.0/243.0 * u*u + 1250.0/2187.0 * u*u*u*u);
+	double const g = 5.0/9.0 * u - (4.0/3.0 - 25.0/81.0 * u*u) * pow(x, -1.0/3.0) + pow(x, 1.0/3.0);
+	double const c = cos(angle);
+	return 3.0 * (1.0 - sqr(g)) * (1.0 + sqr(c)) /
+		(2.0 * (2.0 + g*g) * pow(1.0 + g*g - 2.0 * g * c, 3.0/2.0));
+		*/
+	double const u = 0.85; // Mie scattering parameter (0.7-0.85)
+	double const x = 5.0/9.0 * u + 125.0/729.0 * u*u*u + sqrt(64.0/27.0 - 325.0/243.0 * u*u + 1250.0/2187.0 * u*u*u*u);
+	double const g = 5.0/9.0 * u - (4.0/3.0 - 25.0/81.0 * u*u) * pow(x, -1.0/3.0) + pow(x, 1.0/3.0);
+	// -1 <= g <= 1, backscattering through isotropic through forward
+	return (1 - sqr(g)) /
+		(4.0 * M_PI * pow(1 - 2.0 * g * cos(angle) + sqr(g), 3.0/2.0));
 }
 
 dvec3 Atmosphere::rayleighScatteringAtHeight(double angle, double height) const {
-	return rayleighScatteringFactor * rayleighDensityAtHeight(height) * rayleighPhaseFunction(angle);
+	return rayleighScatteringCoefficient * rayleighDensityAtHeight(height) * rayleighPhaseFunction(angle);
 }
 
 dvec3 Atmosphere::rayleighScatteringAtLayer(double angle, unsigned layer) const {
 	return rayleighScatteringAtHeight(angle, layerHeights[layer]);
 }
 
+dvec3 Atmosphere::mieScatteringAtHeight(double angle, double height) const {
+	return mieScatteringCoefficient * mieDensityAtHeight(height) * miePhaseFunction(angle);
+}
+
+dvec3 Atmosphere::mieScatteringAtLayer(double angle, unsigned layer) const {
+	return mieScatteringAtHeight(angle, layerHeights[layer]);
+}
+
 dvec3 Atmosphere::attenuationFromOpticalLength(dvec3 opticalLength) const {
-	return exp(-rayleighAttenuationFactor * opticalLength);
+	return exp(-opticalLength);
 }
 
 Dvec3Table2D buildOpticalLengthTable(Atmosphere const &atmosphere) {
 	unsigned const numAngles = atmosphere.getNumAngles();
 	unsigned const numLayers = atmosphere.getNumLayers();
-	dvec3 const rayleighAttenuationFactor = atmosphere.getRayleighAttenuationFactor();
+	dvec3 const rayleighScatteringCoefficient = atmosphere.getRayleighScatteringCoefficient();
+	dvec3 const mieScatteringCoefficient = atmosphere.getMieScatteringCoefficient();
 
 	Dvec3Table2D opticalLengthTable = Dvec3Table2D::createWithCoordsSizeAndOffset(
 			uvec2(numLayers, numAngles),
@@ -120,7 +166,12 @@ Dvec3Table2D buildOpticalLengthTable(Atmosphere const &atmosphere) {
 				double const airMass = length * 0.5 * (
 						atmosphere.rayleighDensityAtLayer(layer + 1) +
 						atmosphere.rayleighDensityAtLayer(layer));
-				dvec3 const segment = rayleighAttenuationFactor * airMass;
+				double const aerosolMass = length * 0.5 * (
+						atmosphere.mieDensityAtLayer(layer + 1) +
+						atmosphere.mieDensityAtLayer(layer));
+				dvec3 const segment =
+					rayleighScatteringCoefficient * airMass +
+					mieScatteringCoefficient * aerosolMass;
 				opticalLengthTable.set(uvec2(layer, a), segment);
 			}
 			opticalLengthTable.set(uvec2(numLayers - 1, a), dvec3(0.0));
@@ -133,7 +184,8 @@ Dvec3Table2D buildOpticalLengthTable(Atmosphere const &atmosphere) {
 Dvec3Table2D buildOpticalDepthTable(Atmosphere const &atmosphere) {
 	unsigned const numAngles = atmosphere.getNumAngles();
 	unsigned const numLayers = atmosphere.getNumLayers();
-	dvec3 const rayleighAttenuationFactor = atmosphere.getRayleighAttenuationFactor();
+	dvec3 const rayleighScatteringCoefficient = atmosphere.getRayleighScatteringCoefficient();
+	dvec3 const mieScatteringCoefficient = atmosphere.getRayleighScatteringCoefficient();
 
 	Dvec3Table2D opticalDepthTable = Dvec3Table2D::createWithCoordsSizeAndOffset(
 			uvec2(numLayers, numAngles),
@@ -156,7 +208,12 @@ Dvec3Table2D buildOpticalDepthTable(Atmosphere const &atmosphere) {
 				double const airMass = length * 0.5 * (
 						atmosphere.rayleighDensityAtLayer(layer + 1) +
 						atmosphere.rayleighDensityAtLayer(layer));
-				dvec3 const segment = rayleighAttenuationFactor * airMass;
+				double const aerosolMass = length * 0.5 * (
+						atmosphere.mieDensityAtLayer(layer + 1) +
+						atmosphere.mieDensityAtLayer(layer));
+				dvec3 const segment =
+					rayleighScatteringCoefficient * airMass +
+					mieScatteringCoefficient * aerosolMass;
 				dvec3 const opticalDepth = opticalDepthTable.get(uvec2(layer + 1, a)) + segment;
 				opticalDepthTable.set(uvec2(layer, a), opticalDepth);
 			}
@@ -201,7 +258,9 @@ dvec3 Scatterer::scatteredLightFactor(dvec3 direction, dvec3 sunDirection) const
 	double const groundAngle = acos(direction.z);
 	for (int layer = atmosphere.getNumLayers() - 1; layer >= 0; --layer) {
 		scatteredLightFactor +=
-			sunAttenuationTable(dvec2(layer, groundAngle)) * atmosphere.rayleighScatteringAtLayer(lightAngle, layer);
+			sunAttenuationTable(dvec2(layer, groundAngle)) * (
+					atmosphere.rayleighScatteringAtLayer(lightAngle, layer) +
+					atmosphere.mieScatteringAtLayer(lightAngle, layer));
 		double angle = atmosphere.rayAngleAtLayer(groundAngle, layer);
 		scatteredLightFactor *=
 			exp(-opticalLengthTable(dvec2(layer, angle)));
@@ -212,7 +271,7 @@ dvec3 Scatterer::scatteredLightFactor(dvec3 direction, dvec3 sunDirection) const
 Sky::Sky(Atmosphere const &atmosphere)
 :
 	scatterer(atmosphere),
-	size(16),
+	size(128),
 	textureImage(new unsigned char[size * size * 3])
 {
 
@@ -250,8 +309,8 @@ Sky::Sky(Atmosphere const &atmosphere)
 	vertices.putData(sizeof(v), v, GL_STATIC_DRAW);
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, texture.getName());
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	generateFaces();
 }
@@ -259,8 +318,8 @@ Sky::Sky(Atmosphere const &atmosphere)
 dvec3 Sky::computeColor(vec3 dir) {
 	// TODO get from sun
 	dvec3 const direction(dir);
-	dvec3 const sunColor = 2.0e5 * dvec3(1.0, 1.0, 1.0);
-	dvec3 const sunDirection = normalize(dvec3(1.0, 0.0, 1.0));
+	dvec3 const sunColor = 5.0e4 * dvec3(1.0, 1.0, 1.0);
+	dvec3 const sunDirection = normalize(dvec3(20.0, 0.0, 1.0));
 
 	dvec3 color = sunColor * scatterer.scatteredLightFactor(direction, sunDirection);
 	return color;
