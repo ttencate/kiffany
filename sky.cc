@@ -19,12 +19,14 @@ dvec3 Atmosphere::computeRayleighScatteringCoefficient() const {
 	double const n = 1.000293; // index of refraction of air
 	double const Ns = 2.5e25; // number density in standard atmosphere (molecules/m^3)
 	double const K = 2.0 * M_PI * M_PI * sqr(sqr(n) - 1.0) / (3.0 * Ns);
-	return 4.0 * M_PI * K / pow(lambda, dvec3(4.0));
+	return
+		4.0 * M_PI * K
+		/ pow(lambda, dvec3(4.0));
 }
 
 dvec3 Atmosphere::computeMieScatteringCoefficient() const {
-	// TODO why is this off by 4 orders of magnitude?
-	double const c = 10e-20; // 6e-17 for clear, 25e-17 for overcast
+	// TODO why do we need a much smaller number than in the literature?
+	double const c = 6e-20; // 6e-17 for clear, 25e-17 for overcast
 	double const nu = 4.0;
 	dvec3 K(0.68, 0.673, 0.663); // Preetham, Table 2
 	return 0.434 * c * M_PI * pow(2 * M_PI / lambda, dvec3(nu - 2.0)) * K;
@@ -67,7 +69,9 @@ double Atmosphere::rayLengthToHeight(double angle, double height) const {
 }
 
 double Atmosphere::rayleighPhaseFunction(double angle) const {
-	return 3.0 / (16.0 * M_PI) * (1.0 + sqr(cos(angle)));
+	return
+		3.0 / (16.0 * M_PI)
+		* (1.0 + sqr(cos(angle)));
 }
 
 double Atmosphere::miePhaseFunction(double angle) const {
@@ -80,10 +84,18 @@ double Atmosphere::miePhaseFunction(double angle) const {
 		(2.0 * (2.0 + g*g) * pow(1.0 + g*g - 2.0 * g * c, 3.0/2.0));
 		*/
 	double const u = 0.85; // Mie scattering parameter (0.7-0.85)
-	double const x = 5.0/9.0 * u + 125.0/729.0 * u*u*u + sqrt(64.0/27.0 - 325.0/243.0 * u*u + 1250.0/2187.0 * u*u*u*u);
-	double const g = 5.0/9.0 * u - (4.0/3.0 - 25.0/81.0 * u*u) * pow(x, -1.0/3.0) + pow(x, 1.0/3.0);
+	double const x =
+		5.0/9.0 * u
+		+ 125.0/729.0 * u*u*u
+		+ sqrt(64.0/27.0 - 325.0/243.0 * u*u + 1250.0/2187.0 * u*u*u*u);
+	double const g =
+		5.0/9.0 * u
+		- (4.0/3.0 - 25.0/81.0 * u*u) * pow(x, -1.0/3.0)
+		+ pow(x, 1.0/3.0);
 	// -1 <= g <= 1, backscattering through isotropic through forward
-	return (1 - sqr(g)) /
+	return
+		(1 - sqr(g))
+		/
 		(4.0 * M_PI * pow(1 - 2.0 * g * cos(angle) + sqr(g), 3.0/2.0));
 }
 
@@ -111,6 +123,7 @@ AtmosphereLayers::Heights AtmosphereLayers::computeHeights(double rayleighHeight
 
 AtmosphereLayers::AtmosphereLayers(Atmosphere const &atmosphere)
 :
+	// TODO why is the number of layers so influential on the end result?
 	numLayers(16),
 	numAngles(32),
 	heights(computeHeights(atmosphere.rayleighHeight, atmosphere.atmosphereHeight))
