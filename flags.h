@@ -19,6 +19,7 @@ struct Flags {
 	unsigned dayOfYear;
 	float latitude;
 	float axialTilt;
+	unsigned atmosphereLayers;
 };
 
 extern Flags flags;

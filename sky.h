@@ -7,40 +7,53 @@
 
 #include <vector>
 
+double rayLengthBetweenHeights(double lowerHeight, double upperHeight, double lowerAngle, double earthRadius);
+double rayAngleAtHeight(double height, double groundAngle, double earthRadius);
+
+class Scattering {
+
+	protected:
+
+		static dvec3 const lambda;
+
+		Scattering(double height, dvec3 coefficient);
+
+	public:
+
+		double const height;
+		dvec3 const coefficient;
+
+		double densityAtHeight(double height) const;
+		double opticalLengthBetweenHeights(double lowerHeight, double upperHeight, double lowerAngle, double earthRadius) const;
+
+};
+
+class RayleighScattering : public Scattering {
+	dvec3 computeCoefficient() const;
+	public:
+		RayleighScattering();
+		double phaseFunction(double lightAngle) const;
+};
+
+class MieScattering : public Scattering {
+	dvec3 computeCoefficient() const;
+	public:
+		dvec3 const absorption;
+		MieScattering();
+		double phaseFunction(double lightAngle) const;
+};
+
 class Atmosphere {
-
-	static dvec3 const lambda;
-
-	dvec3 computeRayleighScatteringCoefficient() const;
-	dvec3 computeMieScatteringCoefficient() const;
 
 	public:
 
 		double const earthRadius;
-		double const rayleighHeight;
-		double const mieHeight;
 		double const atmosphereHeight;
 
-		dvec3 const rayleighScatteringCoefficient;
-		dvec3 const mieScatteringCoefficient;
+		RayleighScattering const rayleighScattering;
+		MieScattering const mieScattering;
 
-		Atmosphere();
-
-		double rayleighDensityAtHeight(double height) const;
-		double mieDensityAtHeight(double height) const;
-
-		double rayAngleAtHeight(double angle, double height) const;
-		double rayLengthBetweenHeights(double angle, double lowerHeight, double upperHeight) const;
-		double rayLengthToHeight(double angle, double height) const;
-
-		double rayleighPhaseFunction(double angle) const;
-		double miePhaseFunction(double angle) const;
-
-		dvec3 rayleighScatteringAtHeight(double angle, double height) const;
-		dvec3 mieScatteringAtHeight(double angle, double height) const;
-
-		dvec3 attenuationFromOpticalLength(dvec3 opticalLength) const;
-
+		Atmosphere(double earthRadius = 6371e3, double atmosphereHeight = 100e3);
 };
 
 class AtmosphereLayers {
@@ -59,28 +72,27 @@ class AtmosphereLayers {
 		unsigned const numAngles;
 		Heights const heights;
 
-		AtmosphereLayers(Atmosphere const &atmosphere);
+		AtmosphereLayers(Atmosphere const &atmosphere, unsigned numLayers);
 };
 
 typedef Table<dvec3, uvec2, dvec2> Dvec3Table2D;
 
-Dvec3Table2D buildOpticalLengthTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers);
-Dvec3Table2D buildOpticalDepthTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers);
-Dvec3Table2D buildSunAttenuationTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers, Dvec3Table2D const &opticalLengthTable);
+Dvec3Table2D buildTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers);
+Dvec3Table2D buildSunTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers);
 
 class Scatterer {
 
 	Atmosphere atmosphere;
 	AtmosphereLayers layers;
 
-	Dvec3Table2D opticalLengthTable;
-	Dvec3Table2D sunAttenuationTable;
+	Dvec3Table2D transmittanceTable;
+	Dvec3Table2D sunTransmittanceTable;
 
 	public:
 
 		Scatterer(Atmosphere const &atmosphere, AtmosphereLayers const &layers);
 
-		dvec3 scatteredLightFactor(dvec3 direction, dvec3 sunDirection) const;
+		dvec3 scatteredLight(dvec3 direction, dvec3 sunDirection, dvec3 sunColor) const;
 
 };
 

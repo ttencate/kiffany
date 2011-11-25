@@ -28,6 +28,7 @@ bool parseCommandLine(int argc, char **argv) {
 		("day_of_year", po::value<unsigned>(&flags.dayOfYear)->default_value(183), "day of year (1-365)")
 		("latitude", po::value<float>(&flags.latitude)->default_value(51.5f), "latitude (degrees)")
 		("axial_tilt", po::value<float>(&flags.axialTilt)->default_value(23.5f), "axial tilt (degrees)")
+		("atmosphere_layers", po::value<unsigned>(&flags.atmosphereLayers)->default_value(32), "number of layers for atmosphere rendering")
 	;
 	po::variables_map vm;
 	po::store(po::parse_command_line(argc, argv, desc), vm);
