@@ -318,9 +318,11 @@ dvec3 Scatterer::scatteredLight(dvec3 direction, dvec3 sunDirection, dvec3 sunCo
 		// Add inscattering, attenuated by optical depth to the sun
 		dvec3 const rayleighInscattering =
 			atmosphere.rayleighScattering.coefficient *
+			atmosphere.rayleighScattering.densityAtHeight(height) *
 			rayleighPhaseFunction;
 		dvec3 const mieInscattering =
 			atmosphere.mieScattering.coefficient *
+			atmosphere.mieScattering.densityAtHeight(height) *
 			miePhaseFunction;
 		dvec3 const transmittance = totalTransmittanceTable(dvec2(layer, sunAngle));
 		scatteredLight += rayLength * sunColor * transmittance * (rayleighInscattering + mieInscattering);
