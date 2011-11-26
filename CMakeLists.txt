@@ -36,6 +36,7 @@ set(sources
 	perlin.cc perlin.h
 	queues.cc queues.h
 	raycaster.cc raycaster.h
+	shader.cc shader.h
 	sky.cc sky.h
 	space.cc space.h
 	stats.cc stats.h
