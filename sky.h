@@ -16,19 +16,24 @@
  *   with 0 being straight up (away from the centre of the earth)
  *   and pi being straight down (towards the centre of the earth)
  * - all heights are measured from sea level
+// TODO measure from centre
  */
 
-// TODO reorder arguments
-// TODO measure from centre
-bool rayHitsHeight(double startHeight, double targetHeight, double startAngle, double earthRadius);
+struct Ray {
+	double height;
+	double angle;
+	Ray(double height, double angle) : height(height), angle(angle) {}
+};
 
-double rayLengthUpwards(double startHeight, double targetHeight, double startAngle, double earthRadius);
-double rayLengthToSameHeight(double startHeight, double startAngle, double earthRadius);
-double rayLengthDownwards(double startHeight, double targetHeight, double startAngle, double earthRadius);
+bool rayHitsHeight(Ray ray, double targetHeight, double earthRadius);
 
-double rayAngleUpwards(double startHeight, double targetHeight, double startAngle, double earthRadius);
-double rayAngleToSameHeight(double startAngle);
-double rayAngleDownwards(double startHeight, double targetHeight, double startAngle, double earthRadius);
+double rayLengthUpwards(Ray ray, double targetHeight, double earthRadius);
+double rayLengthToSameHeight(Ray ray, double earthRadius);
+double rayLengthDownwards(Ray ray, double targetHeight, double earthRadius);
+
+double rayAngleUpwards(Ray ray, double targetHeight, double earthRadius);
+double rayAngleToSameHeight(Ray ray);
+double rayAngleDownwards(Ray ray, double targetHeight, double earthRadius);
 
 class Scattering {
 

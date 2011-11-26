@@ -37,24 +37,24 @@ BOOST_FIXTURE_TEST_SUITE(SkyTest, Fixture)
 double const EPS = 1e-4;
 
 BOOST_AUTO_TEST_CASE(TestRayLengthUpwardsStraightUp) {
-	BOOST_CHECK_CLOSE(5.0, rayLengthUpwards(0.0, 5.0, 0.0, 0.0), EPS);
-	BOOST_CHECK_CLOSE(5.0, rayLengthUpwards(0.0, 5.0, 0.0, 1.0), EPS);
-	BOOST_CHECK_CLOSE(5.0, rayLengthUpwards(0.0, 5.0, 0.0, 100.0), EPS);
-	BOOST_CHECK_CLOSE(10.0, rayLengthUpwards(50.0, 60.0, 0.0, 0.0), EPS);
-	BOOST_CHECK_CLOSE(10.0, rayLengthUpwards(50.0, 60.0, 0.0, 1.0), EPS);
-	BOOST_CHECK_CLOSE(10.0, rayLengthUpwards(50.0, 60.0, 0.0, 100.0), EPS);
+	BOOST_CHECK_CLOSE( 5.0, rayLengthUpwards(Ray( 0.0, 0.0),  5.0,   0.0), EPS);
+	BOOST_CHECK_CLOSE( 5.0, rayLengthUpwards(Ray( 0.0, 0.0),  5.0,   1.0), EPS);
+	BOOST_CHECK_CLOSE( 5.0, rayLengthUpwards(Ray( 0.0, 0.0),  5.0, 100.0), EPS);
+	BOOST_CHECK_CLOSE(10.0, rayLengthUpwards(Ray(50.0, 0.0), 60.0,   0.0), EPS);
+	BOOST_CHECK_CLOSE(10.0, rayLengthUpwards(Ray(50.0, 0.0), 60.0,   1.0), EPS);
+	BOOST_CHECK_CLOSE(10.0, rayLengthUpwards(Ray(50.0, 0.0), 60.0, 100.0), EPS);
 }
 
 BOOST_AUTO_TEST_CASE(TestRayLengthUpwardsSideways) {
-	BOOST_CHECK_CLOSE(50.0, rayLengthUpwards(0.0, 50.0, 0.5 * M_PI, 0.0), EPS);
-	BOOST_CHECK_CLOSE(40.0, rayLengthUpwards(30.0, 50.0, 0.5 * M_PI, 0.0), EPS);
-	BOOST_CHECK_CLOSE(40.0, rayLengthUpwards(0.0, 20.0, 0.5 * M_PI, 30.0), EPS);
+	BOOST_CHECK_CLOSE(50.0, rayLengthUpwards(Ray( 0.0, 0.5 * M_PI), 50.0,  0.0), EPS);
+	BOOST_CHECK_CLOSE(40.0, rayLengthUpwards(Ray(30.0, 0.5 * M_PI), 50.0,  0.0), EPS);
+	BOOST_CHECK_CLOSE(40.0, rayLengthUpwards(Ray( 0.0, 0.5 * M_PI), 20.0, 30.0), EPS);
 }
 
 BOOST_AUTO_TEST_CASE(TestRayLengthDownwards) {
-	BOOST_CHECK_EQUAL(50.0, rayLengthDownwards(50.0, 0.0, M_PI, 30.0));
-	BOOST_CHECK_EQUAL(20.0, rayLengthDownwards(50.0, 30.0, M_PI, 0.0));
-	BOOST_CHECK_EQUAL(20.0, rayLengthDownwards(20.0, 0.0, M_PI, 30.0));
+	BOOST_CHECK_EQUAL(50.0, rayLengthDownwards(Ray(50.0, M_PI),  0.0, 30.0));
+	BOOST_CHECK_EQUAL(20.0, rayLengthDownwards(Ray(50.0, M_PI), 30.0,  0.0));
+	BOOST_CHECK_EQUAL(20.0, rayLengthDownwards(Ray(20.0, M_PI),  0.0, 30.0));
 }
 
 template<typename F>

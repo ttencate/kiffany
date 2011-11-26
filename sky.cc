@@ -20,64 +20,63 @@
  * http://www.springerlink.com/content/nrq497r40xmw4821/fulltext.pdf
  */
 
-bool rayHitsHeight(double startHeight, double targetHeight, double startAngle, double earthRadius) {
-	return (earthRadius + startHeight) * sin(startAngle) < earthRadius + targetHeight;
+bool rayHitsHeight(Ray ray, double targetHeight, double earthRadius) {
+	return (earthRadius + ray.height) * sin(ray.angle) < earthRadius + targetHeight;
 	// return pow2(cos(startAngle)) >= 1.0 - pow2((earthRadius + targetHeight) / (earthRadius + startHeight));
 }
 
-double rayLengthUpwards(double startHeight, double targetHeight, double startAngle, double earthRadius) {
-	BOOST_ASSERT(startHeight <= targetHeight);
-	BOOST_ASSERT(startAngle <= 0.5 * M_PI);
-	double cosAngle = cos(startAngle);
+double rayLengthUpwards(Ray ray, double targetHeight, double earthRadius) {
+	BOOST_ASSERT(ray.height <= targetHeight);
+	BOOST_ASSERT(ray.angle <= 0.5 * M_PI);
+	double cosAngle = cos(ray.angle);
 	double rayLength = sqrt(
-			sqr(earthRadius + startHeight) * (sqr(cosAngle) - 1.0) +
+			sqr(earthRadius + ray.height) * (sqr(cosAngle) - 1.0) +
 			sqr(earthRadius + targetHeight))
-		- (earthRadius + startHeight) * cosAngle;
+		- (earthRadius + ray.height) * cosAngle;
 	BOOST_ASSERT(rayLength >= 0);
 	return rayLength;
 }
 
-double rayLengthToSameHeight(double startHeight, double startAngle, double earthRadius) {
-	BOOST_ASSERT(startAngle > 0.5 * M_PI);
-	double rayLength = -2.0 * (earthRadius + startHeight) * cos(startAngle);
+double rayLengthToSameHeight(Ray ray, double earthRadius) {
+	BOOST_ASSERT(ray.angle > 0.5 * M_PI);
+	double rayLength = -2.0 * (earthRadius + ray.height) * cos(ray.angle);
 	BOOST_ASSERT(rayLength >= 0);
 	return rayLength;
 }
 
-double rayLengthDownwards(double startHeight, double targetHeight, double startAngle, double earthRadius) {
-	BOOST_ASSERT(targetHeight <= startHeight);
-	BOOST_ASSERT(startAngle > 0.5 * M_PI);
-	BOOST_ASSERT(rayHitsHeight(startHeight, targetHeight, startAngle, earthRadius));
-	double cosAngle = cos(startAngle);
+double rayLengthDownwards(Ray ray, double targetHeight, double earthRadius) {
+	BOOST_ASSERT(targetHeight <= ray.height);
+	BOOST_ASSERT(ray.angle > 0.5 * M_PI);
+	BOOST_ASSERT(rayHitsHeight(ray, targetHeight, earthRadius));
+	double cosAngle = cos(ray.angle);
 	double rayLength = -sqrt(
-			sqr(earthRadius + startHeight) * (sqr(cosAngle) - 1.0) +
+			sqr(earthRadius + ray.height) * (sqr(cosAngle) - 1.0) +
 			sqr(earthRadius + targetHeight))
-		- (earthRadius + startHeight) * cosAngle;
+		- (earthRadius + ray.height) * cosAngle;
 	BOOST_ASSERT(rayLength >= 0);
 	return rayLength;
 }
 
-double rayAngleUpwards(double startHeight, double targetHeight, double startAngle, double earthRadius) {
-	BOOST_ASSERT(startHeight <= targetHeight);
-	BOOST_ASSERT(startAngle <= 0.5 * M_PI);
-	double rayAngle = asin((earthRadius + startHeight) * sin(startAngle) / (earthRadius + targetHeight));
+double rayAngleUpwards(Ray ray, double targetHeight, double earthRadius) {
+	BOOST_ASSERT(ray.height <= targetHeight);
+	BOOST_ASSERT(ray.angle <= 0.5 * M_PI);
+	double rayAngle = asin((earthRadius + ray.height) * sin(ray.angle) / (earthRadius + targetHeight));
 	BOOST_ASSERT(rayAngle >= 0);
 	BOOST_ASSERT(rayAngle <= 0.5 * M_PI);
 	return rayAngle;
 }
 
-double rayAngleToSameHeight(double startAngle) {
-	BOOST_ASSERT(startAngle >= 0.5 * M_PI);
-	BOOST_ASSERT(startAngle <= M_PI);
-	return M_PI - startAngle;
+double rayAngleToSameHeight(Ray ray) {
+	BOOST_ASSERT(ray.angle >= 0.5 * M_PI);
+	BOOST_ASSERT(ray.angle <= M_PI);
+	return M_PI - ray.angle;
 }
 
-double rayAngleDownwards(double startHeight, double targetHeight, double startAngle, double earthRadius) {
-	BOOST_ASSERT(targetHeight <= startHeight);
-	BOOST_ASSERT(startAngle > 0.5 * M_PI);
-	BOOST_ASSERT(rayHitsHeight(startHeight, targetHeight, startAngle, earthRadius));
-	double rayAngle = M_PI - asin((earthRadius + startHeight) * sin(startAngle) / (earthRadius + targetHeight));
-	//std::cout << startHeight << ", " << targetHeight << ", " << startAngle << ", " << earthRadius << " -> " << rayAngle << '\n';
+double rayAngleDownwards(Ray ray, double targetHeight, double earthRadius) {
+	BOOST_ASSERT(targetHeight <= ray.height);
+	BOOST_ASSERT(ray.angle > 0.5 * M_PI);
+	BOOST_ASSERT(rayHitsHeight(ray, targetHeight, earthRadius));
+	double rayAngle = M_PI - asin((earthRadius + ray.height) * sin(ray.angle) / (earthRadius + targetHeight));
 	BOOST_ASSERT(rayAngle >= 0.5 * M_PI);
 	BOOST_ASSERT(rayAngle <= M_PI);
 	return rayAngle;
@@ -206,22 +205,23 @@ Dvec3Table2D buildTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLay
 		double const angle = M_PI * a / (numAngles - 1);
 		for (unsigned layer = 0; layer < numLayers; ++layer) {
 			double const height = layers.heights[layer];
+			Ray ray(layers.heights[layer], angle);
 			double rayLength;
 			if (angle <= 0.5 * M_PI && layer == numLayers - 1) {
 				// Ray goes up into space
 				rayLength = 0.0;
 			} else if (angle <= 0.5 * M_PI) {
 				// Ray goes up, hits layer above
-				rayLength = rayLengthUpwards(height, layers.heights[layer + 1], angle, atmosphere.earthRadius);
+				rayLength = rayLengthUpwards(ray, layers.heights[layer + 1], atmosphere.earthRadius);
 			} else if (layer == 0) {
 				// Ray goes down, into the ground
 				rayLength = INFINITY;
-			} else if (!rayHitsHeight(height, layers.heights[layer - 1], angle, atmosphere.earthRadius)) {
+			} else if (!rayHitsHeight(ray, layers.heights[layer - 1], atmosphere.earthRadius)) {
 				// Ray goes down, misses layer below, hits current layer from below
-				rayLength = rayLengthToSameHeight(height, angle, atmosphere.earthRadius);
+				rayLength = rayLengthToSameHeight(ray, atmosphere.earthRadius);
 			} else {
 				// Ray goes down, hits layer below
-				rayLength = rayLengthDownwards(height, layers.heights[layer - 1], angle, atmosphere.earthRadius);
+				rayLength = rayLengthDownwards(ray, layers.heights[layer - 1], atmosphere.earthRadius);
 			}
 			dvec3 const extinction =
 				rayleighExtinctionCoefficient * atmosphere.rayleighScattering.densityAtHeight(height) +
@@ -249,14 +249,15 @@ Dvec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, Atmosphe
 	// For upward angles, cumulatively sum over all layers.
 	for (int layer = numLayers - 1; layer >= 0; --layer) {
 		for (unsigned a = 0; a < numAngles / 2; ++a) {
+			double const angle = M_PI * a / (numAngles - 1);
+			Ray ray(layers.heights[layer], angle);
 			dvec3 totalTransmittance;
 			if (layer == (int)numLayers - 1) {
 				// Ray goes directly into space
 				totalTransmittance = dvec3(1.0);
 			} else {
 				// Ray passes through some layers
-				double const angle = M_PI * a / (numAngles - 1);
-				double const nextAngle = rayAngleUpwards(layers.heights[layer], layers.heights[layer + 1], angle, atmosphere.earthRadius);
+				double const nextAngle = rayAngleUpwards(ray, layers.heights[layer + 1], atmosphere.earthRadius);
 				BOOST_ASSERT(nextAngle <= 0.5 * M_PI);
 				
 				totalTransmittance =
@@ -272,20 +273,21 @@ Dvec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, Atmosphe
 	for (unsigned layer = 0; layer < numLayers; ++layer) {
 		for (unsigned a = numAngles / 2; a < numAngles; ++a) {
 			double const angle = M_PI * a / (numAngles - 1);
+			Ray ray(layers.heights[layer], angle);
 			dvec3 totalTransmittance;
 			if (layer == 0) {
 				// Ray goes directly into the ground
 				totalTransmittance = dvec3(0.0);
-			} else if (rayHitsHeight(layers.heights[layer], layers.heights[layer - 1], angle, atmosphere.earthRadius)) {
+			} else if (rayHitsHeight(ray, layers.heights[layer - 1], atmosphere.earthRadius)) {
 				// Ray hits the layer below
-				double const nextAngle = rayAngleDownwards(layers.heights[layer], layers.heights[layer - 1], angle, atmosphere.earthRadius);
+				double const nextAngle = rayAngleDownwards(ray, layers.heights[layer - 1], atmosphere.earthRadius);
 				BOOST_ASSERT(nextAngle >= 0.5 * M_PI);
 				totalTransmittance =
 					transmittanceTable(dvec2(layer, angle)) *
 					totalTransmittanceTable(dvec2(layer - 1, nextAngle));
 			} else {
 				// Ray misses the layer below, hits the current one from below
-				double const nextAngle = rayAngleToSameHeight(angle);
+				double const nextAngle = rayAngleToSameHeight(ray);
 				BOOST_ASSERT(nextAngle <= 0.5 * M_PI);
 				totalTransmittance =
 					transmittanceTable(dvec2(layer, angle)) *
@@ -341,11 +343,11 @@ dvec3 Scatterer::scatteredLight(dvec3 direction, Sun const &sun) const {
 
 	for (int layer = layers.numLayers - 2; layer >= 0; --layer) {
 		double const height = layers.heights[layer];
-		double const angle = rayAngleUpwards(0.0, height, groundAngle, atmosphere.earthRadius);
-		BOOST_ASSERT(angle <= 0.5 * M_PI);
-		double const rayLength = rayLengthUpwards(height, layers.heights[layer + 1], angle, atmosphere.earthRadius);
+		Ray ray(height, rayAngleUpwards(Ray(0.0, groundAngle), height, atmosphere.earthRadius));
+		BOOST_ASSERT(ray.angle <= 0.5 * M_PI);
+		double const rayLength = rayLengthUpwards(ray, layers.heights[layer + 1], atmosphere.earthRadius);
 
-		double const sunAngle = rayAngleUpwards(0.0, height, sunGroundAngle, atmosphere.earthRadius);
+		double const sunAngle = rayAngleUpwards(Ray(0.0, sunGroundAngle), height, atmosphere.earthRadius);
 
 		// Add inscattering, attenuated by optical depth to the sun
 		dvec3 const rayleighInscattering =
@@ -360,7 +362,7 @@ dvec3 Scatterer::scatteredLight(dvec3 direction, Sun const &sun) const {
 		scatteredLight += rayLength * sunColor * transmittance * (rayleighInscattering + mieInscattering);
 
 		// Multiply transmittance
-		dvec3 const layerTransmittance = transmittanceTable(dvec2(layer, angle));
+		dvec3 const layerTransmittance = transmittanceTable(dvec2(layer, ray.angle));
 		scatteredLight *= layerTransmittance;
 		/*
 		std::cout
