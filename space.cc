@@ -7,7 +7,7 @@ Sun::Sun(float season, float latitude, float axialTilt, float timeOfDay, float d
 	axialTilt(axialTilt),
 	dayLength(dayLength),
 	timeOfDay(timeOfDay),
-	color(20.0f * vec3(1.0f, 1.0f, 1.0f))
+	color(10.0f * vec3(1.0f, 1.0f, 1.0f))
 {
 	direction = directionAtTime(timeOfDay);
 }

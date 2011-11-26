@@ -98,7 +98,7 @@ double RayleighScattering::phaseFunction(double lightAngle) const {
 }
 
 dvec3 MieScattering::computeCoefficient() const {
-	return 0.1 * dvec3(2e-5); // Bruneton and Neyret
+	return dvec3(2e-5); // Bruneton and Neyret
 
 	// TODO why do we need a much smaller number than in the literature?
 	double const c = 6e-22; // 6e-17 for clear, 25e-17 for overcast
