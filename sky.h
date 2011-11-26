@@ -7,8 +7,11 @@
 
 #include <vector>
 
-double rayLengthBetweenHeights(double lowerHeight, double upperHeight, double lowerAngle, double earthRadius);
-double rayAngleAtHeight(double height, double groundAngle, double earthRadius);
+// TODO reorder arguments
+// TODO measure from centre
+bool rayHitsHeight(double startHeight, double targetHeight, double startAngle, double earthRadius);
+double rayLengthBetweenHeights(double startHeight, double targetHeight, double startAngle, double earthRadius);
+double rayAngleAtHeight(double startHeight, double targetHeight, double startAngle, double earthRadius);
 
 class Scattering {
 

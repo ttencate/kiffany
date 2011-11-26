@@ -18,20 +18,20 @@
  * http://www.springerlink.com/content/nrq497r40xmw4821/fulltext.pdf
  */
 
-double rayLengthBetweenHeights(double lowerHeight, double upperHeight, double lowerAngle, double earthRadius) {
-	double cosAngle = cos(lowerAngle);
-	return sqrt(
-			sqr(earthRadius + lowerHeight) * (sqr(cosAngle) - 1.0) +
-			sqr(earthRadius + upperHeight)) -
-		(earthRadius + lowerHeight) * cosAngle;
+bool rayHitsHeight(double startHeight, double targetHeight, double startAngle, double earthRadius) {
+	return pow2(cos(startAngle)) >= 1.0 - pow2((earthRadius + targetHeight) / (earthRadius + startHeight));
 }
 
-double rayAngleAtHeight(double height, double groundAngle, double earthRadius) {
-	if (height == 0) {
-		// Avoid division by zero for 0-radius earth.
-		return groundAngle;
-	}
-	return asin(earthRadius * sin(groundAngle) / (earthRadius + height));
+double rayLengthBetweenHeights(double startHeight, double targetHeight, double startAngle, double earthRadius) {
+	double cosAngle = cos(startAngle);
+	return /*+-*/sqrt(
+			sqr(earthRadius + startHeight) * (sqr(cosAngle) - 1.0) +
+			sqr(earthRadius + targetHeight)) -
+		(earthRadius + startHeight) * cosAngle;
+}
+
+double rayAngleAtHeight(double startHeight, double targetHeight, double startAngle, double earthRadius) {
+	return asin((earthRadius + startHeight) * sin(startAngle) / (earthRadius + targetHeight));
 }
 
 //dvec3 const Scattering::lambda = dvec3(700e-9, 530e-9, 400e-9); // wavelengths of RGB (metres)
@@ -150,8 +150,10 @@ AtmosphereLayers::AtmosphereLayers(Atmosphere const &atmosphere, unsigned numLay
 {
 }
 
-// Transmittance between the given layer and the one below it,
-// for the zenith angle at the lower layer
+// Transmittance between the given layer and the next,
+// where 'next' might be the one above (for angle <= 0.5pi),
+// the layer itself (for 0.5pi < angle < x),
+// or the layer below it (for x <= angle).
 Dvec3Table2D buildTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers) {
 	unsigned const numAngles = layers.numAngles;
 	unsigned const numLayers = layers.numLayers;
@@ -163,25 +165,32 @@ Dvec3Table2D buildTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLay
 			dvec2(numLayers, M_PI * numAngles / (numAngles - 1)),
 			dvec2(0.0, 0.0));
 	for (unsigned a = 0; a < numAngles; ++a) {
-		double const lowerAngle = M_PI * a / (numAngles - 1);
-		if (lowerAngle > M_PI / 2) {
-			// Ray goes down
-			for (unsigned layer = 0; layer < numLayers; ++layer) {
-				transmittanceTable.set(uvec2(layer, a), dvec3(0.0));
+		double const angle = M_PI * a / (numAngles - 1);
+		for (unsigned layer = 0; layer < numLayers; ++layer) {
+			double const height = layers.heights[layer];
+			double rayLength;
+			if (angle <= 0.5 * M_PI && layer == numLayers - 1) {
+				// Ray goes up into space
+				rayLength = 0.0;
+			} else if (angle <= 0.5 * M_PI) {
+				// Ray goes up, hits layer above
+				rayLength = rayLengthBetweenHeights(height, layers.heights[layer + 1], angle, atmosphere.earthRadius);
+			} else if (layer == 0) {
+				// Ray goes down, into the ground
+				rayLength = INFINITY;
+			} else if (!rayHitsHeight(height, layers.heights[layer - 1], angle, atmosphere.earthRadius)) {
+				// Ray goes down, misses layer below, hits current layer from below
+				rayLength = rayLengthBetweenHeights(height, height, angle, atmosphere.earthRadius);
+			} else {
+				// Ray goes down, hits layer below
+				double const angleAtPrevious = rayAngleAtHeight(height, layers.heights[layer - 1], angle, atmosphere.earthRadius);
+				rayLength = rayLengthBetweenHeights(layers.heights[layer - 1], height, angleAtPrevious, atmosphere.earthRadius);
 			}
-		} else {
-			// Compute optical length between this layer and previous
-			transmittanceTable.set(uvec2(0, a), dvec3(0.0));
-			for (unsigned layer = 1; layer < numLayers; ++layer) {
-				double const lowerHeight = layers.heights[layer - 1];
-				double const upperHeight = layers.heights[layer];
-				double const rayLength = rayLengthBetweenHeights(lowerHeight, upperHeight, lowerAngle, atmosphere.earthRadius);
-				dvec3 const extinction =
-					rayleighExtinctionCoefficient * atmosphere.rayleighScattering.densityAtHeight(upperHeight) +
-					mieExtinctionCoefficient * atmosphere.mieScattering.densityAtHeight(upperHeight);
-				dvec3 const transmittance = exp(-extinction * rayLength);
-				transmittanceTable.set(uvec2(layer, a), transmittance);
-			}
+			dvec3 const extinction =
+				rayleighExtinctionCoefficient * atmosphere.rayleighScattering.densityAtHeight(height) +
+				mieExtinctionCoefficient * atmosphere.mieScattering.densityAtHeight(height);
+			dvec3 transmittance = exp(-extinction * rayLength);
+			transmittanceTable.set(uvec2(layer, a), transmittance);
 		}
 	}
 
@@ -215,7 +224,7 @@ Dvec3Table2D buildSunTransmittanceTable(Atmosphere const &atmosphere, Atmosphere
 				double const lowerHeight = layers.heights[layer];
 				double const upperHeight = layers.heights[layer + 1];
 				// TODO the notion of groundAngle is broken: ray from in the air, sloping down but missing the ground, does not have one
-				double const lowerAngle = rayAngleAtHeight(lowerHeight, groundAngle, atmosphere.earthRadius);
+				double const lowerAngle = rayAngleAtHeight(0.0, lowerHeight, groundAngle, atmosphere.earthRadius);
 				double const rayLength = rayLengthBetweenHeights(lowerHeight, upperHeight, lowerAngle, atmosphere.earthRadius);
 				dvec3 const extinction =
 					rayleighExtinctionCoefficient * atmosphere.rayleighScattering.densityAtHeight(upperHeight) +
@@ -251,7 +260,7 @@ dvec3 Scatterer::scatteredLight(dvec3 direction, dvec3 sunDirection, dvec3 sunCo
 	for (int layer = layers.numLayers - 1; layer > 0; --layer) {
 		double const lowerHeight = layers.heights[layer - 1];
 		double const upperHeight = layers.heights[layer];
-		double const lowerAngle = rayAngleAtHeight(lowerHeight, groundAngle, atmosphere.earthRadius);
+		double const lowerAngle = rayAngleAtHeight(0.0, lowerHeight, groundAngle, atmosphere.earthRadius);
 		double const rayLength = rayLengthBetweenHeights(lowerHeight, upperHeight, lowerAngle, atmosphere.earthRadius);
 
 		// Add inscattering, attenuated by optical depth to the sun
