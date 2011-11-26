@@ -1,13 +1,14 @@
 #include "space.h"
 
-Sun::Sun(float season, float latitude, float axialTilt, float timeOfDay, float dayLength)
+Sun::Sun(float season, float latitude, float axialTilt, float dayLength, float angularRadius, vec3 color, float timeOfDay)
 :
 	season(season),
 	latitude(latitude),
 	axialTilt(axialTilt),
 	dayLength(dayLength),
-	timeOfDay(timeOfDay),
-	color(10.0f * vec3(1.0f, 1.0f, 1.0f))
+	angularRadius(angularRadius),
+	color(color),
+	timeOfDay(timeOfDay)
 {
 	direction = directionAtTime(timeOfDay);
 }

@@ -282,8 +282,10 @@ int main(int argc, char **argv) {
 			(flags.dayOfYear - 1.0f) / 365.0f,
 			radians(flags.latitude),
 			radians(flags.axialTilt),
-			flags.startTime / 24.0f,
-			flags.dayLength);
+			flags.dayLength,
+			0.04f, // 0.0046 in reality
+			20.0f * vec3(1.0f),
+			flags.startTime / 24.0f);
 	World world(
 			&camera,
 			new PerlinTerrainGenerator(32, flags.seed),

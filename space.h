@@ -11,21 +11,23 @@ class Sun {
 	float const latitude;
 	float const axialTilt;
 	float const dayLength;
+	float const angularRadius;
+	vec3 const color;
 
-	float wallTime;
 	float timeOfDay;
 
 	vec3 direction;
-	vec3 color;
 
 	vec3 directionAtTime(float timeOfDay) const;
 
 	public:
 
-		Sun(float season, float latitude, float axialTilt, float timeOfDay, float dayLength);
+		Sun(float season, float latitude, float axialTilt, float dayLength, float angularRadius, vec3 color, float timeOfDay);
+
+		double getAngularRadius() const { return angularRadius; }
+		vec3 getColor() const { return color; }
 
 		vec3 getDirection() const { return direction; }
-		vec3 getColor() const { return color; }
 
 		void update(float dt);
 

@@ -21,8 +21,14 @@
 // TODO reorder arguments
 // TODO measure from centre
 bool rayHitsHeight(double startHeight, double targetHeight, double startAngle, double earthRadius);
-double rayLengthBetweenHeights(double startHeight, double targetHeight, double startAngle, double earthRadius);
-double rayAngleAtHeight(double startHeight, double targetHeight, double startAngle, double earthRadius);
+
+double rayLengthUpwards(double startHeight, double targetHeight, double startAngle, double earthRadius);
+double rayLengthToSameHeight(double startHeight, double startAngle, double earthRadius);
+double rayLengthDownwards(double startHeight, double targetHeight, double startAngle, double earthRadius);
+
+double rayAngleUpwards(double startHeight, double targetHeight, double startAngle, double earthRadius);
+double rayAngleToSameHeight(double startAngle);
+double rayAngleDownwards(double startHeight, double targetHeight, double startAngle, double earthRadius);
 
 class Scattering {
 
@@ -38,7 +44,6 @@ class Scattering {
 		dvec3 const coefficient;
 
 		double densityAtHeight(double height) const;
-		double opticalLengthBetweenHeights(double lowerHeight, double upperHeight, double lowerAngle, double earthRadius) const;
 
 };
 
@@ -106,7 +111,7 @@ class Scatterer {
 
 		Scatterer(Atmosphere const &atmosphere, AtmosphereLayers const &layers);
 
-		dvec3 scatteredLight(dvec3 direction, dvec3 sunDirection, dvec3 sunColor) const;
+		dvec3 scatteredLight(dvec3 direction, Sun const &sun) const;
 
 };
 

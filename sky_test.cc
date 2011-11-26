@@ -36,49 +36,25 @@ BOOST_FIXTURE_TEST_SUITE(SkyTest, Fixture)
 
 double const EPS = 1e-4;
 
-BOOST_AUTO_TEST_CASE(TestRayLengthBetweenHeightsUpwards) {
-	BOOST_CHECK_CLOSE(5.0, rayLengthBetweenHeights(0.0, 5.0, 0.0, 0.0), EPS);
-	BOOST_CHECK_CLOSE(5.0, rayLengthBetweenHeights(0.0, 5.0, 0.0, 1.0), EPS);
-	BOOST_CHECK_CLOSE(5.0, rayLengthBetweenHeights(0.0, 5.0, 0.0, 100.0), EPS);
-	BOOST_CHECK_CLOSE(10.0, rayLengthBetweenHeights(50.0, 60.0, 0.0, 0.0), EPS);
-	BOOST_CHECK_CLOSE(10.0, rayLengthBetweenHeights(50.0, 60.0, 0.0, 1.0), EPS);
-	BOOST_CHECK_CLOSE(10.0, rayLengthBetweenHeights(50.0, 60.0, 0.0, 100.0), EPS);
+BOOST_AUTO_TEST_CASE(TestRayLengthUpwardsStraightUp) {
+	BOOST_CHECK_CLOSE(5.0, rayLengthUpwards(0.0, 5.0, 0.0, 0.0), EPS);
+	BOOST_CHECK_CLOSE(5.0, rayLengthUpwards(0.0, 5.0, 0.0, 1.0), EPS);
+	BOOST_CHECK_CLOSE(5.0, rayLengthUpwards(0.0, 5.0, 0.0, 100.0), EPS);
+	BOOST_CHECK_CLOSE(10.0, rayLengthUpwards(50.0, 60.0, 0.0, 0.0), EPS);
+	BOOST_CHECK_CLOSE(10.0, rayLengthUpwards(50.0, 60.0, 0.0, 1.0), EPS);
+	BOOST_CHECK_CLOSE(10.0, rayLengthUpwards(50.0, 60.0, 0.0, 100.0), EPS);
 }
 
-BOOST_AUTO_TEST_CASE(TestRayLengthBetweenHeightsSideways) {
-	BOOST_CHECK_CLOSE(50.0, rayLengthBetweenHeights(0.0, 50.0, 0.5 * M_PI, 0.0), EPS);
-	BOOST_CHECK_CLOSE(40.0, rayLengthBetweenHeights(30.0, 50.0, 0.5 * M_PI, 0.0), EPS);
-	BOOST_CHECK_CLOSE(40.0, rayLengthBetweenHeights(0.0, 20.0, 0.5 * M_PI, 30.0), EPS);
+BOOST_AUTO_TEST_CASE(TestRayLengthUpwardsSideways) {
+	BOOST_CHECK_CLOSE(50.0, rayLengthUpwards(0.0, 50.0, 0.5 * M_PI, 0.0), EPS);
+	BOOST_CHECK_CLOSE(40.0, rayLengthUpwards(30.0, 50.0, 0.5 * M_PI, 0.0), EPS);
+	BOOST_CHECK_CLOSE(40.0, rayLengthUpwards(0.0, 20.0, 0.5 * M_PI, 30.0), EPS);
 }
 
-BOOST_AUTO_TEST_CASE(TestRayLengthBetweenHeightsDownwards) {
-	BOOST_CHECK_EQUAL(50.0, rayLengthBetweenHeights(0.0, 50.0, M_PI, 0.0));
-	BOOST_CHECK_EQUAL(80.0, rayLengthBetweenHeights(30.0, 50.0, M_PI, 0.0));
-	BOOST_CHECK_EQUAL(80.0, rayLengthBetweenHeights(0.0, 20.0, M_PI, 30.0));
-}
-
-BOOST_AUTO_TEST_CASE(TestOpticalLengthFromGround) {
-	RayleighScattering const &rayleigh = atmosphere.rayleighScattering;
-	double vertical = rayleigh.opticalLengthBetweenHeights(0, 100.0, 0.0, atmosphere.earthRadius);
-	double slanted = rayleigh.opticalLengthBetweenHeights(0, 100.0, 0.3, atmosphere.earthRadius);
-	double horizontal = rayleigh.opticalLengthBetweenHeights(0, 100.0, M_PI / 2, atmosphere.earthRadius);
-	double maximal = rayleigh.opticalLengthBetweenHeights(0, atmosphere.atmosphereHeight, 0.0, atmosphere.earthRadius);
-	double EPS = 1e-1;
-	BOOST_CHECK_CLOSE(rayleigh.height * (1.0 - exp(-100.0 / rayleigh.height)), vertical, EPS);
-	BOOST_CHECK_LE(vertical, slanted);
-	BOOST_CHECK_LE(slanted, horizontal);
-	BOOST_CHECK_CLOSE(rayleigh.height, maximal, EPS);
-}
-
-BOOST_AUTO_TEST_CASE(TestOpticalLengthFromAir) {
-	RayleighScattering const &rayleigh = atmosphere.rayleighScattering;
-	double vertical = rayleigh.opticalLengthBetweenHeights(50.0, 100.0, 0.0, atmosphere.earthRadius);
-	double slanted = rayleigh.opticalLengthBetweenHeights(50.0, 100.0, 0.3, atmosphere.earthRadius);
-	double horizontal = rayleigh.opticalLengthBetweenHeights(50.0, 100.0, M_PI / 2, atmosphere.earthRadius);
-	double EPS = 1e-1;
-	BOOST_CHECK_CLOSE(rayleigh.height * (exp(-50.0 / rayleigh.height) - exp(-100.0 / rayleigh.height)), vertical, EPS);
-	BOOST_CHECK_LE(vertical, slanted);
-	BOOST_CHECK_LE(slanted, horizontal);
+BOOST_AUTO_TEST_CASE(TestRayLengthDownwards) {
+	BOOST_CHECK_EQUAL(50.0, rayLengthDownwards(50.0, 0.0, M_PI, 30.0));
+	BOOST_CHECK_EQUAL(20.0, rayLengthDownwards(50.0, 30.0, M_PI, 0.0));
+	BOOST_CHECK_EQUAL(20.0, rayLengthDownwards(20.0, 0.0, M_PI, 30.0));
 }
 
 template<typename F>
@@ -163,58 +139,92 @@ BOOST_AUTO_TEST_CASE(TestBuildTransmittanceTable) {
 		for (unsigned layer = 0; layer < numLayers; ++layer) {
 			uvec2 index = uvec2(layer, a);
 			dvec3 transmittance = transmittanceTable.get(index);
-			// Transmittance is never negative
+			// Transmittance is always between 0 and 1
 			BOOST_REQUIRE_LE_3(0.0, transmittance);
-			// Larger angles mean longer travel distance, hence more scattering
-			if (a > 0) {
-				BOOST_REQUIRE_GE_3(transmittance, transmittanceTable.get(uvec2(layer, a - 1)));
+			BOOST_REQUIRE_GE_3(1.0, transmittance);
+			// Larger angles mean longer travel distance, hence less transmittance
+			if (a > 0 && a < numAngles / 2) {
+				BOOST_REQUIRE_LE_3(transmittance, transmittanceTable.get(uvec2(layer, a - 1)));
 			}
 		}
 	}
 }
 
-BOOST_AUTO_TEST_CASE(TestBuildSunTransmittanceTable) {
-	Dvec3Table2D sunTransmittanceTable = buildSunTransmittanceTable(atmosphere, layers);
-	unsigned numLayers = layers.numLayers;
-	unsigned numAngles = layers.numAngles;
-	BOOST_REQUIRE_EQUAL(numLayers, sunTransmittanceTable.getSize().x);
-	BOOST_REQUIRE_EQUAL(numAngles, sunTransmittanceTable.getSize().y);
-	for (unsigned a = 0; a < numAngles; ++a) {
-		for (unsigned layer = 0; layer < numLayers; ++layer) {
-			uvec2 index = uvec2(layer, a);
-			dvec3 sunTransmittance = sunTransmittanceTable.get(index);
-			// Optical length is never negative
-			BOOST_REQUIRE_LE_3(0, sunTransmittance);
-			// Larger angles mean longer travel distance, hence larger optical length
-			if (a > 0) {
-				BOOST_REQUIRE_GE_3(sunTransmittance, sunTransmittanceTable.get(uvec2(layer, a - 1)));
-			}
-			// Higher layers mean shorter travel distance, hence smaller optical length
-			if (layer > 0) {
-				BOOST_REQUIRE_LE_3(sunTransmittance, sunTransmittanceTable.get(uvec2(layer - 1, a)));
-			}
-		}
-	}
-}
-
-BOOST_AUTO_TEST_CASE(TestBuildSunTransmittanceTableForZeroRadiusEarth) {
+BOOST_AUTO_TEST_CASE(TestBuildTransmittanceTableForZeroRadiusEarth) {
 	Atmosphere atmosphere(0.0);
-	Dvec3Table2D sunTransmittanceTable = buildSunTransmittanceTable(atmosphere, layers);
+	Dvec3Table2D transmittanceTable = buildTransmittanceTable(atmosphere, layers);
 	unsigned numLayers = layers.numLayers;
 	unsigned numAngles = layers.numAngles;
-	BOOST_REQUIRE_EQUAL(numLayers, sunTransmittanceTable.getSize().x);
-	BOOST_REQUIRE_EQUAL(numAngles, sunTransmittanceTable.getSize().y);
+	BOOST_REQUIRE_EQUAL(numLayers, transmittanceTable.getSize().x);
+	BOOST_REQUIRE_EQUAL(numAngles, transmittanceTable.getSize().y);
 	for (unsigned a = 0; a < numAngles; ++a) {
 		for (unsigned layer = 0; layer < numLayers; ++layer) {
 			uvec2 index = uvec2(layer, a);
-			dvec3 sunTransmittance = sunTransmittanceTable.get(index);
-			// Optical length is never negative
-			BOOST_REQUIRE_LE_3(0, sunTransmittance);
+			dvec3 transmittance = transmittanceTable.get(index);
+			// Transmittance is always between 0 and 1
+			BOOST_REQUIRE_LE_3(0.0, transmittance);
+			BOOST_REQUIRE_GE_3(1.0, transmittance);
 			// For an earth of radius 0, all ground angles should give the same result
-			BOOST_REQUIRE_CLOSE_3(sunTransmittanceTable.get(uvec2(layer, 0)), sunTransmittanceTable.get(uvec2(layer, a)), EPS);
+			if (layer == 0 && a < numAngles / 2) {
+				BOOST_REQUIRE_CLOSE_3(transmittanceTable.get(uvec2(layer, 0)), transmittanceTable.get(uvec2(layer, a)), EPS);
+			}
+			// Larger angles mean longer travel distance, hence less transmittance
+			if (a > 0 && a < numAngles / 2) {
+				BOOST_REQUIRE_LE_3(transmittance, transmittanceTable.get(uvec2(layer, a - 1)));
+			}
+		}
+	}
+}
+
+BOOST_AUTO_TEST_CASE(TestBuildTotalTransmittanceTable) {
+	Dvec3Table2D transmittanceTable = buildTransmittanceTable(atmosphere, layers);
+	Dvec3Table2D totalTransmittanceTable = buildTotalTransmittanceTable(atmosphere, layers, transmittanceTable);
+	unsigned numLayers = layers.numLayers;
+	unsigned numAngles = layers.numAngles;
+	BOOST_REQUIRE_EQUAL(numLayers, totalTransmittanceTable.getSize().x);
+	BOOST_REQUIRE_EQUAL(numAngles, totalTransmittanceTable.getSize().y);
+	for (unsigned a = 0; a < numAngles; ++a) {
+		for (unsigned layer = 0; layer < numLayers; ++layer) {
+			uvec2 index = uvec2(layer, a);
+			dvec3 totalTransmittance = totalTransmittanceTable.get(index);
+			// Transmittance is always between 0 and 1
+			BOOST_REQUIRE_LE_3(0.0, totalTransmittance);
+			BOOST_REQUIRE_GE_3(1.0, totalTransmittance);
+			// Larger angles mean longer travel distance, hence less transmittance
+			if (a > 0) {
+				BOOST_REQUIRE_LE_3(totalTransmittance, totalTransmittanceTable.get(uvec2(layer, a - 1)));
+			}
 			// Higher layers mean shorter travel distance, hence smaller optical length
 			if (layer > 0) {
-				BOOST_REQUIRE_LE_3(sunTransmittance, sunTransmittanceTable.get(uvec2(layer - 1, a)));
+				BOOST_REQUIRE_GE_3(totalTransmittance, totalTransmittanceTable.get(uvec2(layer - 1, a)));
+			}
+		}
+	}
+}
+
+BOOST_AUTO_TEST_CASE(TestBuildTotalTransmittanceTableForZeroRadiusEarth) {
+	Atmosphere atmosphere(0.0);
+	Dvec3Table2D transmittanceTable = buildTransmittanceTable(atmosphere, layers);
+	Dvec3Table2D totalTransmittanceTable = buildTotalTransmittanceTable(atmosphere, layers, transmittanceTable);
+	unsigned numLayers = layers.numLayers;
+	unsigned numAngles = layers.numAngles;
+	BOOST_REQUIRE_EQUAL(numLayers, totalTransmittanceTable.getSize().x);
+	BOOST_REQUIRE_EQUAL(numAngles, totalTransmittanceTable.getSize().y);
+	for (unsigned a = 0; a < numAngles; ++a) {
+		for (unsigned layer = 0; layer < numLayers; ++layer) {
+			uvec2 index = uvec2(layer, a);
+			dvec3 totalTransmittance = totalTransmittanceTable.get(index);
+			// Transmittance is always between 0 and 1
+			BOOST_REQUIRE_LE_3(0.0, totalTransmittance);
+			BOOST_REQUIRE_GE_3(1.0, totalTransmittance);
+			// For an earth of radius 0, all ground angles should give the same result
+			if (layer == 0 && a < numAngles / 2) {
+				BOOST_REQUIRE_CLOSE_3(totalTransmittanceTable.get(uvec2(layer, 0)), totalTransmittanceTable.get(uvec2(layer, a)), EPS);
+			}
+			// Higher layers mean shorter travel distance, hence more transmittance,
+			// unless we were hitting the earth previously
+			if (layer > 0 && a < numAngles / 2) {
+				BOOST_REQUIRE_GE_3(totalTransmittance, totalTransmittanceTable.get(uvec2(layer - 1, a)));
 			}
 		}
 	}
@@ -222,11 +232,13 @@ BOOST_AUTO_TEST_CASE(TestBuildSunTransmittanceTableForZeroRadiusEarth) {
 
 BOOST_AUTO_TEST_CASE(TestScatterer) {
 	Scatterer scatterer(atmosphere, layers);
-	dvec3 intoSunFactor = scatterer.scatteredLightFactor(dvec3(0.0, 0.0, 1.0), dvec3(0.0, 0.0, 1.0));
+	Sun sun(0.5f, 0.0f, 0.0f, 0.0f, 0.0f, vec3(1.0f), 0.5f);
+
+	dvec3 intoSunFactor = scatterer.scatteredLight(dvec3(0.0, 0.0, 1.0), sun);
 	BOOST_CHECK_LE_3(0.0, intoSunFactor);
 	BOOST_CHECK_GE_3(1.0, intoSunFactor);
 
-	dvec3 nextToSunFactor = scatterer.scatteredLightFactor(normalize(dvec3(1.0, 0.0, 1.0)), dvec3(0.0, 0.0, 1.0));
+	dvec3 nextToSunFactor = scatterer.scatteredLight(normalize(dvec3(1.0, 0.0, 1.0)), sun);
 	BOOST_CHECK_LE_3(0.0, nextToSunFactor);
 	BOOST_CHECK_GE_3(1.0, nextToSunFactor);
 
@@ -234,7 +246,7 @@ BOOST_AUTO_TEST_CASE(TestScatterer) {
 	BOOST_CHECK_LE(nextToSunFactor.r, nextToSunFactor.g);
 	BOOST_CHECK_LE(nextToSunFactor.g, nextToSunFactor.b);
 
-	dvec3 closeToHorizonFactor = scatterer.scatteredLightFactor(normalize(dvec3(100.0, 0.0, 1.0)), dvec3(0.0, 0.0, 1.0));
+	dvec3 closeToHorizonFactor = scatterer.scatteredLight(normalize(dvec3(100.0, 0.0, 1.0)), sun);
 	BOOST_CHECK_LE_3(0.0, closeToHorizonFactor);
 	BOOST_CHECK_GE_3(1.0, closeToHorizonFactor);
 }
