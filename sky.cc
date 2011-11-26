@@ -63,7 +63,7 @@ dvec3 RayleighScattering::computeCoefficient() const {
 	return dvec3(5.8e-6, 13.5e-6, 33.1e-6); // Bruneton and Neyret; they use n ~ 1.0003 apparently
 
 	double const n = 1.000293; // index of refraction of air
-	double const Ns = 2.50e25; // number density in standard atmosphere (molecules/m^3)
+	double const Ns = 2.545e25; // number density in standard atmosphere (molecules/m^3)
 	double const K = 2.0 * M_PI * M_PI * sqr(sqr(n) - 1.0) / (3.0 * Ns);
 	return K / pow(lambda, dvec3(4.0));
 }
@@ -338,6 +338,19 @@ dvec3 Sky::computeColor(vec3 dir) {
 	dvec3 const sunDirection = normalize(dvec3(3.0, 0.0, 1.0));
 
 	return scatterer.scatteredLight(direction, sunDirection, sunColor);
+
+	/*
+	// Super simple scheme by ATI (Preetham et al.)
+	double cost = dot(sunDirection, direction);
+	double g = 0.85;
+	dvec3 br = dvec3(5.8e-6, 13.5e-6, 33.1e-6); // Bruneton and Neyret; they use n ~ 1.0003 apparently
+	dvec3 bm = dvec3(2e-5); // Bruneton and Neyret
+	dvec3 brt = 3.0 / (16.0 * M_PI) * br * (1 + pow2(cost));
+	dvec3 bmt = 1.0 / (4.0 * M_PI) * bm * pow2(1 - g) / pow(1 + pow2(g) - 2.0 * g * cost, 3.0 / 2.0);
+	double s = 100e3 / direction.z;
+	dvec3 lin = (brt + bmt) / (br + bm) * sunColor * (1.0 - exp(-(bm + br) * s));
+	return lin;
+	*/
 }
 
 void Sky::generateFace(GLenum face, vec3 base, vec3 xBasis, vec3 yBasis) {
