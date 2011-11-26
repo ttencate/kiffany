@@ -37,6 +37,7 @@ set(sources
 	queues.cc queues.h
 	raycaster.cc raycaster.h
 	sky.cc sky.h
+	space.cc space.h
 	stats.cc stats.h
 	table.cc table.h
 	terrain.cc terrain.h

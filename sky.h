@@ -3,6 +3,7 @@
 
 #include "gl.h"
 #include "maths.h"
+#include "space.h"
 #include "table.h"
 
 #include <vector>
@@ -102,6 +103,7 @@ class Scatterer {
 class Sky {
 
 	Scatterer const scatterer;
+	Sun const *sun;
 
 	unsigned const size;
 	boost::scoped_array<unsigned char> textureImage;
@@ -115,7 +117,9 @@ class Sky {
 
 	public:
 
-		Sky(Scatterer const &scatterer);
+		Sky(Scatterer const &scatterer, Sun const *sun);
+
+		void setSun(Sun const *sun) { this->sun = sun; }
 
 		void update(float dt);
 		void render();

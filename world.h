@@ -14,12 +14,13 @@ class World {
 
 	Camera *camera;
 	Terrain terrain;
+	boost::scoped_ptr<Sun> sun;
 	boost::scoped_ptr<Lighting> lighting;
 	boost::scoped_ptr<Sky> sky;
 
 	public:
 
-		World(Camera *camera, TerrainGenerator *terrainGenerator, Lighting *lighting, Sky *sky);
+		World(Camera *camera, TerrainGenerator *terrainGenerator, Sun *sun, Lighting *lighting, Sky *sky);
 
 		Terrain &getTerrain() { return terrain; }
 		Terrain const &getTerrain() const { return terrain; }

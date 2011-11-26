@@ -1,34 +1,16 @@
 #ifndef LIGHTING_H
 #define LIGHTING_H
 
-#include "maths.h"
-
-class Sun {
-
-	float const season;
-	float const latitude;
-	float const axialTilt;
-
-	public:
-
-		Sun(float season, float latitude, float axialTilt);
-
-		vec3 directionAtTime(float timeOfDay);
-
-};
+#include "space.h"
 
 class Lighting {
 
-	float wallTime;
-	float timeOfDay;
-	float const dayLength;
-	Sun sun;
+	Sun const *sun;
 
 	public:
 
-		Lighting(float startTime, float dayLength, Sun sun);
+		Lighting(Sun const *sun);
 
-		void update(float dt);
 		void setup();
 
 };

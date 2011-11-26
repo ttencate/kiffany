@@ -293,9 +293,10 @@ dvec3 Scatterer::scatteredLight(dvec3 direction, dvec3 sunDirection, dvec3 sunCo
 	return scatteredLight;
 }
 
-Sky::Sky(Scatterer const &scatterer)
+Sky::Sky(Scatterer const &scatterer, Sun const *sun)
 :
 	scatterer(scatterer),
+	sun(sun),
 	size(128),
 	textureImage(new unsigned char[size * size * 3])
 {
@@ -340,13 +341,11 @@ Sky::Sky(Scatterer const &scatterer)
 	generateFaces();
 }
 
-dvec3 Sky::computeColor(vec3 dir) {
-	// TODO get from sun
-	dvec3 const direction(dir);
-	dvec3 const sunColor = 1.0 * dvec3(1.0, 1.0, 1.0);
-	dvec3 const sunDirection = normalize(dvec3(3.0, 0.0, 1.0));
-
-	return scatterer.scatteredLight(direction, sunDirection, sunColor);
+dvec3 Sky::computeColor(vec3 direction) {
+	return scatterer.scatteredLight(
+			dvec3(direction),
+			dvec3(sun->getDirection()),
+			dvec3(sun->getColor()));
 
 	/*
 	// Super simple scheme by ATI (Preetham et al.)

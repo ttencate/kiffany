@@ -1,9 +1,10 @@
 #include "world.h"
 
-World::World(Camera *camera, TerrainGenerator *terrainGenerator, Lighting *lighting, Sky *sky)
+World::World(Camera *camera, TerrainGenerator *terrainGenerator, Sun *sun, Lighting *lighting, Sky *sky)
 :
 	camera(camera),
 	terrain(terrainGenerator),
+	sun(sun),
 	lighting(lighting),
 	sky(sky)
 {
@@ -12,7 +13,7 @@ World::World(Camera *camera, TerrainGenerator *terrainGenerator, Lighting *light
 void World::update(float dt) {
 	terrain.update(dt);
 	sky->update(dt);
-	lighting->update(dt);
+	sun->update(dt);
 }
 
 void World::render() {
