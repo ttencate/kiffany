@@ -1,5 +1,7 @@
 #include "sky.h"
 
+#include <boost/assert.hpp>
+
 #include <algorithm>
 #include <limits>
 
@@ -23,15 +25,28 @@ bool rayHitsHeight(double startHeight, double targetHeight, double startAngle, d
 }
 
 double rayLengthBetweenHeights(double startHeight, double targetHeight, double startAngle, double earthRadius) {
+	BOOST_ASSERT(rayHitsHeight(startHeight, targetHeight, startAngle, earthRadius));
 	double cosAngle = cos(startAngle);
-	return /*+-*/sqrt(
+	double d = sqrt(
 			sqr(earthRadius + startHeight) * (sqr(cosAngle) - 1.0) +
-			sqr(earthRadius + targetHeight)) -
-		(earthRadius + startHeight) * cosAngle;
+			sqr(earthRadius + targetHeight));
+	double a = -(earthRadius + startHeight) * cosAngle;
+	if (startAngle <= 0.5 * M_PI) {
+		// We hit the target height from below: second intersection
+		return a + d;
+	} else {
+		// We hit the target height from above: first intersection
+		return a - d;
+	}
 }
 
 double rayAngleAtHeight(double startHeight, double targetHeight, double startAngle, double earthRadius) {
-	return asin((earthRadius + startHeight) * sin(startAngle) / (earthRadius + targetHeight));
+	BOOST_ASSERT(rayHitsHeight(startHeight, targetHeight, startAngle, earthRadius));
+	if (startAngle <= 0.5 * M_PI) {
+		return asin((earthRadius + startHeight) * sin(startAngle) / (earthRadius + targetHeight));
+	} else {
+		return M_PI - asin((earthRadius + startHeight) * sin(startAngle) / (earthRadius + targetHeight));
+	}
 }
 
 //dvec3 const Scattering::lambda = dvec3(700e-9, 530e-9, 400e-9); // wavelengths of RGB (metres)
@@ -183,8 +198,7 @@ Dvec3Table2D buildTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLay
 				rayLength = rayLengthBetweenHeights(height, height, angle, atmosphere.earthRadius);
 			} else {
 				// Ray goes down, hits layer below
-				double const angleAtPrevious = rayAngleAtHeight(height, layers.heights[layer - 1], angle, atmosphere.earthRadius);
-				rayLength = rayLengthBetweenHeights(layers.heights[layer - 1], height, angleAtPrevious, atmosphere.earthRadius);
+				rayLength = rayLengthBetweenHeights(height, layers.heights[layer - 1], angle, atmosphere.earthRadius);
 			}
 			dvec3 const extinction =
 				rayleighExtinctionCoefficient * atmosphere.rayleighScattering.densityAtHeight(height) +
@@ -198,46 +212,82 @@ Dvec3Table2D buildTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLay
 	return transmittanceTable;
 }
 
-// Transmittance from the ground up to the given layer,
-// for the zenith angle on the ground
-Dvec3Table2D buildSunTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers) {
+// Transmittance from the given layer to outer space,
+// for the given angle on that layer.
+// Zero if the earth is in between.
+Dvec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers, Dvec3Table2D const &transmittanceTable) {
 	unsigned const numAngles = layers.numAngles;
 	unsigned const numLayers = layers.numLayers;
-	dvec3 const rayleighExtinctionCoefficient = atmosphere.rayleighScattering.coefficient;
-	dvec3 const mieExtinctionCoefficient = atmosphere.mieScattering.coefficient + atmosphere.mieScattering.absorption;
 
-	Dvec3Table2D sunTransmittanceTable = Dvec3Table2D::createWithCoordsSizeAndOffset(
+	Dvec3Table2D totalTransmittanceTable = Dvec3Table2D::createWithCoordsSizeAndOffset(
 			uvec2(numLayers, numAngles),
 			dvec2(numLayers, M_PI * numAngles / (numAngles - 1)),
 			dvec2(0.0, 0.0));
-	for (unsigned a = 0; a < numAngles; ++a) {
-		double const groundAngle = M_PI * a / (numAngles - 1);
-		if (groundAngle > M_PI / 2) {
-			// Ray goes into the ground
-			for (unsigned layer = 0; layer < numLayers; ++layer) {
-				sunTransmittanceTable.set(uvec2(layer, a), dvec3(0.0));
+	// For upward angles, cumulatively sum over all layers.
+	for (int layer = numLayers - 1; layer >= 0; --layer) {
+		for (unsigned a = 0; a < numAngles / 2; ++a) {
+			dvec3 totalTransmittance;
+			if (layer == (int)numLayers - 1) {
+				// Ray goes directly into space
+				totalTransmittance = dvec3(1.0);
+			} else {
+				// Ray passes through some layers
+				double const angle = M_PI * a / (numAngles - 1);
+				double const nextAngle = rayAngleAtHeight(layers.heights[layer], layers.heights[layer + 1], angle, atmosphere.earthRadius);
+				BOOST_ASSERT(nextAngle <= 0.5 * M_PI);
+				
+				totalTransmittance =
+					transmittanceTable(dvec2(layer, angle)) *
+					totalTransmittanceTable(dvec2(layer + 1, nextAngle));
 			}
-		} else {
-			// Cumulatively sum over all layers
-			sunTransmittanceTable.set(uvec2(numLayers - 1, a), dvec3(1.0));
-			for (int layer = numLayers - 2; layer >= 0; --layer) {
-				double const lowerHeight = layers.heights[layer];
-				double const upperHeight = layers.heights[layer + 1];
-				// TODO the notion of groundAngle is broken: ray from in the air, sloping down but missing the ground, does not have one
-				double const lowerAngle = rayAngleAtHeight(0.0, lowerHeight, groundAngle, atmosphere.earthRadius);
-				double const rayLength = rayLengthBetweenHeights(lowerHeight, upperHeight, lowerAngle, atmosphere.earthRadius);
-				dvec3 const extinction =
-					rayleighExtinctionCoefficient * atmosphere.rayleighScattering.densityAtHeight(upperHeight) +
-					mieExtinctionCoefficient * atmosphere.mieScattering.densityAtHeight(upperHeight);
-				dvec3 const transmittance = exp(-extinction * rayLength);
-				dvec3 const sunTransmittance = sunTransmittanceTable.get(uvec2(layer + 1, a)) * transmittance;
-				sunTransmittanceTable.set(uvec2(layer, a), sunTransmittance);
+			totalTransmittanceTable.set(uvec2(layer, a), totalTransmittance);
+		}
+	}
+	// We can only do downward angles after we've got all upward ones,
+	// because (unless they hit the ground) they eventually start going up again.
+	// Also, we need to do them in bottom-to-top order.
+	for (unsigned layer = 0; layer < numLayers; ++layer) {
+		for (unsigned a = numAngles / 2; a < numAngles; ++a) {
+			double const angle = M_PI * a / (numAngles - 1);
+			dvec3 totalTransmittance;
+			if (layer == 0) {
+				// Ray goes directly into the ground
+				totalTransmittance = dvec3(0.0);
+			} else if (rayHitsHeight(layers.heights[layer], layers.heights[layer - 1], angle, atmosphere.earthRadius)) {
+				// Ray hits the layer below
+				double const nextAngle = rayAngleAtHeight(layers.heights[layer], layers.heights[layer - 1], angle, atmosphere.earthRadius);
+				BOOST_ASSERT(nextAngle >= 0.5 * M_PI);
+				totalTransmittance =
+					transmittanceTable(dvec2(layer, angle)) *
+					totalTransmittanceTable(dvec2(layer - 1, nextAngle));
+			} else {
+				// Ray misses the layer below, hits the current one from below
+				double const nextAngle = M_PI - angle;
+				BOOST_ASSERT(nextAngle <= 0.5 * M_PI);
+				totalTransmittance =
+					transmittanceTable(dvec2(layer, angle)) *
+					totalTransmittanceTable(dvec2(layer, nextAngle));
 			}
+			totalTransmittanceTable.set(uvec2(layer, a), totalTransmittance);
 		}
 	}
 
-	// std::cout << "Sun transmittance table:\n" << sunTransmittanceTable << '\n';
-	return sunTransmittanceTable;
+	/*
+	std::cout << "Sun transmittance table:\n";
+	std::cout << std::fixed;
+	std::cout.precision(5);
+	for (int layer = numLayers - 1; layer >= 0; --layer) {
+		std::cout << layer << "  ";
+		for (unsigned a = 0; a < numAngles; ++a) {
+			if (a == numAngles / 2) {
+				std::cout << "| ";
+			}
+			std::cout << totalTransmittanceTable.get(uvec2(layer, a)).r << ' ';
+		}
+		std::cout << '\n';
+	}
+	*/
+	return totalTransmittanceTable;
 }
 
 Scatterer::Scatterer(Atmosphere const &atmosphere, AtmosphereLayers const &layers)
@@ -245,7 +295,7 @@ Scatterer::Scatterer(Atmosphere const &atmosphere, AtmosphereLayers const &layer
 	atmosphere(atmosphere),
 	layers(layers),
 	transmittanceTable(buildTransmittanceTable(atmosphere, layers)),
-	sunTransmittanceTable(buildSunTransmittanceTable(atmosphere, layers))
+	totalTransmittanceTable(buildTotalTransmittanceTable(atmosphere, layers, transmittanceTable))
 {
 }
 
@@ -267,11 +317,11 @@ dvec3 Scatterer::scatteredLight(dvec3 direction, dvec3 sunDirection, dvec3 sunCo
 		dvec3 const rayleighInscattering =
 			atmosphere.rayleighScattering.coefficient *
 			atmosphere.rayleighScattering.phaseFunction(lightAngle) *
-			sunTransmittanceTable(dvec2(layer, groundAngle));
+			totalTransmittanceTable(dvec2(layer, groundAngle));
 		dvec3 const mieInscattering =
 			atmosphere.mieScattering.coefficient *
 			atmosphere.mieScattering.phaseFunction(lightAngle) *
-			sunTransmittanceTable(dvec2(layer, groundAngle));
+			totalTransmittanceTable(dvec2(layer, groundAngle));
 		scatteredLight += rayLength * sunColor * (rayleighInscattering + mieInscattering);
 
 		// Multiply transmittance

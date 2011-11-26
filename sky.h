@@ -8,6 +8,16 @@
 
 #include <vector>
 
+/*
+ * Conventions:
+ * - all angles are in radians
+ * - all distances are in metres
+ * - all angles are zenith angles (0 <= a <= pi)
+ *   with 0 being straight up (away from the centre of the earth)
+ *   and pi being straight down (towards the centre of the earth)
+ * - all heights are measured from sea level
+ */
+
 // TODO reorder arguments
 // TODO measure from centre
 bool rayHitsHeight(double startHeight, double targetHeight, double startAngle, double earthRadius);
@@ -82,7 +92,7 @@ class AtmosphereLayers {
 typedef Table<dvec3, uvec2, dvec2> Dvec3Table2D;
 
 Dvec3Table2D buildTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers);
-Dvec3Table2D buildSunTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers);
+Dvec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers, Dvec3Table2D const &transmittanceTable);
 
 class Scatterer {
 
@@ -90,7 +100,7 @@ class Scatterer {
 	AtmosphereLayers layers;
 
 	Dvec3Table2D transmittanceTable;
-	Dvec3Table2D sunTransmittanceTable;
+	Dvec3Table2D totalTransmittanceTable;
 
 	public:
 
