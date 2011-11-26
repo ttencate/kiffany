@@ -258,11 +258,11 @@ dvec3 Scatterer::scatteredLight(dvec3 direction, dvec3 sunDirection, dvec3 sunCo
 		dvec3 const rayleighInscattering =
 			atmosphere.rayleighScattering.coefficient *
 			atmosphere.rayleighScattering.phaseFunction(lightAngle) *
-			sunTransmittanceTable.get(uvec2(layer, groundAngle));
+			sunTransmittanceTable(dvec2(layer, groundAngle));
 		dvec3 const mieInscattering =
 			atmosphere.mieScattering.coefficient *
 			atmosphere.mieScattering.phaseFunction(lightAngle) *
-			sunTransmittanceTable.get(uvec2(layer, groundAngle));
+			sunTransmittanceTable(dvec2(layer, groundAngle));
 		scatteredLight += rayLength * sunColor * (rayleighInscattering + mieInscattering);
 
 		// Multiply transmittance
