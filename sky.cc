@@ -302,6 +302,8 @@ Scatterer::Scatterer(Atmosphere const &atmosphere, AtmosphereLayers const &layer
 dvec3 Scatterer::scatteredLight(dvec3 direction, dvec3 sunDirection, dvec3 sunColor) const {
 	double const lightAngle = acos(dot(direction, sunDirection));
 	double const groundAngle = acos(direction.z);
+	double const rayleighPhaseFunction = atmosphere.rayleighScattering.phaseFunction(lightAngle);
+	double const miePhaseFunction = atmosphere.mieScattering.phaseFunction(lightAngle);
 	// 0.0046 is the real angular radius of sun in radians
 	// TODO extract into parameter on Sun
 	dvec3 scatteredLight = (1.0 - smoothstep(0.04, 0.07, lightAngle)) * sunColor;
@@ -314,13 +316,12 @@ dvec3 Scatterer::scatteredLight(dvec3 direction, dvec3 sunDirection, dvec3 sunCo
 		double const sunAngle = rayAngleAtHeight(0.0, height, acos(sunDirection.z), atmosphere.earthRadius);
 
 		// Add inscattering, attenuated by optical depth to the sun
-		// TODO can we take the phase function out?
 		dvec3 const rayleighInscattering =
 			atmosphere.rayleighScattering.coefficient *
-			atmosphere.rayleighScattering.phaseFunction(lightAngle);
+			rayleighPhaseFunction;
 		dvec3 const mieInscattering =
 			atmosphere.mieScattering.coefficient *
-			atmosphere.mieScattering.phaseFunction(lightAngle);
+			miePhaseFunction;
 		dvec3 const transmittance = totalTransmittanceTable(dvec2(layer, sunAngle));
 		scatteredLight += rayLength * sunColor * transmittance * (rayleighInscattering + mieInscattering);
 
