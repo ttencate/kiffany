@@ -15,6 +15,7 @@ bool parseCommandLine(int argc, char **argv) {
 		("mouse_look", po::value<bool>(&flags.mouseLook)->default_value(true), "use mouse to look around")
 		("autofly_speed", po::value<float>(&flags.autoflySpeed)->default_value(0), "automatically fly forward")
 		("vsync", po::bool_switch(&flags.vsync), "synchronize on vertical blank")
+		("fullscreen", po::bool_switch(&flags.fullscreen), "start in fullscreen mode")
 		("fixed_timestep", po::value<unsigned>(&flags.fixedTimestep)->default_value(0), "fixed simulation timestep value (ms)")
 		("exit_after", po::value<unsigned>(&flags.exitAfter)->default_value(0), "terminate after this many frames")
 		("seed", po::value<unsigned>(&flags.seed)->default_value(4), "seed for world generation")

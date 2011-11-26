@@ -14,6 +14,7 @@ Camera *camera = 0;
 
 bool mouseLook;
 int2 mousePos;
+bool fullscreen;
 bool running = true;
 
 struct Marker {
@@ -244,7 +245,21 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	glfwOpenWindow(1024, 768, 8, 8, 8, 8, 16, 0, GLFW_WINDOW);
+	int width;
+	int height;
+	int mode;
+	if (flags.fullscreen) {
+		GLFWvidmode videoMode;
+		glfwGetDesktopMode(&videoMode);
+		width = videoMode.Width;
+		height = videoMode.Height;
+		mode = GLFW_FULLSCREEN;
+	} else {
+		width = 1024;
+		height = 768;
+		mode = GLFW_WINDOW;
+	}
+	glfwOpenWindow(width, height, 8, 8, 8, 8, 16, 0, mode);
 	glfwSwapInterval(flags.vsync ? 1 : 0);
 	glfwSetWindowTitle("Kiffany");
 

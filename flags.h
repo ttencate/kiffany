@@ -6,6 +6,7 @@ struct Flags {
 	bool mouseLook;
 	float autoflySpeed;
 	bool vsync;
+	bool fullscreen;
 	unsigned fixedTimestep;
 	unsigned exitAfter;
 	unsigned seed;
