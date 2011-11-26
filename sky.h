@@ -102,6 +102,9 @@ class AtmosphereLayers {
 
 typedef Table<dvec3, uvec2, dvec2> Dvec3Table2D;
 
+double rayLengthToNextLayer(Ray ray, AtmosphereLayers const &layers, unsigned layer);
+dvec3 transmittanceToNextLayer(Ray ray, Atmosphere const &atmosphere, AtmosphereLayers const &layers, unsigned layer);
+
 Dvec3Table2D buildTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers);
 Dvec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers, Dvec3Table2D const &transmittanceTable);
 
@@ -117,7 +120,7 @@ class Scatterer {
 
 		Scatterer(Atmosphere const &atmosphere, AtmosphereLayers const &layers);
 
-		dvec3 scatteredLight(dvec3 direction, Sun const &sun) const;
+		dvec3 scatteredLight(dvec3 viewDirection, Sun const &sun) const;
 
 };
 

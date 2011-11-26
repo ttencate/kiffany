@@ -184,15 +184,43 @@ AtmosphereLayers::AtmosphereLayers(Atmosphere const &atmosphere, unsigned numLay
 {
 }
 
-// Transmittance between the given layer and the next,
+// Ray length from the given layer to the next,
 // where 'next' might be the one above (for angle <= 0.5pi),
 // the layer itself (for 0.5pi < angle < x),
 // or the layer below it (for x <= angle).
+inline double rayLengthToNextLayer(Ray ray, AtmosphereLayers const &layers, unsigned layer) {
+	if (ray.angle <= 0.5 * M_PI && layer == layers.numLayers - 1) {
+		// Ray goes up into space
+		return 0.0;
+	} else if (ray.angle <= 0.5 * M_PI) {
+		// Ray goes up, hits layer above
+		return rayLengthUpwards(ray, layers.heights[layer + 1]);
+	} else if (layer == 0) {
+		// Ray goes down, into the ground
+		return 0.0;
+	} else if (!rayHitsHeight(ray, layers.heights[layer - 1])) {
+		// Ray goes down, misses layer below, hits current layer from below
+		return rayLengthToSameHeight(ray);
+	} else {
+		// Ray goes down, hits layer below
+		return rayLengthDownwards(ray, layers.heights[layer - 1]);
+	}
+}
+
+inline dvec3 transmittanceToNextLayer(Ray ray, Atmosphere const &atmosphere, AtmosphereLayers const &layers, unsigned layer) {
+	dvec3 const rayleighExtinctionCoefficient = atmosphere.rayleighScattering.coefficient;
+	dvec3 const mieExtinctionCoefficient = atmosphere.mieScattering.coefficient + atmosphere.mieScattering.absorption;
+
+	double rayLength = rayLengthToNextLayer(ray, layers, layer);
+	dvec3 const extinction =
+		rayleighExtinctionCoefficient * atmosphere.rayleighScattering.densityAtHeight(ray.height) +
+		mieExtinctionCoefficient * atmosphere.mieScattering.densityAtHeight(ray.height);
+	return exp(-extinction * rayLength);
+}
+
 Dvec3Table2D buildTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers) {
 	unsigned const numAngles = layers.numAngles;
 	unsigned const numLayers = layers.numLayers;
-	dvec3 const rayleighExtinctionCoefficient = atmosphere.rayleighScattering.coefficient;
-	dvec3 const mieExtinctionCoefficient = atmosphere.mieScattering.coefficient + atmosphere.mieScattering.absorption;
 
 	Dvec3Table2D transmittanceTable = Dvec3Table2D::createWithCoordsSizeAndOffset(
 			uvec2(numLayers, numAngles),
@@ -202,33 +230,8 @@ Dvec3Table2D buildTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLay
 		double const angle = M_PI * a / (numAngles - 1);
 		for (unsigned layer = 0; layer < numLayers; ++layer) {
 			double const height = layers.heights[layer];
-			Ray ray(layers.heights[layer], angle);
-			double rayLength;
-			if (angle <= 0.5 * M_PI && layer == numLayers - 1) {
-				// Ray goes up into space
-				rayLength = 0.0;
-			} else if (angle <= 0.5 * M_PI) {
-				// Ray goes up, hits layer above
-				rayLength = rayLengthUpwards(ray, layers.heights[layer + 1]);
-			} else if (layer == 0) {
-				// Ray goes down, into the ground
-				rayLength = INFINITY;
-			} else if (!rayHitsHeight(ray, layers.heights[layer - 1])) {
-				// Ray goes down, misses layer below, hits current layer from below
-				rayLength = rayLengthToSameHeight(ray);
-			} else {
-				// Ray goes down, hits layer below
-				rayLength = rayLengthDownwards(ray, layers.heights[layer - 1]);
-			}
-			dvec3 transmittance;
-			if (rayLength < INFINITY) {
-				dvec3 const extinction =
-					rayleighExtinctionCoefficient * atmosphere.rayleighScattering.densityAtHeight(height) +
-					mieExtinctionCoefficient * atmosphere.mieScattering.densityAtHeight(height);
-				transmittance = exp(-extinction * rayLength);
-			} else {
-				transmittance = dvec3(0.0);
-			}
+			Ray ray(height, angle);
+			dvec3 transmittance = transmittanceToNextLayer(ray, atmosphere, layers, layer);
 			transmittanceTable.set(uvec2(layer, a), transmittance);
 		}
 	}
@@ -340,30 +343,32 @@ Scatterer::Scatterer(Atmosphere const &atmosphere, AtmosphereLayers const &layer
 {
 }
 
-dvec3 Scatterer::scatteredLight(dvec3 direction, Sun const &sun) const {
-	if (direction.z < 0.0) {
+inline dvec3 Scatterer::scatteredLight(dvec3 viewDirection, Sun const &sun) const {
+	if (viewDirection.z < 0.0) {
 		return dvec3(0.0);
 	}
 	double const sunAngularRadius = sun.getAngularRadius();
 	dvec3 sunColor(sun.getColor());
 	dvec3 sunDirection(sun.getDirection());
 
-	double const lightAngle = acos(dot(direction, sunDirection));
-	double const groundAngle = acos(direction.z);
-	double const sunGroundAngle = acos(sunDirection.z);
+	double const lightAngle = acos(dot(viewDirection, sunDirection));
+	double const groundViewAngle = acos(viewDirection.z);
+	double const groundSunAngle = acos(sunDirection.z);
+	Ray groundViewRay(atmosphere.earthRadius, groundViewAngle);
+	Ray groundSunRay(atmosphere.earthRadius, groundSunAngle);
 
 	double const rayleighPhaseFunction = atmosphere.rayleighScattering.phaseFunction(lightAngle);
 	double const miePhaseFunction = atmosphere.mieScattering.phaseFunction(lightAngle);
-	
-	dvec3 scatteredLight = (1.0 - smoothstep(sunAngularRadius, sunAngularRadius * 1.2, lightAngle)) * sunColor;
 
+	dvec3 scatteredLight = (1.0 - smoothstep(sunAngularRadius, sunAngularRadius * 1.2, lightAngle)) * sunColor;
 	for (int layer = layers.numLayers - 2; layer >= 0; --layer) {
 		double const height = layers.heights[layer];
-		Ray ray(height, rayAngleUpwards(Ray(atmosphere.earthRadius, groundAngle), height));
-		BOOST_ASSERT(ray.angle <= 0.5 * M_PI);
-		double const rayLength = rayLengthUpwards(ray, layers.heights[layer + 1]);
 
-		double const sunAngle = rayAngleUpwards(Ray(atmosphere.earthRadius, sunGroundAngle), height);
+		Ray viewRay(height, rayAngleUpwards(groundViewRay, height));
+		BOOST_ASSERT(viewRay.angle <= 0.5 * M_PI);
+		double const rayLength = rayLengthUpwards(viewRay, layers.heights[layer + 1]);
+
+		double const sunAngle = rayAngleUpwards(groundSunRay, height);
 
 		// Add inscattering, attenuated by optical depth to the sun
 		dvec3 const rayleighInscattering =
@@ -378,21 +383,9 @@ dvec3 Scatterer::scatteredLight(dvec3 direction, Sun const &sun) const {
 		scatteredLight += rayLength * sunColor * transmittance * (rayleighInscattering + mieInscattering);
 
 		// Multiply transmittance
-		dvec3 const layerTransmittance = transmittanceTable(dvec2(layer, ray.angle));
+		dvec3 const layerTransmittance = transmittanceTable(dvec2(layer, viewRay.angle));
 		scatteredLight *= layerTransmittance;
-		/*
-		std::cout
-			<< layer << " -> "
-			<< "[" << lowerHeight << ", " << upperHeight << "] "
-			<< "opt " << rayleighOpticalLength << ' '
-			<< "in " << rayleighInscattering.b << ' '
-			<< "sunAtt " << sunAttenuation.b << ' '
-			<< "layAtt " << layerAttenuation.b << ' '
-			<< "now " << scatteredLightFactor
-			<< '\n';
-			*/
 	}
-	//std::cout << '\n';
 	return scatteredLight;
 }
 
