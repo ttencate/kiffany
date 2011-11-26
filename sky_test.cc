@@ -37,24 +37,24 @@ BOOST_FIXTURE_TEST_SUITE(SkyTest, Fixture)
 double const EPS = 1e-4;
 
 BOOST_AUTO_TEST_CASE(TestRayLengthUpwardsStraightUp) {
-	BOOST_CHECK_CLOSE( 5.0, rayLengthUpwards(Ray( 0.0, 0.0),  5.0,   0.0), EPS);
-	BOOST_CHECK_CLOSE( 5.0, rayLengthUpwards(Ray( 0.0, 0.0),  5.0,   1.0), EPS);
-	BOOST_CHECK_CLOSE( 5.0, rayLengthUpwards(Ray( 0.0, 0.0),  5.0, 100.0), EPS);
-	BOOST_CHECK_CLOSE(10.0, rayLengthUpwards(Ray(50.0, 0.0), 60.0,   0.0), EPS);
-	BOOST_CHECK_CLOSE(10.0, rayLengthUpwards(Ray(50.0, 0.0), 60.0,   1.0), EPS);
-	BOOST_CHECK_CLOSE(10.0, rayLengthUpwards(Ray(50.0, 0.0), 60.0, 100.0), EPS);
+	BOOST_CHECK_CLOSE( 5.0, rayLengthUpwards(Ray( 0.0, 0.0),  5.0), EPS);
+	BOOST_CHECK_CLOSE( 5.0, rayLengthUpwards(Ray( 0.0, 0.0),  5.0), EPS);
+	BOOST_CHECK_CLOSE( 5.0, rayLengthUpwards(Ray( 0.0, 0.0),  5.0), EPS);
+	BOOST_CHECK_CLOSE(10.0, rayLengthUpwards(Ray(50.0, 0.0), 60.0), EPS);
+	BOOST_CHECK_CLOSE(10.0, rayLengthUpwards(Ray(50.0, 0.0), 60.0), EPS);
+	BOOST_CHECK_CLOSE(10.0, rayLengthUpwards(Ray(50.0, 0.0), 60.0), EPS);
 }
 
 BOOST_AUTO_TEST_CASE(TestRayLengthUpwardsSideways) {
-	BOOST_CHECK_CLOSE(50.0, rayLengthUpwards(Ray( 0.0, 0.5 * M_PI), 50.0,  0.0), EPS);
-	BOOST_CHECK_CLOSE(40.0, rayLengthUpwards(Ray(30.0, 0.5 * M_PI), 50.0,  0.0), EPS);
-	BOOST_CHECK_CLOSE(40.0, rayLengthUpwards(Ray( 0.0, 0.5 * M_PI), 20.0, 30.0), EPS);
+	BOOST_CHECK_CLOSE(50.0, rayLengthUpwards(Ray( 0.0, 0.5 * M_PI), 50.0), EPS);
+	BOOST_CHECK_CLOSE(20.0, rayLengthUpwards(Ray( 0.0, 0.5 * M_PI), 20.0), EPS);
+	BOOST_CHECK_CLOSE(40.0, rayLengthUpwards(Ray(30.0, 0.5 * M_PI), 50.0), EPS);
 }
 
 BOOST_AUTO_TEST_CASE(TestRayLengthDownwards) {
-	BOOST_CHECK_EQUAL(50.0, rayLengthDownwards(Ray(50.0, M_PI),  0.0, 30.0));
-	BOOST_CHECK_EQUAL(20.0, rayLengthDownwards(Ray(50.0, M_PI), 30.0,  0.0));
-	BOOST_CHECK_EQUAL(20.0, rayLengthDownwards(Ray(20.0, M_PI),  0.0, 30.0));
+	BOOST_CHECK_EQUAL(40.0, rayLengthDownwards(Ray(50.0, M_PI), 10.0));
+	BOOST_CHECK_EQUAL(20.0, rayLengthDownwards(Ray(50.0, M_PI), 30.0));
+	BOOST_CHECK_EQUAL(10.0, rayLengthDownwards(Ray(20.0, M_PI), 10.0));
 }
 
 template<typename F>
@@ -117,16 +117,16 @@ BOOST_AUTO_TEST_CASE(TestMiePhaseFunctionIsForward) {
 }
 
 BOOST_AUTO_TEST_CASE(TestLayerHeights) {
-	double const height = atmosphere.rayleighScattering.height;
+	double const thickness = atmosphere.rayleighScattering.thickness;
 	double const EPS = 1e-4;
-	BOOST_CHECK_EQUAL(0.0, layers.heights[0]);
+	BOOST_CHECK_CLOSE(atmosphere.earthRadius, layers.heights[0], EPS);
 	for (unsigned i = 0; i < layers.numLayers - 1; ++i) {
 		BOOST_CHECK_LE(0.0, layers.heights[i]);
 		BOOST_CHECK_LT(layers.heights[i], layers.heights[i + 1]);
-		double cumulativeDensity = height * (1.0 - exp(-layers.heights[i] / height));
-		BOOST_CHECK_CLOSE((double)i / (layers.numLayers - 1) * height, cumulativeDensity, EPS);
+		double cumulativeDensity = thickness * (1.0 - exp(-(layers.heights[i] - atmosphere.earthRadius) / thickness));
+		BOOST_CHECK_CLOSE((double)i / (layers.numLayers - 1) * thickness, cumulativeDensity, EPS);
 	}
-	BOOST_CHECK_EQUAL(atmosphere.atmosphereHeight, layers.heights[layers.numLayers - 1]);
+	BOOST_CHECK_EQUAL(atmosphere.earthRadius + atmosphere.thickness, layers.heights[layers.numLayers - 1]);
 }
 
 BOOST_AUTO_TEST_CASE(TestBuildTransmittanceTable) {

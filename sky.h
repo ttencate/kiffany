@@ -15,8 +15,8 @@
  * - all angles are zenith angles (0 <= a <= pi)
  *   with 0 being straight up (away from the centre of the earth)
  *   and pi being straight down (towards the centre of the earth)
- * - all heights are measured from sea level
-// TODO measure from centre
+ * - all heights are measured from the centre of the earth
+ * - things measured from sea level are called "thickness"
  */
 
 struct Ray {
@@ -25,15 +25,15 @@ struct Ray {
 	Ray(double height, double angle) : height(height), angle(angle) {}
 };
 
-bool rayHitsHeight(Ray ray, double targetHeight, double earthRadius);
+bool rayHitsHeight(Ray ray, double targetHeight);
 
-double rayLengthUpwards(Ray ray, double targetHeight, double earthRadius);
-double rayLengthToSameHeight(Ray ray, double earthRadius);
-double rayLengthDownwards(Ray ray, double targetHeight, double earthRadius);
+double rayLengthUpwards(Ray ray, double targetHeight);
+double rayLengthToSameHeight(Ray ray);
+double rayLengthDownwards(Ray ray, double targetHeight);
 
-double rayAngleUpwards(Ray ray, double targetHeight, double earthRadius);
+double rayAngleUpwards(Ray ray, double targetHeight);
 double rayAngleToSameHeight(Ray ray);
-double rayAngleDownwards(Ray ray, double targetHeight, double earthRadius);
+double rayAngleDownwards(Ray ray, double targetHeight);
 
 class Scattering {
 
@@ -41,11 +41,12 @@ class Scattering {
 
 		static dvec3 const lambda;
 
-		Scattering(double height, dvec3 coefficient);
+		Scattering(double unityHeight, double thickness, dvec3 coefficient);
 
 	public:
 
-		double const height;
+		double const unityHeight;
+		double const thickness;
 		dvec3 const coefficient;
 
 		double densityAtHeight(double height) const;
@@ -55,7 +56,7 @@ class Scattering {
 class RayleighScattering : public Scattering {
 	dvec3 computeCoefficient() const;
 	public:
-		RayleighScattering();
+		RayleighScattering(double unityHeight);
 		double phaseFunction(double lightAngle) const;
 };
 
@@ -63,7 +64,7 @@ class MieScattering : public Scattering {
 	dvec3 computeCoefficient() const;
 	public:
 		dvec3 const absorption;
-		MieScattering();
+		MieScattering(double unityHeight);
 		double phaseFunction(double lightAngle) const;
 };
 
@@ -72,12 +73,12 @@ class Atmosphere {
 	public:
 
 		double const earthRadius;
-		double const atmosphereHeight;
+		double const thickness;
 
 		RayleighScattering const rayleighScattering;
 		MieScattering const mieScattering;
 
-		Atmosphere(double earthRadius = 6371e3, double atmosphereHeight = 100e3);
+		Atmosphere(double earthRadius = 6371e3, double thickness = 100e3);
 };
 
 class AtmosphereLayers {
@@ -88,7 +89,7 @@ class AtmosphereLayers {
 	
 	private:
 
-		Heights computeHeights(double rayleighHeight, double atmosphereHeight);
+		Heights computeHeights(double earthRadius, double rayleighHeight, double atmosphereHeight);
 
 	public:
 

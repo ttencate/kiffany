@@ -20,47 +20,47 @@
  * http://www.springerlink.com/content/nrq497r40xmw4821/fulltext.pdf
  */
 
-bool rayHitsHeight(Ray ray, double targetHeight, double earthRadius) {
-	return (earthRadius + ray.height) * sin(ray.angle) < earthRadius + targetHeight;
+bool rayHitsHeight(Ray ray, double targetHeight) {
+	return ray.height * sin(ray.angle) < targetHeight;
 	// return pow2(cos(startAngle)) >= 1.0 - pow2((earthRadius + targetHeight) / (earthRadius + startHeight));
 }
 
-double rayLengthUpwards(Ray ray, double targetHeight, double earthRadius) {
+double rayLengthUpwards(Ray ray, double targetHeight) {
 	BOOST_ASSERT(ray.height <= targetHeight);
 	BOOST_ASSERT(ray.angle <= 0.5 * M_PI);
 	double cosAngle = cos(ray.angle);
 	double rayLength = sqrt(
-			sqr(earthRadius + ray.height) * (sqr(cosAngle) - 1.0) +
-			sqr(earthRadius + targetHeight))
-		- (earthRadius + ray.height) * cosAngle;
+			sqr(ray.height) * (sqr(cosAngle) - 1.0) +
+			sqr(targetHeight))
+		- ray.height * cosAngle;
 	BOOST_ASSERT(rayLength >= 0);
 	return rayLength;
 }
 
-double rayLengthToSameHeight(Ray ray, double earthRadius) {
+double rayLengthToSameHeight(Ray ray) {
 	BOOST_ASSERT(ray.angle > 0.5 * M_PI);
-	double rayLength = -2.0 * (earthRadius + ray.height) * cos(ray.angle);
+	double rayLength = -2.0 * ray.height * cos(ray.angle);
 	BOOST_ASSERT(rayLength >= 0);
 	return rayLength;
 }
 
-double rayLengthDownwards(Ray ray, double targetHeight, double earthRadius) {
+double rayLengthDownwards(Ray ray, double targetHeight) {
 	BOOST_ASSERT(targetHeight <= ray.height);
 	BOOST_ASSERT(ray.angle > 0.5 * M_PI);
-	BOOST_ASSERT(rayHitsHeight(ray, targetHeight, earthRadius));
+	BOOST_ASSERT(rayHitsHeight(ray, targetHeight));
 	double cosAngle = cos(ray.angle);
 	double rayLength = -sqrt(
-			sqr(earthRadius + ray.height) * (sqr(cosAngle) - 1.0) +
-			sqr(earthRadius + targetHeight))
-		- (earthRadius + ray.height) * cosAngle;
+			sqr(ray.height) * (sqr(cosAngle) - 1.0) +
+			sqr(targetHeight))
+		- ray.height * cosAngle;
 	BOOST_ASSERT(rayLength >= 0);
 	return rayLength;
 }
 
-double rayAngleUpwards(Ray ray, double targetHeight, double earthRadius) {
+double rayAngleUpwards(Ray ray, double targetHeight) {
 	BOOST_ASSERT(ray.height <= targetHeight);
 	BOOST_ASSERT(ray.angle <= 0.5 * M_PI);
-	double rayAngle = asin((earthRadius + ray.height) * sin(ray.angle) / (earthRadius + targetHeight));
+	double rayAngle = asin(ray.height * sin(ray.angle) / targetHeight);
 	BOOST_ASSERT(rayAngle >= 0);
 	BOOST_ASSERT(rayAngle <= 0.5 * M_PI);
 	return rayAngle;
@@ -72,11 +72,11 @@ double rayAngleToSameHeight(Ray ray) {
 	return M_PI - ray.angle;
 }
 
-double rayAngleDownwards(Ray ray, double targetHeight, double earthRadius) {
+double rayAngleDownwards(Ray ray, double targetHeight) {
 	BOOST_ASSERT(targetHeight <= ray.height);
 	BOOST_ASSERT(ray.angle > 0.5 * M_PI);
-	BOOST_ASSERT(rayHitsHeight(ray, targetHeight, earthRadius));
-	double rayAngle = M_PI - asin((earthRadius + ray.height) * sin(ray.angle) / (earthRadius + targetHeight));
+	BOOST_ASSERT(rayHitsHeight(ray, targetHeight));
+	double rayAngle = M_PI - asin(ray.height * sin(ray.angle) / targetHeight);
 	BOOST_ASSERT(rayAngle >= 0.5 * M_PI);
 	BOOST_ASSERT(rayAngle <= M_PI);
 	return rayAngle;
@@ -85,15 +85,16 @@ double rayAngleDownwards(Ray ray, double targetHeight, double earthRadius) {
 //dvec3 const Scattering::lambda = dvec3(700e-9, 530e-9, 400e-9); // wavelengths of RGB (metres)
 dvec3 const Scattering::lambda = dvec3(680e-9, 550e-9, 440e-9); // Bruneton and Neyret
 
-Scattering::Scattering(double height, dvec3 coefficient)
+Scattering::Scattering(double unityHeight, double thickness, dvec3 coefficient)
 :
-	height(height),
+	unityHeight(unityHeight),
+	thickness(thickness),
 	coefficient(coefficient)
 {
 }
 
 double Scattering::densityAtHeight(double height) const {
-	return exp(-height / this->height);
+	return exp(-(height - unityHeight) / thickness);
 }
 
 dvec3 RayleighScattering::computeCoefficient() const {
@@ -105,9 +106,9 @@ dvec3 RayleighScattering::computeCoefficient() const {
 	return K / pow(lambda, dvec3(4.0));
 }
 
-RayleighScattering::RayleighScattering()
+RayleighScattering::RayleighScattering(double unityHeight)
 :
-	Scattering(7994, computeCoefficient())
+	Scattering(unityHeight, 7994, computeCoefficient())
 {
 }
 
@@ -121,17 +122,11 @@ double RayleighScattering::phaseFunction(double lightAngle) const {
 
 dvec3 MieScattering::computeCoefficient() const {
 	return dvec3(2e-5); // Bruneton and Neyret
-
-	// TODO why do we need a much smaller number than in the literature?
-	double const c = 6e-22; // 6e-17 for clear, 25e-17 for overcast
-	double const nu = 4.0;
-	dvec3 K(0.68, 0.673, 0.663); // Preetham, Table 2
-	return 0.434 * c * M_PI * pow(2 * M_PI / lambda, dvec3(nu - 2.0)) * K;
 }
 
-MieScattering::MieScattering()
+MieScattering::MieScattering(double unityHeight)
 :
-	Scattering(1200, computeCoefficient()),
+	Scattering(unityHeight, 1200, computeCoefficient()),
 	absorption(dvec3(coefficient / 9.0))
 {
 }
@@ -162,20 +157,22 @@ double MieScattering::phaseFunction(double lightAngle) const {
 		*/
 }
 
-Atmosphere::Atmosphere(double earthRadius, double atmosphereHeight)
+Atmosphere::Atmosphere(double earthRadius, double thickness)
 :
 	earthRadius(earthRadius),
-	atmosphereHeight(atmosphereHeight)
+	thickness(thickness),
+	rayleighScattering(earthRadius),
+	mieScattering(earthRadius)
 {
 }
 
-AtmosphereLayers::Heights AtmosphereLayers::computeHeights(double rayleighHeight, double atmosphereHeight) {
+AtmosphereLayers::Heights AtmosphereLayers::computeHeights(double earthRadius, double thickness, double atmosphereThickness) {
 	Heights heights(numLayers);
 	for (unsigned i = 0; i < numLayers - 1; ++i) {
 		double const containedFraction = 1.0f - (double)i / (numLayers - 1);
-		heights[i] = -rayleighHeight * log(containedFraction);
+		heights[i] = earthRadius - thickness * log(containedFraction);
 	}
-	heights[numLayers - 1] = std::max(heights[numLayers - 1] * 1.01f, atmosphereHeight);
+	heights[numLayers - 1] = std::max(heights[numLayers - 1] * 1.01f, earthRadius + atmosphereThickness);
 	return heights;
 }
 
@@ -183,7 +180,7 @@ AtmosphereLayers::AtmosphereLayers(Atmosphere const &atmosphere, unsigned numLay
 :
 	numLayers(numLayers),
 	numAngles(256),
-	heights(computeHeights(atmosphere.rayleighScattering.height, atmosphere.atmosphereHeight))
+	heights(computeHeights(atmosphere.earthRadius, atmosphere.rayleighScattering.thickness, atmosphere.thickness))
 {
 }
 
@@ -212,26 +209,45 @@ Dvec3Table2D buildTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLay
 				rayLength = 0.0;
 			} else if (angle <= 0.5 * M_PI) {
 				// Ray goes up, hits layer above
-				rayLength = rayLengthUpwards(ray, layers.heights[layer + 1], atmosphere.earthRadius);
+				rayLength = rayLengthUpwards(ray, layers.heights[layer + 1]);
 			} else if (layer == 0) {
 				// Ray goes down, into the ground
 				rayLength = INFINITY;
-			} else if (!rayHitsHeight(ray, layers.heights[layer - 1], atmosphere.earthRadius)) {
+			} else if (!rayHitsHeight(ray, layers.heights[layer - 1])) {
 				// Ray goes down, misses layer below, hits current layer from below
-				rayLength = rayLengthToSameHeight(ray, atmosphere.earthRadius);
+				rayLength = rayLengthToSameHeight(ray);
 			} else {
 				// Ray goes down, hits layer below
-				rayLength = rayLengthDownwards(ray, layers.heights[layer - 1], atmosphere.earthRadius);
+				rayLength = rayLengthDownwards(ray, layers.heights[layer - 1]);
 			}
-			dvec3 const extinction =
-				rayleighExtinctionCoefficient * atmosphere.rayleighScattering.densityAtHeight(height) +
-				mieExtinctionCoefficient * atmosphere.mieScattering.densityAtHeight(height);
-			dvec3 transmittance = exp(-extinction * rayLength);
+			dvec3 transmittance;
+			if (rayLength < INFINITY) {
+				dvec3 const extinction =
+					rayleighExtinctionCoefficient * atmosphere.rayleighScattering.densityAtHeight(height) +
+					mieExtinctionCoefficient * atmosphere.mieScattering.densityAtHeight(height);
+				transmittance = exp(-extinction * rayLength);
+			} else {
+				transmittance = dvec3(0.0);
+			}
 			transmittanceTable.set(uvec2(layer, a), transmittance);
 		}
 	}
 
-	// std::cout << "Transmittance table:\n" << transmittanceTable << '\n';
+	/*
+	std::cout << "Transmittance table:\n";
+	std::cout << std::fixed;
+	std::cout.precision(5);
+	for (int layer = numLayers - 1; layer >= 0; --layer) {
+		std::cout << layer << "  ";
+		for (unsigned a = 0; a < numAngles; ++a) {
+			if (a == numAngles / 2) {
+				std::cout << "| ";
+			}
+			std::cout << transmittanceTable.get(uvec2(layer, a)).r << ' ';
+		}
+		std::cout << '\n';
+	}
+	*/
 	return transmittanceTable;
 }
 
@@ -257,7 +273,7 @@ Dvec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, Atmosphe
 				totalTransmittance = dvec3(1.0);
 			} else {
 				// Ray passes through some layers
-				double const nextAngle = rayAngleUpwards(ray, layers.heights[layer + 1], atmosphere.earthRadius);
+				double const nextAngle = rayAngleUpwards(ray, layers.heights[layer + 1]);
 				BOOST_ASSERT(nextAngle <= 0.5 * M_PI);
 				
 				totalTransmittance =
@@ -278,9 +294,9 @@ Dvec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, Atmosphe
 			if (layer == 0) {
 				// Ray goes directly into the ground
 				totalTransmittance = dvec3(0.0);
-			} else if (rayHitsHeight(ray, layers.heights[layer - 1], atmosphere.earthRadius)) {
+			} else if (rayHitsHeight(ray, layers.heights[layer - 1])) {
 				// Ray hits the layer below
-				double const nextAngle = rayAngleDownwards(ray, layers.heights[layer - 1], atmosphere.earthRadius);
+				double const nextAngle = rayAngleDownwards(ray, layers.heights[layer - 1]);
 				BOOST_ASSERT(nextAngle >= 0.5 * M_PI);
 				totalTransmittance =
 					transmittanceTable(dvec2(layer, angle)) *
@@ -298,7 +314,7 @@ Dvec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, Atmosphe
 	}
 
 	/*
-	std::cout << "Sun transmittance table:\n";
+	std::cout << "Total transmittance table:\n";
 	std::cout << std::fixed;
 	std::cout.precision(5);
 	for (int layer = numLayers - 1; layer >= 0; --layer) {
@@ -343,11 +359,11 @@ dvec3 Scatterer::scatteredLight(dvec3 direction, Sun const &sun) const {
 
 	for (int layer = layers.numLayers - 2; layer >= 0; --layer) {
 		double const height = layers.heights[layer];
-		Ray ray(height, rayAngleUpwards(Ray(0.0, groundAngle), height, atmosphere.earthRadius));
+		Ray ray(height, rayAngleUpwards(Ray(atmosphere.earthRadius, groundAngle), height));
 		BOOST_ASSERT(ray.angle <= 0.5 * M_PI);
-		double const rayLength = rayLengthUpwards(ray, layers.heights[layer + 1], atmosphere.earthRadius);
+		double const rayLength = rayLengthUpwards(ray, layers.heights[layer + 1]);
 
-		double const sunAngle = rayAngleUpwards(Ray(0.0, sunGroundAngle), height, atmosphere.earthRadius);
+		double const sunAngle = rayAngleUpwards(Ray(atmosphere.earthRadius, sunGroundAngle), height);
 
 		// Add inscattering, attenuated by optical depth to the sun
 		dvec3 const rayleighInscattering =
