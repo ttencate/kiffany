@@ -300,32 +300,32 @@ Scatterer::Scatterer(Atmosphere const &atmosphere, AtmosphereLayers const &layer
 }
 
 dvec3 Scatterer::scatteredLight(dvec3 direction, dvec3 sunDirection, dvec3 sunColor) const {
-	if (direction.z < 0.0) {
-		return dvec3(0.0);
-	}
 	double const lightAngle = acos(dot(direction, sunDirection));
 	double const groundAngle = acos(direction.z);
 	// 0.0046 is the real angular radius of sun in radians
+	// TODO extract into parameter on Sun
 	dvec3 scatteredLight = (1.0 - smoothstep(0.04, 0.07, lightAngle)) * sunColor;
-	for (int layer = layers.numLayers - 1; layer > 0; --layer) {
-		double const lowerHeight = layers.heights[layer - 1];
-		double const upperHeight = layers.heights[layer];
-		double const lowerAngle = rayAngleAtHeight(0.0, lowerHeight, groundAngle, atmosphere.earthRadius);
-		double const rayLength = rayLengthBetweenHeights(lowerHeight, upperHeight, lowerAngle, atmosphere.earthRadius);
+	for (int layer = layers.numLayers - 2; layer >= 0; --layer) {
+		double const height = layers.heights[layer];
+		double const angle = rayAngleAtHeight(0.0, height, groundAngle, atmosphere.earthRadius);
+		BOOST_ASSERT(direction.z >= 0 ? angle <= 0.5 * M_PI : angle >= 0.5 * M_PI);
+		double const rayLength = rayLengthBetweenHeights(height, layers.heights[layer + 1], angle, atmosphere.earthRadius);
+
+		double const sunAngle = rayAngleAtHeight(0.0, height, acos(sunDirection.z), atmosphere.earthRadius);
 
 		// Add inscattering, attenuated by optical depth to the sun
+		// TODO can we take the phase function out?
 		dvec3 const rayleighInscattering =
 			atmosphere.rayleighScattering.coefficient *
-			atmosphere.rayleighScattering.phaseFunction(lightAngle) *
-			totalTransmittanceTable(dvec2(layer, groundAngle));
+			atmosphere.rayleighScattering.phaseFunction(lightAngle);
 		dvec3 const mieInscattering =
 			atmosphere.mieScattering.coefficient *
-			atmosphere.mieScattering.phaseFunction(lightAngle) *
-			totalTransmittanceTable(dvec2(layer, groundAngle));
-		scatteredLight += rayLength * sunColor * (rayleighInscattering + mieInscattering);
+			atmosphere.mieScattering.phaseFunction(lightAngle);
+		dvec3 const transmittance = totalTransmittanceTable(dvec2(layer, sunAngle));
+		scatteredLight += rayLength * sunColor * transmittance * (rayleighInscattering + mieInscattering);
 
 		// Multiply transmittance
-		dvec3 const layerTransmittance = transmittanceTable(dvec2(layer, lowerAngle));
+		dvec3 const layerTransmittance = transmittanceTable(dvec2(layer, angle));
 		scatteredLight *= layerTransmittance;
 		/*
 		std::cout
