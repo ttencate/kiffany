@@ -6,12 +6,10 @@
 
 #include <boost/noncopyable.hpp>
 
-class GLBuffer
-:
-	boost::noncopyable
-{
+// TODO refactor this to become a trivial resource-managing wrapper like the others
+class GLBuffer : boost::noncopyable {
 
-	unsigned name;
+	GLuint name;
 	unsigned sizeInBytes;
 
 	public:
@@ -24,24 +22,60 @@ class GLBuffer
 		bool isEmpty() const;
 		unsigned getSizeInBytes() const;
 
-		unsigned getName() const;
-
+		GLuint getName() const;
 };
 
-class GLTexture
-:
-	boost::noncopyable
-{
+class GLTexture : boost::noncopyable {
 
-	unsigned name;
+	GLuint name;
 
 	public:
 
 		GLTexture();
 		~GLTexture();
 
-		unsigned getName() const;
+		GLuint getName() const;
+};
 
+class GLShader : boost::noncopyable {
+
+	GLuint name;
+	
+	public:
+		
+		~GLShader();
+
+		GLuint getName() const { return name; }
+
+	protected:
+
+		GLShader(GLenum type);
+};
+
+class GLVertexShader : public GLShader {
+
+	public:
+
+		GLVertexShader();
+};
+
+class GLFragmentShader : public GLShader {
+
+	public:
+
+		GLFragmentShader();
+};
+
+class GLProgram : boost::noncopyable {
+	
+	GLuint name;
+	
+	public:
+		
+		GLProgram();
+		~GLProgram();
+
+		GLuint getName() const { return name; }
 };
 
 #endif

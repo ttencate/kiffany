@@ -1,5 +1,7 @@
 #include "sky.h"
 
+#include "shader.h"
+
 #include <boost/assert.hpp>
 
 #include <algorithm>
@@ -435,6 +437,8 @@ Sky::Sky(Scatterer const &scatterer, Sun const *sun)
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	generateFaces();
+
+	shaderProgram.loadAndLink("shaders/sky.vert", "shaders/sky.frag");
 }
 
 dvec3 Sky::computeColor(vec3 direction) {

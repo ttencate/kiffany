@@ -6,42 +6,25 @@
 #include <iosfwd>
 #include <string>
 
-template<GLenum Type>
-class GLShader {
-	
-	GLuint name;
-	
-	public:
+bool loadShaderFromFile(GLShader &shader, std::string const &fileName);
+bool loadShaderFromStream(GLShader &shader, std::istream &stream);
+
+std::string getShaderInfoLog(GLShader const &shader);
 		
-		GLShader();
-		~GLShader();
-
-		bool loadFromFile(std::string const &fileName);
-		bool loadFromStream(std::istream &stream);
-		
-		GLuint getName() const { return name; }
-};
-
-template<GLenum Type>
-std::string getShaderInfoLog(GLShader<Type> const &shader);
-
-typedef GLShader<GL_VERTEX_SHADER> GLVertexShader;
-typedef GLShader<GL_FRAGMENT_SHADER> GLFragmentShader;
-
-class GLProgram {
-	
-	GLuint name;
-	
-	public:
-		
-		GLProgram();
-		~GLProgram();
-
-		GLuint getName() const { return name; }
-};
-
 bool linkProgram(GLProgram &program, GLVertexShader const *vertexShader, GLFragmentShader const *fragmentShader);
 		
 std::string getProgramInfoLog(GLProgram const &program);
+
+class ShaderProgram {
+
+	GLVertexShader vertexShader;
+	GLFragmentShader fragmentShader;
+	GLProgram program;
+
+	public:
+
+		bool loadAndLink(std::string const &vertexShaderFileName, std::string const &fragmentShaderFileName);
+
+};
 
 #endif

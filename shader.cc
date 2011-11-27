@@ -5,26 +5,14 @@
 #include <stdexcept>
 #include <vector>
 
-template<GLenum Type>
-GLShader<Type>::GLShader()
-:
-	name(glCreateShader(Type))
-{
-}
+std::ostream *shaderErrorStream = &std::cerr;
 
-template<GLenum Type>
-GLShader<Type>::~GLShader() {
-	glDeleteShader(name);
-}
-
-template<GLenum Type>
-bool GLShader<Type>::loadFromFile(std::string const &fileName) {
+bool loadShaderFromFile(GLShader &shader, std::string const &fileName) {
 	std::ifstream file(fileName.c_str());
-	return loadFromStream(file);
+	return loadShaderFromStream(shader, file);
 }
 
-template<GLenum Type>
-bool GLShader<Type>::loadFromStream(std::istream &stream) {
+bool loadShaderFromStream(GLShader &shader, std::istream &stream) {
 	std::vector<std::string> lines;
 	std::string line;
 	while (std::getline(stream, line)) {
@@ -37,16 +25,15 @@ bool GLShader<Type>::loadFromStream(std::istream &stream) {
 		clines.push_back(i->c_str());
 	}
 
-	glShaderSource(name, lines.size(), &clines[0], 0);
-	glCompileShader(name);
+	glShaderSource(shader.getName(), lines.size(), &clines[0], 0);
+	glCompileShader(shader.getName());
 	
 	int success;
-	glGetShaderiv(name, GL_COMPILE_STATUS, &success);
+	glGetShaderiv(shader.getName(), GL_COMPILE_STATUS, &success);
 	return success != 0;
 }
 
-template<GLenum Type>
-std::string getShaderInfoLog(GLShader<Type> const &shader) {
+std::string getShaderInfoLog(GLShader const &shader) {
 	int logLength;
 	glGetShaderiv(shader.getName(), GL_INFO_LOG_LENGTH, &logLength);
 	
@@ -58,20 +45,6 @@ std::string getShaderInfoLog(GLShader<Type> const &shader) {
 	}
 	
 	return log;
-}
-
-template class GLShader<GL_VERTEX_SHADER>;
-template class GLShader<GL_FRAGMENT_SHADER>;
-
-template<>
-std::string getShaderInfoLog(GLShader<GL_VERTEX_SHADER> const &shader);
-template<>
-std::string getShaderInfoLog(GLShader<GL_FRAGMENT_SHADER> const &shader);
-
-GLProgram::GLProgram()
-:
-	name(glCreateProgram())
-{
 }
 
 bool linkProgram(GLProgram &program, GLVertexShader const *vertexShader, GLFragmentShader const *fragmentShader) {
@@ -89,10 +62,6 @@ bool linkProgram(GLProgram &program, GLVertexShader const *vertexShader, GLFragm
 	return success != 0;
 }
 
-GLProgram::~GLProgram() {
-	glDeleteProgram(name);
-}
-
 std::string getProgramInfoLog(GLProgram const &program) {
 	int logLength;
 	glGetProgramiv(program.getName(), GL_INFO_LOG_LENGTH, &logLength);
@@ -106,4 +75,39 @@ std::string getProgramInfoLog(GLProgram const &program) {
 	}
 	
 	return log;
+}
+
+bool ShaderProgram::loadAndLink(std::string const &vertexShaderFileName, std::string const &fragmentShaderFileName) {
+	bool success = true;
+	if (!vertexShaderFileName.empty()) {
+		success &= loadShaderFromFile(vertexShader, vertexShaderFileName);
+		std::string log = getShaderInfoLog(vertexShader);
+		if (!log.empty()) {
+			*shaderErrorStream
+				<< "Compilation of vertex shader '" << vertexShaderFileName << "':\n"
+				<< getShaderInfoLog(vertexShader);
+		}
+	}
+	if (!fragmentShaderFileName.empty()) {
+		success &= loadShaderFromFile(fragmentShader, fragmentShaderFileName);
+		std::string log = getShaderInfoLog(fragmentShader);
+		if (!log.empty()) {
+			*shaderErrorStream
+				<< "Compilation of fragment shader '" << fragmentShaderFileName << "':\n"
+				<< getShaderInfoLog(fragmentShader);
+		}
+	}
+	if (success) {
+		success &= linkProgram(program,
+				vertexShaderFileName.empty() ? NULL : &vertexShader,
+				fragmentShaderFileName.empty() ? NULL : &fragmentShader);
+		std::string log = getProgramInfoLog(program);
+		if (!log.empty()) {
+			*shaderErrorStream
+				<< "Linking of program with vertex shader '" << vertexShaderFileName << "', "
+				<< "fragment shader '" << fragmentShaderFileName << "':\n"
+				<< getProgramInfoLog(program);
+		}
+	}
+	return success;
 }

@@ -29,7 +29,7 @@ unsigned GLBuffer::getSizeInBytes() const {
 	return sizeInBytes;
 }
 
-unsigned GLBuffer::getName() const {
+GLuint GLBuffer::getName() const {
 	return name;
 }
 
@@ -41,6 +41,38 @@ GLTexture::~GLTexture() {
 	glDeleteTextures(1, &name);
 }
 
-unsigned GLTexture::getName() const {
+GLuint GLTexture::getName() const {
 	return name;
+}
+
+GLShader::GLShader(GLenum type)
+:
+	name(glCreateShader(type))
+{
+}
+
+GLShader::~GLShader() {
+	glDeleteShader(name);
+}
+
+GLVertexShader::GLVertexShader()
+:
+	GLShader(GL_VERTEX_SHADER)
+{
+}
+
+GLFragmentShader::GLFragmentShader()
+:
+	GLShader(GL_FRAGMENT_SHADER)
+{
+}
+
+GLProgram::GLProgram()
+:
+	name(glCreateProgram())
+{
+}
+
+GLProgram::~GLProgram() {
+	glDeleteProgram(name);
 }

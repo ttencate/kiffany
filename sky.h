@@ -3,6 +3,7 @@
 
 #include "gl.h"
 #include "maths.h"
+#include "shader.h"
 #include "space.h"
 #include "table.h"
 
@@ -134,6 +135,8 @@ class Sky {
 
 	GLBuffer vertices;
 	GLTexture texture;
+
+	ShaderProgram shaderProgram;
 
 	dvec3 computeColor(vec3 direction);
 	void generateFace(GLenum face, vec3 base, vec3 xBasis, vec3 yBasis);
