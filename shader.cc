@@ -76,8 +76,8 @@ bool ShaderProgram::loadAndLink(std::string const &vertexShaderFileName, std::st
 		printProgramInfoLog(program,
 				(vertexShaderFileName.empty() ? "[default]" : vertexShaderFileName) + ", " +
 				(fragmentShaderFileName.empty() ? "[default]" : fragmentShaderFileName));
-		uniforms.clear();
 	}
+	uniforms.clear();
 	return success;
 }
 
@@ -88,12 +88,8 @@ GLUniform ShaderProgram::getUniform(std::string const &name) const {
 	}
 	GLUniform uniform = getUniformLocation(program, name);
 	if (!uniform.isValid()) {
-		*shaderErrorStream << "Invalid uniform: '" << name << "'\n";
+		*shaderErrorStream << "Invalid uniform: '" << name << "' (optimized out?)\n";
 	}
 	uniforms[name] = uniform;
 	return uniform;
-}
-
-void useProgram(ShaderProgram const &shaderProgram) {
-	useProgram(shaderProgram.program);
 }

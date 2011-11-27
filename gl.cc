@@ -20,6 +20,10 @@ GLTexture::~GLTexture() {
 	glDeleteTextures(1, &name);
 }
 
+void activeTexture(unsigned texture) {
+	glActiveTexture(GL_TEXTURE0 + texture);
+}
+
 void bindTexture(GLenum target, GLTexture const &texture) {
 	glBindTexture(target, texture.getName());
 }
@@ -130,6 +134,10 @@ void useFixedProcessing() {
 	glUseProgram(0);
 }
 
+void bindFragDataLocation(GLProgram &program, unsigned number, std::string const &name) {
+	glBindFragDataLocation(program.getName(), number, name.c_str());
+}
+
 GLUniform::GLUniform(GLint location)
 :
 	location(location)
@@ -171,4 +179,36 @@ void uniform(GLUniform const &uniform, glm::ivec3 v) {
 
 void uniform(GLUniform const &uniform, glm::ivec4 v) {
 	glUniform4i(uniform.getLocation(), v.x, v.y, v.z, v.w);
+}
+
+void uniform(GLUniform const &uniform, std::vector<float> const &v) {
+	glUniform1fv(uniform.getLocation(), v.size(), &v[0]);
+}
+
+void uniform(GLUniform const &uniform, std::vector<glm::vec2> const &v) {
+	glUniform2fv(uniform.getLocation(), v.size(), (float const *)&v[0]); // TODO undefined behaviour
+}
+
+void uniform(GLUniform const &uniform, std::vector<glm::vec3> const &v) {
+	glUniform3fv(uniform.getLocation(), v.size(), (float const *)&v[0]); // TODO undefined behaviour
+}
+
+void uniform(GLUniform const &uniform, std::vector<glm::vec4> const &v) {
+	glUniform4fv(uniform.getLocation(), v.size(), (float const *)&v[0]); // TODO undefined behaviour
+}
+
+void uniform(GLUniform const &uniform, std::vector<int> const &v) {
+	glUniform1iv(uniform.getLocation(), v.size(), &v[0]);
+}
+
+void uniform(GLUniform const &uniform, std::vector<glm::ivec2> const &v) {
+	glUniform2iv(uniform.getLocation(), v.size(), (int const *)&v[0]); // TODO undefined behaviour
+}
+
+void uniform(GLUniform const &uniform, std::vector<glm::ivec3> const &v) {
+	glUniform3iv(uniform.getLocation(), v.size(), (int const *)&v[0]); // TODO undefined behaviour
+}
+
+void uniform(GLUniform const &uniform, std::vector<glm::ivec4> const &v) {
+	glUniform4iv(uniform.getLocation(), v.size(), (int const *)&v[0]); // TODO undefined behaviour
 }

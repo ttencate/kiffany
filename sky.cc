@@ -123,7 +123,7 @@ double RayleighScattering::phaseFunction(double lightAngle) const {
 }
 
 dvec3 MieScattering::computeCoefficient() const {
-	return dvec3(2e-5); // Bruneton and Neyret
+	return dvec3(2e-5); // dvec3(2e-5); // Bruneton and Neyret
 }
 
 MieScattering::MieScattering(double unityHeight)
@@ -181,7 +181,7 @@ AtmosphereLayers::Heights AtmosphereLayers::computeHeights(double earthRadius, d
 AtmosphereLayers::AtmosphereLayers(Atmosphere const &atmosphere, unsigned numLayers)
 :
 	numLayers(numLayers),
-	numAngles(256),
+	numAngles(255),
 	heights(computeHeights(atmosphere.earthRadius, atmosphere.rayleighScattering.thickness, atmosphere.thickness))
 {
 }
@@ -336,65 +336,31 @@ Dvec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, Atmosphe
 	return totalTransmittanceTable;
 }
 
-Scatterer::Scatterer(Atmosphere const &atmosphere, AtmosphereLayers const &layers)
+void tableToTexture(Dvec3Table2D const &table, GLTexture &texture) {
+	unsigned width = table.getSize().x;
+	unsigned height = table.getSize().y;
+	std::vector<float> data(3 * width * height);
+	float *q = &data[0];
+	for (dvec3 const *p = table.begin(); p < table.end(); ++p) {
+		*(q++) = p->r;
+		*(q++) = p->g;
+		*(q++) = p->b;
+	}
+	bindTexture(GL_TEXTURE_RECTANGLE, texture);
+	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA32F, table.getSize().x, table.getSize().y, 0, GL_RGB, GL_FLOAT, &data[0]);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+}
+
+Sky::Sky(Atmosphere const &atmosphere, AtmosphereLayers const &layers, Sun const *sun)
 :
 	atmosphere(atmosphere),
 	layers(layers),
-	transmittanceTable(buildTransmittanceTable(atmosphere, layers)),
-	totalTransmittanceTable(buildTotalTransmittanceTable(atmosphere, layers, transmittanceTable))
-{
-}
-
-inline dvec3 Scatterer::scatteredLight(dvec3 viewDirection, Sun const &sun) const {
-	if (viewDirection.z < 0.0) {
-		return dvec3(0.0);
-	}
-	double const sunAngularRadius = sun.getAngularRadius();
-	dvec3 sunColor(sun.getColor());
-	dvec3 sunDirection(sun.getDirection());
-
-	double const lightAngle = acos(dot(viewDirection, sunDirection));
-	double const groundViewAngle = acos(viewDirection.z);
-	double const groundSunAngle = acos(sunDirection.z);
-	Ray groundViewRay(atmosphere.earthRadius, groundViewAngle);
-	Ray groundSunRay(atmosphere.earthRadius, groundSunAngle);
-
-	double const rayleighPhaseFunction = atmosphere.rayleighScattering.phaseFunction(lightAngle);
-	double const miePhaseFunction = atmosphere.mieScattering.phaseFunction(lightAngle);
-
-	dvec3 scatteredLight = (1.0 - smoothstep(sunAngularRadius, sunAngularRadius * 1.2, lightAngle)) * sunColor;
-	for (int layer = layers.numLayers - 2; layer >= 0; --layer) {
-		double const height = layers.heights[layer];
-
-		Ray viewRay(height, rayAngleUpwards(groundViewRay, height));
-		BOOST_ASSERT(viewRay.angle <= 0.5 * M_PI);
-		double const rayLength = rayLengthUpwards(viewRay, layers.heights[layer + 1]);
-
-		double const sunAngle = rayAngleUpwards(groundSunRay, height);
-
-		// Add inscattering, attenuated by optical depth to the sun
-		dvec3 const rayleighInscattering =
-			atmosphere.rayleighScattering.coefficient *
-			atmosphere.rayleighScattering.densityAtHeight(height) *
-			rayleighPhaseFunction;
-		dvec3 const mieInscattering =
-			atmosphere.mieScattering.coefficient *
-			atmosphere.mieScattering.densityAtHeight(height) *
-			miePhaseFunction;
-		dvec3 const transmittance = totalTransmittanceTable(dvec2(layer, sunAngle));
-		scatteredLight += rayLength * sunColor * transmittance * (rayleighInscattering + mieInscattering);
-
-		// Multiply transmittance
-		dvec3 const layerTransmittance = transmittanceTable(dvec2(layer, viewRay.angle));
-		scatteredLight *= layerTransmittance;
-	}
-	return scatteredLight;
-}
-
-Sky::Sky(Scatterer const &scatterer, Sun const *sun)
-:
-	scatterer(scatterer),
 	sun(sun),
+	transmittanceTable(buildTransmittanceTable(atmosphere, layers)),
+	totalTransmittanceTable(buildTotalTransmittanceTable(atmosphere, layers, transmittanceTable)),
 	size(128),
 	textureImage(new unsigned char[size * size * 3])
 {
@@ -436,13 +402,59 @@ Sky::Sky(Scatterer const &scatterer, Sun const *sun)
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+	tableToTexture(transmittanceTable, transmittanceTexture);
+	tableToTexture(totalTransmittanceTable, totalTransmittanceTexture);
+
 	generateFaces();
 
 	shaderProgram.loadAndLink("shaders/sky.vert", "shaders/sky.frag");
 }
 
-dvec3 Sky::computeColor(vec3 direction) {
-	return scatterer.scatteredLight(dvec3(direction), *sun);
+dvec3 Sky::computeColor(dvec3 viewDirection) {
+	if (viewDirection.z < 0.0) {
+		return dvec3(0.0);
+	}
+	double const sunAngularRadius = sun->getAngularRadius();
+	dvec3 sunColor(sun->getColor());
+	dvec3 sunDirection(sun->getDirection());
+
+	double const lightAngle = acos(dot(viewDirection, sunDirection));
+	double const groundViewAngle = acos(viewDirection.z);
+	double const groundSunAngle = acos(sunDirection.z);
+	Ray groundViewRay(atmosphere.earthRadius, groundViewAngle);
+	Ray groundSunRay(atmosphere.earthRadius, groundSunAngle);
+
+	double const rayleighPhaseFunction = atmosphere.rayleighScattering.phaseFunction(lightAngle);
+	double const miePhaseFunction = atmosphere.mieScattering.phaseFunction(lightAngle);
+
+	dvec3 scatteredLight = (1.0 - smoothstep(sunAngularRadius, sunAngularRadius * 1.2, lightAngle)) * sunColor;
+	for (int layer = layers.numLayers - 2; layer >= 0; --layer) {
+		double const height = layers.heights[layer];
+
+		Ray viewRay(height, rayAngleUpwards(groundViewRay, height));
+		BOOST_ASSERT(viewRay.angle <= 0.5 * M_PI);
+		double const rayLength = rayLengthUpwards(viewRay, layers.heights[layer + 1]);
+
+		// TODO broken!
+		double const sunAngle = 0.1;// rayAngleUpwards(groundSunRay, height);
+
+		// Add inscattering, attenuated by optical depth to the sun
+		dvec3 const rayleighInscattering =
+			atmosphere.rayleighScattering.coefficient *
+			atmosphere.rayleighScattering.densityAtHeight(height) *
+			rayleighPhaseFunction;
+		dvec3 const mieInscattering =
+			atmosphere.mieScattering.coefficient *
+			atmosphere.mieScattering.densityAtHeight(height) *
+			miePhaseFunction;
+		dvec3 const transmittance = totalTransmittanceTable(dvec2(layer, sunAngle));
+		scatteredLight += rayLength * sunColor * transmittance * (rayleighInscattering + mieInscattering);
+
+		// Multiply transmittance
+		dvec3 const layerTransmittance = transmittanceTable(dvec2(layer, viewRay.angle));
+		scatteredLight *= layerTransmittance;
+	}
+	return scatteredLight;
 
 	/*
 	// Super simple scheme by ATI (Preetham et al.)
@@ -458,15 +470,15 @@ dvec3 Sky::computeColor(vec3 direction) {
 	*/
 }
 
-void Sky::generateFace(GLenum face, vec3 base, vec3 xBasis, vec3 yBasis) {
+void Sky::generateFace(GLenum face, dvec3 base, dvec3 xBasis, dvec3 yBasis) {
 	unsigned char *p = textureImage.get();
 	for (unsigned y = 0; y < size; ++y) {
 		for (unsigned x = 0; x < size; ++x) {
-			vec3 direction = normalize(
+			dvec3 direction = normalize(
 				base +
-				(x + 0.5f) / size * xBasis +
-				(y + 0.5f) / size * yBasis);
-			vec3 color = clamp(vec3(computeColor(direction)), 0.0f, 1.0f);
+				(x + 0.5) / size * xBasis +
+				(y + 0.5) / size * yBasis);
+			dvec3 color = clamp(computeColor(direction), 0.0, 1.0);
 			p[0] = (unsigned char)(0xFF * color[0]);
 			p[1] = (unsigned char)(0xFF * color[1]);
 			p[2] = (unsigned char)(0xFF * color[2]);
@@ -480,42 +492,62 @@ void Sky::generateFaces() {
 	float const N = -0.5f;
 	float const P = 0.5f;
 	bindTexture(GL_TEXTURE_CUBE_MAP, texture);
-	generateFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, vec3(N, P, N), vec3(0, 0, 1), vec3(0, -1, 0));
-	generateFace(GL_TEXTURE_CUBE_MAP_POSITIVE_X, vec3(P, P, P), vec3(0, 0, -1), vec3(0, -1, 0));
-	generateFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, vec3(N, N, P), vec3(1, 0, 0), vec3(0, 0, -1));
-	generateFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, vec3(N, P, N), vec3(1, 0, 0), vec3(0, 0, 1));
-	generateFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, vec3(P, P, N), vec3(-1, 0, 0), vec3(0, -1, 0));
-	generateFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, vec3(N, P, P), vec3(1, 0, 0), vec3(0, -1, 0));
+	generateFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, dvec3(N, P, N), dvec3(0, 0, 1), dvec3(0, -1, 0));
+	generateFace(GL_TEXTURE_CUBE_MAP_POSITIVE_X, dvec3(P, P, P), dvec3(0, 0, -1), dvec3(0, -1, 0));
+	generateFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, dvec3(N, N, P), dvec3(1, 0, 0), dvec3(0, 0, -1));
+	generateFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, dvec3(N, P, N), dvec3(1, 0, 0), dvec3(0, 0, 1));
+	generateFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, dvec3(P, P, N), dvec3(-1, 0, 0), dvec3(0, -1, 0));
+	generateFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, dvec3(N, P, P), dvec3(1, 0, 0), dvec3(0, -1, 0));
 }
 
 void Sky::update(float dt) {
 }
 
 void Sky::render() {
+	unsigned const numLayers = layers.numLayers;
+	unsigned const numAngles = layers.numAngles;
+
 	glDisable(GL_LIGHTING);
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
-	glEnable(GL_TEXTURE_CUBE_MAP);
 
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_NORMAL_ARRAY);	
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
 	bindBuffer(GL_ARRAY_BUFFER, vertices);
 	glVertexPointer(3, GL_INT, 0, 0);
-	glTexCoordPointer(3, GL_INT, 0, 0);
 
-	bindTexture(GL_TEXTURE_CUBE_MAP, texture);
+	useProgram(shaderProgram.getProgram());
 
-	useProgram(shaderProgram);
-	shaderProgram.setUniform("skySampler", 0);
+	shaderProgram.setUniform("atmosphere.earthRadius", (float)atmosphere.earthRadius);
+	shaderProgram.setUniform("atmosphere.rayleighThickness", (float)atmosphere.rayleighScattering.thickness);
+	shaderProgram.setUniform("atmosphere.mieThickness", (float)atmosphere.mieScattering.thickness);
+	shaderProgram.setUniform("atmosphere.rayleighScatteringCoefficient", vec3(atmosphere.rayleighScattering.coefficient));
+	shaderProgram.setUniform("atmosphere.mieScatteringCoefficient", vec3(atmosphere.mieScattering.coefficient));
+	shaderProgram.setUniform("sun.angularRadius", (float)sun->getAngularRadius());
+	shaderProgram.setUniform("sun.color", sun->getColor());
+	shaderProgram.setUniform("sun.direction", sun->getDirection());
+	shaderProgram.setUniform("layers.numLayers", (int)numLayers);
+	shaderProgram.setUniform("layers.numAngles", (int)numAngles);
+	std::vector<float> heights(numLayers);
+	for (unsigned i = 0; i < numLayers; ++i) {
+		heights[i] = layers.heights[i];
+	}
+	shaderProgram.setUniform("layers.heights", heights);
+
+	activeTexture(1);
+	bindTexture(GL_TEXTURE_RECTANGLE, totalTransmittanceTexture);
+	activeTexture(0);
+	bindTexture(GL_TEXTURE_RECTANGLE, transmittanceTexture);
+	shaderProgram.setUniform("transmittanceSampler", 0);
+	shaderProgram.setUniform("totalTransmittanceSampler", 1);
+
+	bindFragDataLocation(shaderProgram.getProgram(), 0, "scatteredLight");
 
 	glDrawArrays(GL_QUADS, 0, vertices.getSizeInBytes() / sizeof(int) / 3);
 
 	useFixedProcessing();
 
-	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	glDisable(GL_TEXTURE_CUBE_MAP);
 	glDepthMask(GL_TRUE);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_LIGHTING);

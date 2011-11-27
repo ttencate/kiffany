@@ -10,6 +10,8 @@
 
 #include <vector>
 
+#include <boost/noncopyable.hpp>
+
 /*
  * Conventions:
  * - all angles are in radians
@@ -20,6 +22,8 @@
  * - all heights are measured from the centre of the earth
  * - things measured from sea level are called "thickness"
  */
+
+// TODO see if it still works if we replace double by float
 
 struct Ray {
 	double height;
@@ -110,26 +114,18 @@ dvec3 transmittanceToNextLayer(Ray ray, Atmosphere const &atmosphere, Atmosphere
 Dvec3Table2D buildTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers);
 Dvec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers, Dvec3Table2D const &transmittanceTable);
 
-class Scatterer {
+// TODO in the shader world, everything below this line needs refactor
+
+class Sky : boost::noncopyable {
 
 	Atmosphere atmosphere;
 	AtmosphereLayers layers;
+	Sun const *sun;
 
 	Dvec3Table2D transmittanceTable;
 	Dvec3Table2D totalTransmittanceTable;
-
-	public:
-
-		Scatterer(Atmosphere const &atmosphere, AtmosphereLayers const &layers);
-
-		dvec3 scatteredLight(dvec3 viewDirection, Sun const &sun) const;
-
-};
-
-class Sky {
-
-	Scatterer const scatterer;
-	Sun const *sun;
+	GLTexture transmittanceTexture;
+	GLTexture totalTransmittanceTexture;
 
 	unsigned const size;
 	boost::scoped_array<unsigned char> textureImage;
@@ -139,13 +135,13 @@ class Sky {
 
 	ShaderProgram shaderProgram;
 
-	dvec3 computeColor(vec3 direction);
-	void generateFace(GLenum face, vec3 base, vec3 xBasis, vec3 yBasis);
+	dvec3 computeColor(dvec3 viewDirection);
+	void generateFace(GLenum face, dvec3 base, dvec3 xBasis, dvec3 yBasis);
 	void generateFaces();
 
 	public:
 
-		Sky(Scatterer const &scatterer, Sun const *sun);
+		Sky(Atmosphere const &atmosphere, AtmosphereLayers const &layers, Sun const *sun);
 
 		void setSun(Sun const *sun) { this->sun = sun; }
 

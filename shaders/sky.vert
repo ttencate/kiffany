@@ -1,8 +1,8 @@
 #version 120
 
-varying out vec3 direction;
+varying out vec3 viewDirectionUnnormalized;
 
 void main() {
 	gl_Position = ftransform();
-	direction = vec3(gl_Vertex);
+	viewDirectionUnnormalized = vec3(gl_Vertex);
 }

@@ -44,6 +44,7 @@ class GLTexture : boost::noncopyable {
 		GLuint getName() const { return name; }
 };
 
+void activeTexture(unsigned texture);
 void bindTexture(GLenum target, GLTexture const &texture);
 
 class GLShader : boost::noncopyable {
@@ -95,6 +96,7 @@ void validateProgram(GLProgram const &program);
 std::string getProgramInfoLog(GLProgram const &program);
 void useProgram(GLProgram const &program);
 void useFixedProcessing();
+void bindFragDataLocation(GLProgram &program, unsigned number, std::string const &name);
 
 class GLUniform {
 
@@ -117,5 +119,13 @@ void uniform(GLUniform const &uniform, int v);
 void uniform(GLUniform const &uniform, glm::ivec2 v);
 void uniform(GLUniform const &uniform, glm::ivec3 v);
 void uniform(GLUniform const &uniform, glm::ivec4 v);
+void uniform(GLUniform const &uniform, std::vector<float> const &v);
+void uniform(GLUniform const &uniform, std::vector<glm::vec2> const &v);
+void uniform(GLUniform const &uniform, std::vector<glm::vec3> const &v);
+void uniform(GLUniform const &uniform, std::vector<glm::vec4> const &v);
+void uniform(GLUniform const &uniform, std::vector<int> const &v);
+void uniform(GLUniform const &uniform, std::vector<glm::ivec2> const &v);
+void uniform(GLUniform const &uniform, std::vector<glm::ivec3> const &v);
+void uniform(GLUniform const &uniform, std::vector<glm::ivec4> const &v);
 
 #endif

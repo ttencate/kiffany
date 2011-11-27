@@ -19,8 +19,6 @@ void printProgramInfoLog(GLProgram const &program, std::string const &name);
 		
 class ShaderProgram {
 
-	friend void useProgram(ShaderProgram const &);
-
 	GLVertexShader vertexShader;
 	GLFragmentShader fragmentShader;
 	GLProgram program;
@@ -32,6 +30,8 @@ class ShaderProgram {
 
 		bool loadAndLink(std::string const &vertexShaderFileName, std::string const &fragmentShaderFileName);
 
+		GLProgram &getProgram() { return program; }
+
 		GLUniform getUniform(std::string const &name) const;
 
 		template<typename T>
@@ -40,7 +40,5 @@ class ShaderProgram {
 		}
 
 };
-
-void useProgram(ShaderProgram const &shaderProgram);
 
 #endif
