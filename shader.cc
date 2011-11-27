@@ -87,11 +87,10 @@ GLUniform ShaderProgram::getUniform(std::string const &name) const {
 		return i->second;
 	}
 	GLUniform uniform = getUniformLocation(program, name);
-	if (uniform.isValid()) {
-		uniforms[name] = uniform;
-	} else {
+	if (!uniform.isValid()) {
 		*shaderErrorStream << "Invalid uniform: '" << name << "'\n";
 	}
+	uniforms[name] = uniform;
 	return uniform;
 }
 

@@ -508,6 +508,7 @@ void Sky::render() {
 	bindTexture(GL_TEXTURE_CUBE_MAP, texture);
 
 	useProgram(shaderProgram);
+	shaderProgram.setUniform("skySampler", 0);
 
 	glDrawArrays(GL_QUADS, 0, vertices.getSizeInBytes() / sizeof(int) / 3);
 

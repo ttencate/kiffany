@@ -141,34 +141,34 @@ GLUniform getUniformLocation(GLProgram const &program, std::string const &name) 
 	return GLUniform(location);
 }
 
-void uniform(GLUniform &uniform, float v) {
+void uniform(GLUniform const &uniform, float v) {
 	glUniform1f(uniform.getLocation(), v);
 }
 
-void uniform(GLUniform &uniform, glm::vec2 v) {
+void uniform(GLUniform const &uniform, glm::vec2 v) {
 	glUniform2f(uniform.getLocation(), v.x, v.y);
 }
 
-void uniform(GLUniform &uniform, glm::vec3 v) {
+void uniform(GLUniform const &uniform, glm::vec3 v) {
 	glUniform3f(uniform.getLocation(), v.x, v.y, v.z);
 }
 
-void uniform(GLUniform &uniform, glm::vec4 v) {
+void uniform(GLUniform const &uniform, glm::vec4 v) {
 	glUniform4f(uniform.getLocation(), v.x, v.y, v.z, v.w);
 }
 
-void uniform(GLUniform &uniform, int v) {
+void uniform(GLUniform const &uniform, int v) {
 	glUniform1i(uniform.getLocation(), v);
 }
 
-void uniform(GLUniform &uniform, glm::ivec2 v) {
+void uniform(GLUniform const &uniform, glm::ivec2 v) {
 	glUniform2i(uniform.getLocation(), v.x, v.y);
 }
 
-void uniform(GLUniform &uniform, glm::ivec3 v) {
+void uniform(GLUniform const &uniform, glm::ivec3 v) {
 	glUniform3i(uniform.getLocation(), v.x, v.y, v.z);
 }
 
-void uniform(GLUniform &uniform, glm::ivec4 v) {
+void uniform(GLUniform const &uniform, glm::ivec4 v) {
 	glUniform4i(uniform.getLocation(), v.x, v.y, v.z, v.w);
 }

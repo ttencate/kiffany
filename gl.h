@@ -109,13 +109,13 @@ class GLUniform {
 };
 
 GLUniform getUniformLocation(GLProgram const &program, std::string const &name);
-void uniform(GLUniform &uniform, float v);
-void uniform(GLUniform &uniform, glm::vec2 v);
-void uniform(GLUniform &uniform, glm::vec3 v);
-void uniform(GLUniform &uniform, glm::vec4 v);
-void uniform(GLUniform &uniform, int v);
-void uniform(GLUniform &uniform, glm::ivec2 v);
-void uniform(GLUniform &uniform, glm::ivec3 v);
-void uniform(GLUniform &uniform, glm::ivec4 v);
+void uniform(GLUniform const &uniform, float v);
+void uniform(GLUniform const &uniform, glm::vec2 v);
+void uniform(GLUniform const &uniform, glm::vec3 v);
+void uniform(GLUniform const &uniform, glm::vec4 v);
+void uniform(GLUniform const &uniform, int v);
+void uniform(GLUniform const &uniform, glm::ivec2 v);
+void uniform(GLUniform const &uniform, glm::ivec3 v);
+void uniform(GLUniform const &uniform, glm::ivec4 v);
 
 #endif

@@ -36,8 +36,7 @@ class ShaderProgram {
 
 		template<typename T>
 		void setUniform(std::string const &name, T const &value) {
-			GLUniform uniform = getUniform(name);
-			uniform(uniform, value);
+			uniform(getUniform(name), value);
 		}
 
 };
