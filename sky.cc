@@ -438,7 +438,7 @@ Sky::Sky(Scatterer const &scatterer, Sun const *sun)
 
 	generateFaces();
 
-	shaderProgram.loadAndLink("glsl/sky.vert", "glsl/sky.frag");
+	shaderProgram.loadAndLink("shaders/sky.vert", "shaders/sky.frag");
 }
 
 dvec3 Sky::computeColor(vec3 direction) {
