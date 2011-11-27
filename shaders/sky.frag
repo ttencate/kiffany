@@ -127,4 +127,7 @@ void main() {
 	}
 	// Poor man's HDR
 	scatteredLight = 0.3 * log(vec3(1.0) + 10.0 * scatteredLight);
+	// Poor man's dithering
+	// TODO apply as post-processing effect
+	scatteredLight += 1.0/64.0 * fract(sin(dot(viewDirection.xy, vec2(12.9898,78.233))) * 43758.5453);
 }
