@@ -72,6 +72,7 @@ bool ShaderProgram::loadAndLink(std::string const &vertexShaderFileName, std::st
 		success &= linkProgram(program,
 				vertexShaderFileName.empty() ? NULL : &vertexShader,
 				fragmentShaderFileName.empty() ? NULL : &fragmentShader);
+		validateProgram(program);
 		printProgramInfoLog(program,
 				(vertexShaderFileName.empty() ? "[default]" : vertexShaderFileName) + ", " +
 				(fragmentShaderFileName.empty() ? "[default]" : fragmentShaderFileName));

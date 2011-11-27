@@ -91,6 +91,7 @@ class GLProgram : boost::noncopyable {
 void attachShader(GLProgram &program, GLShader const &shader);
 void linkProgram(GLProgram &program);
 int getProgram(GLProgram const &program, GLenum pname);
+void validateProgram(GLProgram const &program);
 std::string getProgramInfoLog(GLProgram const &program);
 void useProgram(GLProgram const &program);
 void useFixedProcessing();

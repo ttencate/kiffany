@@ -103,6 +103,10 @@ int getProgram(GLProgram const &program, GLenum pname) {
 	return params;
 }
 
+void validateProgram(GLProgram const &program) {
+	glValidateProgram(program.getName());
+}
+
 std::string getProgramInfoLog(GLProgram const &program) {
 	int logLength;
 	glGetProgramiv(program.getName(), GL_INFO_LOG_LENGTH, &logLength);
