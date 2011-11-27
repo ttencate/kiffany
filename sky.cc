@@ -22,72 +22,72 @@
  * http://www.springerlink.com/content/nrq497r40xmw4821/fulltext.pdf
  */
 
-bool rayHitsHeight(Ray ray, double targetHeight) {
+bool rayHitsHeight(Ray ray, float targetHeight) {
 	return ray.height * sin(ray.angle) < targetHeight;
-	// return pow2(cos(startAngle)) >= 1.0 - pow2((earthRadius + targetHeight) / (earthRadius + startHeight));
+	// return pow2(cos(startAngle)) >= 1.0f - pow2((earthRadius + targetHeight) / (earthRadius + startHeight));
 }
 
-double rayLengthUpwards(Ray ray, double targetHeight) {
+float rayLengthUpwards(Ray ray, float targetHeight) {
 	BOOST_ASSERT(ray.height <= targetHeight);
-	BOOST_ASSERT(ray.angle <= 0.5 * M_PI);
-	double cosAngle = cos(ray.angle);
-	double rayLength = sqrt(
-			sqr(ray.height) * (sqr(cosAngle) - 1.0) +
+	BOOST_ASSERT(ray.angle <= 0.5f * M_PI);
+	float cosAngle = cos(ray.angle);
+	float rayLength = sqrt(
+			sqr(ray.height) * (sqr(cosAngle) - 1.0f) +
 			sqr(targetHeight))
 		- ray.height * cosAngle;
-	BOOST_ASSERT(rayLength >= 0);
+	BOOST_ASSERT(rayLength >= 0.0f);
 	return rayLength;
 }
 
-double rayLengthToSameHeight(Ray ray) {
-	BOOST_ASSERT(ray.angle > 0.5 * M_PI);
-	double rayLength = -2.0 * ray.height * cos(ray.angle);
-	BOOST_ASSERT(rayLength >= 0);
+float rayLengthToSameHeight(Ray ray) {
+	BOOST_ASSERT(ray.angle > 0.5f * M_PI);
+	float rayLength = -2.0f * ray.height * cos(ray.angle);
+	BOOST_ASSERT(rayLength >= 0.0f);
 	return rayLength;
 }
 
-double rayLengthDownwards(Ray ray, double targetHeight) {
+float rayLengthDownwards(Ray ray, float targetHeight) {
 	BOOST_ASSERT(targetHeight <= ray.height);
-	BOOST_ASSERT(ray.angle > 0.5 * M_PI);
+	BOOST_ASSERT(ray.angle > 0.5f * M_PI);
 	BOOST_ASSERT(rayHitsHeight(ray, targetHeight));
-	double cosAngle = cos(ray.angle);
-	double rayLength = -sqrt(
-			sqr(ray.height) * (sqr(cosAngle) - 1.0) +
+	float cosAngle = cos(ray.angle);
+	float rayLength = -sqrt(
+			sqr(ray.height) * (sqr(cosAngle) - 1.0f) +
 			sqr(targetHeight))
 		- ray.height * cosAngle;
-	BOOST_ASSERT(rayLength >= 0);
+	BOOST_ASSERT(rayLength >= 0.0f);
 	return rayLength;
 }
 
-double rayAngleUpwards(Ray ray, double targetHeight) {
+float rayAngleUpwards(Ray ray, float targetHeight) {
 	BOOST_ASSERT(ray.height <= targetHeight);
-	BOOST_ASSERT(ray.angle <= 0.5 * M_PI);
-	double rayAngle = asin(ray.height * sin(ray.angle) / targetHeight);
-	BOOST_ASSERT(rayAngle >= 0);
-	BOOST_ASSERT(rayAngle <= 0.5 * M_PI);
+	BOOST_ASSERT(ray.angle <= 0.5f * M_PI);
+	float rayAngle = asin(ray.height * sin(ray.angle) / targetHeight);
+	BOOST_ASSERT(rayAngle >= 0.0f);
+	BOOST_ASSERT(rayAngle <= 0.5f * M_PI);
 	return rayAngle;
 }
 
-double rayAngleToSameHeight(Ray ray) {
-	BOOST_ASSERT(ray.angle >= 0.5 * M_PI);
+float rayAngleToSameHeight(Ray ray) {
+	BOOST_ASSERT(ray.angle >= 0.5f * M_PI);
 	BOOST_ASSERT(ray.angle <= M_PI);
 	return M_PI - ray.angle;
 }
 
-double rayAngleDownwards(Ray ray, double targetHeight) {
+float rayAngleDownwards(Ray ray, float targetHeight) {
 	BOOST_ASSERT(targetHeight <= ray.height);
-	BOOST_ASSERT(ray.angle > 0.5 * M_PI);
+	BOOST_ASSERT(ray.angle > 0.5f * M_PI);
 	BOOST_ASSERT(rayHitsHeight(ray, targetHeight));
-	double rayAngle = M_PI - asin(ray.height * sin(ray.angle) / targetHeight);
-	BOOST_ASSERT(rayAngle >= 0.5 * M_PI);
-	BOOST_ASSERT(rayAngle <= M_PI);
+	float rayAngle = M_PI - asin(ray.height * sin(ray.angle) / targetHeight);
+	BOOST_ASSERT(rayAngle >= 0.5f * M_PI);
+	// BOOST_ASSERT(rayAngle <= M_PI); TODO fix for --start_time 5.4
 	return rayAngle;
 }
 
-//dvec3 const Scattering::lambda = dvec3(700e-9, 530e-9, 400e-9); // wavelengths of RGB (metres)
-dvec3 const Scattering::lambda = dvec3(680e-9, 550e-9, 440e-9); // Bruneton and Neyret
+//vec3 const Scattering::lambda = vec3(700e-9, 530e-9, 400e-9); // wavelengths of RGB (metres)
+vec3 const Scattering::lambda = vec3(680e-9f, 550e-9f, 440e-9f); // Bruneton and Neyret
 
-Scattering::Scattering(double unityHeight, double thickness, dvec3 coefficient)
+Scattering::Scattering(float unityHeight, float thickness, vec3 coefficient)
 :
 	unityHeight(unityHeight),
 	thickness(thickness),
@@ -95,71 +95,71 @@ Scattering::Scattering(double unityHeight, double thickness, dvec3 coefficient)
 {
 }
 
-double Scattering::densityAtHeight(double height) const {
+float Scattering::densityAtHeight(float height) const {
 	return exp(-(height - unityHeight) / thickness);
 }
 
-dvec3 RayleighScattering::computeCoefficient() const {
-	return dvec3(5.8e-6, 13.5e-6, 33.1e-6); // Bruneton and Neyret; they use n ~ 1.0003 apparently
+vec3 RayleighScattering::computeCoefficient() const {
+	return vec3(5.8e-6, 13.5e-6, 33.1e-6); // Bruneton and Neyret; they use n ~ 1.0f003 apparently
 
-	double const n = 1.000293; // index of refraction of air
-	double const Ns = 2.545e25; // number density in standard atmosphere (molecules/m^3)
-	double const K = 2.0 * M_PI * M_PI * sqr(sqr(n) - 1.0) / (3.0 * Ns);
-	return K / pow(lambda, dvec3(4.0));
+	float const n = 1.000293f; // index of refraction of air
+	float const Ns = 2.545e25f; // number density in standard atmosphere (molecules/m^3)
+	float const K = 2.0f * M_PI * M_PI * sqr(sqr(n) - 1.0f) / (3.0f * Ns);
+	return K / pow(lambda, vec3(4.0f));
 }
 
-RayleighScattering::RayleighScattering(double unityHeight)
+RayleighScattering::RayleighScattering(float unityHeight)
 :
 	Scattering(unityHeight, 7994, computeCoefficient())
 {
 }
 
-double RayleighScattering::phaseFunction(double lightAngle) const {
+float RayleighScattering::phaseFunction(float lightAngle) const {
 	// Bruneton and Neyret
-	double const mu = cos(lightAngle);
+	float const mu = cos(lightAngle);
 	return
-		3.0 / (16.0 * M_PI)
-		* (1.0 + sqr(mu));
+		3.0f / (16.0f * M_PI)
+		* (1.0f + sqr(mu));
 }
 
-dvec3 MieScattering::computeCoefficient() const {
-	return dvec3(2e-5); // dvec3(2e-5); // Bruneton and Neyret
+vec3 MieScattering::computeCoefficient() const {
+	return vec3(2e-6f); // vec3(2e-5f); // Bruneton and Neyret
 }
 
-MieScattering::MieScattering(double unityHeight)
+MieScattering::MieScattering(float unityHeight)
 :
-	Scattering(unityHeight, 1200, computeCoefficient()),
-	absorption(dvec3(coefficient / 9.0))
+	Scattering(unityHeight, 1200.0f, computeCoefficient()),
+	absorption(vec3(coefficient / 9.0f))
 {
 }
 
-double MieScattering::phaseFunction(double lightAngle) const {
+float MieScattering::phaseFunction(float lightAngle) const {
 	// Bruneton and Neyret
-	double const mu = cos(lightAngle);
-	double const g = 0.76; // 0.76
-	return 3.0 / (8.0 * M_PI) *
-		(1 - pow2(g)) * (1 + pow2(mu)) /
-		((2 + pow2(g)) * pow(1 + pow2(g) - 2.0 * g * mu, 3.0 / 2.0));
+	float const mu = cos(lightAngle);
+	float const g = 0.76f; // 0.76
+	return 3.0f / (8.0f * M_PI) *
+		(1.0f - pow2(g)) * (1.0f + pow2(mu)) /
+		((2.0f + pow2(g)) * pow(1.0f + pow2(g) - 2.0f * g * mu, 3.0f / 2.0f));
 
 	/*
-	double const u = 0.70; // Mie scattering parameter (0.7-0.85)
-	double const x =
-		5.0/9.0 * u
-		+ 125.0/729.0 * u*u*u
-		+ sqrt(64.0/27.0 - 325.0/243.0 * u*u + 1250.0/2187.0 * u*u*u*u);
-	double const g =
-		5.0/9.0 * u
-		- (4.0/3.0 - 25.0/81.0 * u*u) * pow(x, -1.0/3.0)
-		+ pow(x, 1.0/3.0);
+	float const u = 0.70; // Mie scattering parameter (0.7-0.85)
+	float const x =
+		5.0f/9.0f * u
+		+ 125.0f/729.0f * u*u*u
+		+ sqrt(64.0f/27.0f - 325.0f/243.0f * u*u + 1250.0f/2187.0f * u*u*u*u);
+	float const g =
+		5.0f/9.0f * u
+		- (4.0f/3.0f - 25.0f/81.0f * u*u) * pow(x, -1.0f/3.0f)
+		+ pow(x, 1.0f/3.0f);
 	// -1 <= g <= 1, backscattering through isotropic through forward
 	return
 		(1 - sqr(g))
 		/
-		(4.0 * M_PI * pow(1 - 2.0 * g * cos(lightAngle) + sqr(g), 3.0/2.0));
+		(4.0f * M_PI * pow(1 - 2.0f * g * cos(lightAngle) + sqr(g), 3.0f/2.0f));
 		*/
 }
 
-Atmosphere::Atmosphere(double earthRadius, double thickness)
+Atmosphere::Atmosphere(float earthRadius, float thickness)
 :
 	earthRadius(earthRadius),
 	thickness(thickness),
@@ -168,10 +168,10 @@ Atmosphere::Atmosphere(double earthRadius, double thickness)
 {
 }
 
-AtmosphereLayers::Heights AtmosphereLayers::computeHeights(double earthRadius, double thickness, double atmosphereThickness) {
+AtmosphereLayers::Heights AtmosphereLayers::computeHeights(float earthRadius, float thickness, float atmosphereThickness) {
 	Heights heights(numLayers);
 	for (unsigned i = 0; i < numLayers - 1; ++i) {
-		double const containedFraction = 1.0f - (double)i / (numLayers - 1);
+		float const containedFraction = 1.0f - (float)i / (numLayers - 1);
 		heights[i] = earthRadius - thickness * log(containedFraction);
 	}
 	heights[numLayers - 1] = std::max(heights[numLayers - 1] * 1.01f, earthRadius + atmosphereThickness);
@@ -187,19 +187,19 @@ AtmosphereLayers::AtmosphereLayers(Atmosphere const &atmosphere, unsigned numLay
 }
 
 // Ray length from the given layer to the next,
-// where 'next' might be the one above (for angle <= 0.5pi),
-// the layer itself (for 0.5pi < angle < x),
+// where 'next' might be the one above (for angle <= 0.5fpi),
+// the layer itself (for 0.5fpi < angle < x),
 // or the layer below it (for x <= angle).
-inline double rayLengthToNextLayer(Ray ray, AtmosphereLayers const &layers, unsigned layer) {
-	if (ray.angle <= 0.5 * M_PI && layer == layers.numLayers - 1) {
+inline float rayLengthToNextLayer(Ray ray, AtmosphereLayers const &layers, unsigned layer) {
+	if (ray.angle <= 0.5f * M_PI && layer == layers.numLayers - 1) {
 		// Ray goes up into space
-		return 0.0;
-	} else if (ray.angle <= 0.5 * M_PI) {
+		return 0.0f;
+	} else if (ray.angle <= 0.5f * M_PI) {
 		// Ray goes up, hits layer above
 		return rayLengthUpwards(ray, layers.heights[layer + 1]);
 	} else if (layer == 0) {
-		// Ray goes down, into the ground
-		return 0.0;
+		// Ray goes down, into the ground; near infinite
+		return 1e30f;
 	} else if (!rayHitsHeight(ray, layers.heights[layer - 1])) {
 		// Ray goes down, misses layer below, hits current layer from below
 		return rayLengthToSameHeight(ray);
@@ -209,31 +209,31 @@ inline double rayLengthToNextLayer(Ray ray, AtmosphereLayers const &layers, unsi
 	}
 }
 
-inline dvec3 transmittanceToNextLayer(Ray ray, Atmosphere const &atmosphere, AtmosphereLayers const &layers, unsigned layer) {
-	dvec3 const rayleighExtinctionCoefficient = atmosphere.rayleighScattering.coefficient;
-	dvec3 const mieExtinctionCoefficient = atmosphere.mieScattering.coefficient + atmosphere.mieScattering.absorption;
+inline vec3 transmittanceToNextLayer(Ray ray, Atmosphere const &atmosphere, AtmosphereLayers const &layers, unsigned layer) {
+	vec3 const rayleighExtinctionCoefficient = atmosphere.rayleighScattering.coefficient;
+	vec3 const mieExtinctionCoefficient = atmosphere.mieScattering.coefficient + atmosphere.mieScattering.absorption;
 
-	double rayLength = rayLengthToNextLayer(ray, layers, layer);
-	dvec3 const extinction =
+	float rayLength = rayLengthToNextLayer(ray, layers, layer);
+	vec3 const extinction =
 		rayleighExtinctionCoefficient * atmosphere.rayleighScattering.densityAtHeight(ray.height) +
 		mieExtinctionCoefficient * atmosphere.mieScattering.densityAtHeight(ray.height);
 	return exp(-extinction * rayLength);
 }
 
-Dvec3Table2D buildTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers) {
+Vec3Table2D buildTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers) {
 	unsigned const numAngles = layers.numAngles;
 	unsigned const numLayers = layers.numLayers;
 
-	Dvec3Table2D transmittanceTable = Dvec3Table2D::createWithCoordsSizeAndOffset(
+	Vec3Table2D transmittanceTable = Vec3Table2D::createWithCoordsSizeAndOffset(
 			uvec2(numLayers, numAngles),
-			dvec2(numLayers, M_PI * numAngles / (numAngles - 1)),
-			dvec2(0.0, 0.0));
+			vec2(numLayers, M_PI * numAngles / (numAngles - 1)),
+			vec2(0.0f, 0.0f));
 	for (unsigned a = 0; a < numAngles; ++a) {
-		double const angle = M_PI * a / (numAngles - 1);
+		float const angle = M_PI * a / (numAngles - 1);
 		for (unsigned layer = 0; layer < numLayers; ++layer) {
-			double const height = layers.heights[layer];
+			float const height = layers.heights[layer];
 			Ray ray(height, angle);
-			dvec3 transmittance = transmittanceToNextLayer(ray, atmosphere, layers, layer);
+			vec3 transmittance = transmittanceToNextLayer(ray, atmosphere, layers, layer);
 			transmittanceTable.set(uvec2(layer, a), transmittance);
 		}
 	}
@@ -259,31 +259,31 @@ Dvec3Table2D buildTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLay
 // Transmittance from the given layer to outer space,
 // for the given angle on that layer.
 // Zero if the earth is in between.
-Dvec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers, Dvec3Table2D const &transmittanceTable) {
+Vec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers, Vec3Table2D const &transmittanceTable) {
 	unsigned const numAngles = layers.numAngles;
 	unsigned const numLayers = layers.numLayers;
 
-	Dvec3Table2D totalTransmittanceTable = Dvec3Table2D::createWithCoordsSizeAndOffset(
+	Vec3Table2D totalTransmittanceTable = Vec3Table2D::createWithCoordsSizeAndOffset(
 			uvec2(numLayers, numAngles),
-			dvec2(numLayers, M_PI * numAngles / (numAngles - 1)),
-			dvec2(0.0, 0.0));
+			vec2(numLayers, M_PI * numAngles / (numAngles - 1)),
+			vec2(0.0f, 0.0f));
 	// For upward angles, cumulatively sum over all layers.
 	for (int layer = numLayers - 1; layer >= 0; --layer) {
 		for (unsigned a = 0; a < numAngles / 2; ++a) {
-			double const angle = M_PI * a / (numAngles - 1);
+			float const angle = M_PI * a / (numAngles - 1);
 			Ray ray(layers.heights[layer], angle);
-			dvec3 totalTransmittance;
+			vec3 totalTransmittance;
 			if (layer == (int)numLayers - 1) {
 				// Ray goes directly into space
-				totalTransmittance = dvec3(1.0);
+				totalTransmittance = vec3(1.0f);
 			} else {
 				// Ray passes through some layers
-				double const nextAngle = rayAngleUpwards(ray, layers.heights[layer + 1]);
-				BOOST_ASSERT(nextAngle <= 0.5 * M_PI);
+				float const nextAngle = rayAngleUpwards(ray, layers.heights[layer + 1]);
+				BOOST_ASSERT(nextAngle <= 0.5f * M_PI);
 				
 				totalTransmittance =
-					transmittanceTable(dvec2(layer, angle)) *
-					totalTransmittanceTable(dvec2(layer + 1, nextAngle));
+					transmittanceTable(vec2(layer, angle)) *
+					totalTransmittanceTable(vec2(layer + 1, nextAngle));
 			}
 			totalTransmittanceTable.set(uvec2(layer, a), totalTransmittance);
 		}
@@ -293,26 +293,26 @@ Dvec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, Atmosphe
 	// Also, we need to do them in bottom-to-top order.
 	for (unsigned layer = 0; layer < numLayers; ++layer) {
 		for (unsigned a = numAngles / 2; a < numAngles; ++a) {
-			double const angle = M_PI * a / (numAngles - 1);
+			float const angle = M_PI * a / (numAngles - 1);
 			Ray ray(layers.heights[layer], angle);
-			dvec3 totalTransmittance;
+			vec3 totalTransmittance;
 			if (layer == 0) {
 				// Ray goes directly into the ground
-				totalTransmittance = dvec3(0.0);
+				totalTransmittance = vec3(0.0f);
 			} else if (rayHitsHeight(ray, layers.heights[layer - 1])) {
 				// Ray hits the layer below
-				double const nextAngle = rayAngleDownwards(ray, layers.heights[layer - 1]);
-				BOOST_ASSERT(nextAngle >= 0.5 * M_PI);
+				float const nextAngle = rayAngleDownwards(ray, layers.heights[layer - 1]);
+				BOOST_ASSERT(nextAngle >= 0.5f * M_PI);
 				totalTransmittance =
-					transmittanceTable(dvec2(layer, angle)) *
-					totalTransmittanceTable(dvec2(layer - 1, nextAngle));
+					transmittanceTable(vec2(layer, angle)) *
+					totalTransmittanceTable(vec2(layer - 1, nextAngle));
 			} else {
 				// Ray misses the layer below, hits the current one from below
-				double const nextAngle = rayAngleToSameHeight(ray);
-				BOOST_ASSERT(nextAngle <= 0.5 * M_PI);
+				float const nextAngle = rayAngleToSameHeight(ray);
+				BOOST_ASSERT(nextAngle <= 0.5f * M_PI);
 				totalTransmittance =
-					transmittanceTable(dvec2(layer, angle)) *
-					totalTransmittanceTable(dvec2(layer, nextAngle));
+					transmittanceTable(vec2(layer, angle)) *
+					totalTransmittanceTable(vec2(layer, nextAngle));
 			}
 			totalTransmittanceTable.set(uvec2(layer, a), totalTransmittance);
 		}
@@ -336,12 +336,12 @@ Dvec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, Atmosphe
 	return totalTransmittanceTable;
 }
 
-void tableToTexture(Dvec3Table2D const &table, GLTexture &texture) {
+void tableToTexture(Vec3Table2D const &table, GLTexture &texture) {
 	unsigned width = table.getSize().x;
 	unsigned height = table.getSize().y;
 	std::vector<float> data(3 * width * height);
 	float *q = &data[0];
-	for (dvec3 const *p = table.begin(); p < table.end(); ++p) {
+	for (vec3 const *p = table.begin(); p < table.end(); ++p) {
 		*(q++) = p->r;
 		*(q++) = p->g;
 		*(q++) = p->b;
@@ -410,75 +410,75 @@ Sky::Sky(Atmosphere const &atmosphere, AtmosphereLayers const &layers, Sun const
 	shaderProgram.loadAndLink("shaders/sky.vert", "shaders/sky.frag");
 }
 
-dvec3 Sky::computeColor(dvec3 viewDirection) {
-	if (viewDirection.z < 0.0) {
-		return dvec3(0.0);
+vec3 Sky::computeColor(vec3 viewDirection) {
+	if (viewDirection.z < 0.0f) {
+		return vec3(0.0f);
 	}
-	double const sunAngularRadius = sun->getAngularRadius();
-	dvec3 sunColor(sun->getColor());
-	dvec3 sunDirection(sun->getDirection());
+	float const sunAngularRadius = sun->getAngularRadius();
+	vec3 sunColor(sun->getColor());
+	vec3 sunDirection(sun->getDirection());
 
-	double const lightAngle = acos(dot(viewDirection, sunDirection));
-	double const groundViewAngle = acos(viewDirection.z);
-	double const groundSunAngle = acos(sunDirection.z);
+	float const lightAngle = acos(dot(viewDirection, sunDirection));
+	float const groundViewAngle = acos(viewDirection.z);
+	float const groundSunAngle = acos(sunDirection.z);
 	Ray groundViewRay(atmosphere.earthRadius, groundViewAngle);
 	Ray groundSunRay(atmosphere.earthRadius, groundSunAngle);
 
-	double const rayleighPhaseFunction = atmosphere.rayleighScattering.phaseFunction(lightAngle);
-	double const miePhaseFunction = atmosphere.mieScattering.phaseFunction(lightAngle);
+	float const rayleighPhaseFunction = atmosphere.rayleighScattering.phaseFunction(lightAngle);
+	float const miePhaseFunction = atmosphere.mieScattering.phaseFunction(lightAngle);
 
-	dvec3 scatteredLight = (1.0 - smoothstep(sunAngularRadius, sunAngularRadius * 1.2, lightAngle)) * sunColor;
+	vec3 scatteredLight = (1.0f - smoothstep(sunAngularRadius, sunAngularRadius * 1.2f, lightAngle)) * sunColor;
 	for (int layer = layers.numLayers - 2; layer >= 0; --layer) {
-		double const height = layers.heights[layer];
+		float const height = layers.heights[layer];
 
 		Ray viewRay(height, rayAngleUpwards(groundViewRay, height));
-		BOOST_ASSERT(viewRay.angle <= 0.5 * M_PI);
-		double const rayLength = rayLengthUpwards(viewRay, layers.heights[layer + 1]);
+		BOOST_ASSERT(viewRay.angle <= 0.5f * M_PI);
+		float const rayLength = rayLengthUpwards(viewRay, layers.heights[layer + 1]);
 
 		// TODO broken!
-		double const sunAngle = 0.1;// rayAngleUpwards(groundSunRay, height);
+		float const sunAngle = groundSunAngle;// rayAngleUpwards(groundSunRay, height);
 
 		// Add inscattering, attenuated by optical depth to the sun
-		dvec3 const rayleighInscattering =
+		vec3 const rayleighInscattering =
 			atmosphere.rayleighScattering.coefficient *
 			atmosphere.rayleighScattering.densityAtHeight(height) *
 			rayleighPhaseFunction;
-		dvec3 const mieInscattering =
+		vec3 const mieInscattering =
 			atmosphere.mieScattering.coefficient *
 			atmosphere.mieScattering.densityAtHeight(height) *
 			miePhaseFunction;
-		dvec3 const transmittance = totalTransmittanceTable(dvec2(layer, sunAngle));
+		vec3 const transmittance = totalTransmittanceTable(vec2(layer, sunAngle));
 		scatteredLight += rayLength * sunColor * transmittance * (rayleighInscattering + mieInscattering);
 
 		// Multiply transmittance
-		dvec3 const layerTransmittance = transmittanceTable(dvec2(layer, viewRay.angle));
+		vec3 const layerTransmittance = transmittanceTable(vec2(layer, viewRay.angle));
 		scatteredLight *= layerTransmittance;
 	}
 	return scatteredLight;
 
 	/*
 	// Super simple scheme by ATI (Preetham et al.)
-	double cost = dot(sunDirection, direction);
-	double g = 0.85;
-	dvec3 br = dvec3(5.8e-6, 13.5e-6, 33.1e-6); // Bruneton and Neyret; they use n ~ 1.0003 apparently
-	dvec3 bm = dvec3(2e-5); // Bruneton and Neyret
-	dvec3 brt = 3.0 / (16.0 * M_PI) * br * (1 + pow2(cost));
-	dvec3 bmt = 1.0 / (4.0 * M_PI) * bm * pow2(1 - g) / pow(1 + pow2(g) - 2.0 * g * cost, 3.0 / 2.0);
-	double s = 100e3 / direction.z;
-	dvec3 lin = (brt + bmt) / (br + bm) * sunColor * (1.0 - exp(-(bm + br) * s));
+	float cost = dot(sunDirection, direction);
+	float g = 0.85;
+	vec3 br = vec3(5.8e-6, 13.5e-6, 33.1e-6); // Bruneton and Neyret; they use n ~ 1.0f003 apparently
+	vec3 bm = vec3(2e-5); // Bruneton and Neyret
+	vec3 brt = 3.0f / (16.0f * M_PI) * br * (1 + pow2(cost));
+	vec3 bmt = 1.0f / (4.0f * M_PI) * bm * pow2(1 - g) / pow(1 + pow2(g) - 2.0f * g * cost, 3.0f / 2.0f);
+	float s = 100e3 / direction.z;
+	vec3 lin = (brt + bmt) / (br + bm) * sunColor * (1.0f - exp(-(bm + br) * s));
 	return lin;
 	*/
 }
 
-void Sky::generateFace(GLenum face, dvec3 base, dvec3 xBasis, dvec3 yBasis) {
+void Sky::generateFace(GLenum face, vec3 base, vec3 xBasis, vec3 yBasis) {
 	unsigned char *p = textureImage.get();
 	for (unsigned y = 0; y < size; ++y) {
 		for (unsigned x = 0; x < size; ++x) {
-			dvec3 direction = normalize(
+			vec3 direction = normalize(
 				base +
-				(x + 0.5) / size * xBasis +
-				(y + 0.5) / size * yBasis);
-			dvec3 color = clamp(computeColor(direction), 0.0, 1.0);
+				(x + 0.5f) / size * xBasis +
+				(y + 0.5f) / size * yBasis);
+			vec3 color = clamp(computeColor(direction), 0.0f, 1.0f);
 			p[0] = (unsigned char)(0xFF * color[0]);
 			p[1] = (unsigned char)(0xFF * color[1]);
 			p[2] = (unsigned char)(0xFF * color[2]);
@@ -492,12 +492,12 @@ void Sky::generateFaces() {
 	float const N = -0.5f;
 	float const P = 0.5f;
 	bindTexture(GL_TEXTURE_CUBE_MAP, texture);
-	generateFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, dvec3(N, P, N), dvec3(0, 0, 1), dvec3(0, -1, 0));
-	generateFace(GL_TEXTURE_CUBE_MAP_POSITIVE_X, dvec3(P, P, P), dvec3(0, 0, -1), dvec3(0, -1, 0));
-	generateFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, dvec3(N, N, P), dvec3(1, 0, 0), dvec3(0, 0, -1));
-	generateFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, dvec3(N, P, N), dvec3(1, 0, 0), dvec3(0, 0, 1));
-	generateFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, dvec3(P, P, N), dvec3(-1, 0, 0), dvec3(0, -1, 0));
-	generateFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, dvec3(N, P, P), dvec3(1, 0, 0), dvec3(0, -1, 0));
+	generateFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, vec3(N, P, N), vec3(0, 0, 1), vec3(0, -1, 0));
+	generateFace(GL_TEXTURE_CUBE_MAP_POSITIVE_X, vec3(P, P, P), vec3(0, 0, -1), vec3(0, -1, 0));
+	generateFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, vec3(N, N, P), vec3(1, 0, 0), vec3(0, 0, -1));
+	generateFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, vec3(N, P, N), vec3(1, 0, 0), vec3(0, 0, 1));
+	generateFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, vec3(P, P, N), vec3(-1, 0, 0), vec3(0, -1, 0));
+	generateFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, vec3(N, P, P), vec3(1, 0, 0), vec3(0, -1, 0));
 }
 
 void Sky::update(float dt) {

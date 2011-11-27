@@ -23,79 +23,80 @@
  * - things measured from sea level are called "thickness"
  */
 
-// TODO see if it still works if we replace double by float
+// TODO elevations instead of zenith angles?
+// TODO remove sqr, use pow2
 
 struct Ray {
-	double height;
-	double angle;
-	Ray(double height, double angle) : height(height), angle(angle) {}
+	float height;
+	float angle;
+	Ray(float height, float angle) : height(height), angle(angle) {}
 };
 
-bool rayHitsHeight(Ray ray, double targetHeight);
+bool rayHitsHeight(Ray ray, float targetHeight);
 
-double rayLengthUpwards(Ray ray, double targetHeight);
-double rayLengthToSameHeight(Ray ray);
-double rayLengthDownwards(Ray ray, double targetHeight);
+float rayLengthUpwards(Ray ray, float targetHeight);
+float rayLengthToSameHeight(Ray ray);
+float rayLengthDownwards(Ray ray, float targetHeight);
 
-double rayAngleUpwards(Ray ray, double targetHeight);
-double rayAngleToSameHeight(Ray ray);
-double rayAngleDownwards(Ray ray, double targetHeight);
+float rayAngleUpwards(Ray ray, float targetHeight);
+float rayAngleToSameHeight(Ray ray);
+float rayAngleDownwards(Ray ray, float targetHeight);
 
 class Scattering {
 
 	protected:
 
-		static dvec3 const lambda;
+		static vec3 const lambda;
 
-		Scattering(double unityHeight, double thickness, dvec3 coefficient);
+		Scattering(float unityHeight, float thickness, vec3 coefficient);
 
 	public:
 
-		double const unityHeight;
-		double const thickness;
-		dvec3 const coefficient;
+		float const unityHeight;
+		float const thickness;
+		vec3 const coefficient;
 
-		double densityAtHeight(double height) const;
+		float densityAtHeight(float height) const;
 
 };
 
 class RayleighScattering : public Scattering {
-	dvec3 computeCoefficient() const;
+	vec3 computeCoefficient() const;
 	public:
-		RayleighScattering(double unityHeight);
-		double phaseFunction(double lightAngle) const;
+		RayleighScattering(float unityHeight);
+		float phaseFunction(float lightAngle) const;
 };
 
 class MieScattering : public Scattering {
-	dvec3 computeCoefficient() const;
+	vec3 computeCoefficient() const;
 	public:
-		dvec3 const absorption;
-		MieScattering(double unityHeight);
-		double phaseFunction(double lightAngle) const;
+		vec3 const absorption;
+		MieScattering(float unityHeight);
+		float phaseFunction(float lightAngle) const;
 };
 
 class Atmosphere {
 
 	public:
 
-		double const earthRadius;
-		double const thickness;
+		float const earthRadius;
+		float const thickness;
 
 		RayleighScattering const rayleighScattering;
 		MieScattering const mieScattering;
 
-		Atmosphere(double earthRadius = 6371e3, double thickness = 100e3);
+		Atmosphere(float earthRadius = 6371e3, float thickness = 100e3);
 };
 
 class AtmosphereLayers {
 
 	public:
 
-		typedef std::vector<double> Heights;
+		typedef std::vector<float> Heights;
 	
 	private:
 
-		Heights computeHeights(double earthRadius, double rayleighHeight, double atmosphereHeight);
+		Heights computeHeights(float earthRadius, float rayleighHeight, float atmosphereHeight);
 
 	public:
 
@@ -106,13 +107,13 @@ class AtmosphereLayers {
 		AtmosphereLayers(Atmosphere const &atmosphere, unsigned numLayers);
 };
 
-typedef Table<dvec3, uvec2, dvec2> Dvec3Table2D;
+typedef Table<vec3, uvec2, vec2> Vec3Table2D;
 
-double rayLengthToNextLayer(Ray ray, AtmosphereLayers const &layers, unsigned layer);
-dvec3 transmittanceToNextLayer(Ray ray, Atmosphere const &atmosphere, AtmosphereLayers const &layers, unsigned layer);
+float rayLengthToNextLayer(Ray ray, AtmosphereLayers const &layers, unsigned layer);
+vec3 transmittanceToNextLayer(Ray ray, Atmosphere const &atmosphere, AtmosphereLayers const &layers, unsigned layer);
 
-Dvec3Table2D buildTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers);
-Dvec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers, Dvec3Table2D const &transmittanceTable);
+Vec3Table2D buildTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers);
+Vec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers, Vec3Table2D const &transmittanceTable);
 
 // TODO in the shader world, everything below this line needs refactor
 
@@ -122,8 +123,8 @@ class Sky : boost::noncopyable {
 	AtmosphereLayers layers;
 	Sun const *sun;
 
-	Dvec3Table2D transmittanceTable;
-	Dvec3Table2D totalTransmittanceTable;
+	Vec3Table2D transmittanceTable;
+	Vec3Table2D totalTransmittanceTable;
 	GLTexture transmittanceTexture;
 	GLTexture totalTransmittanceTexture;
 
@@ -135,8 +136,8 @@ class Sky : boost::noncopyable {
 
 	ShaderProgram shaderProgram;
 
-	dvec3 computeColor(dvec3 viewDirection);
-	void generateFace(GLenum face, dvec3 base, dvec3 xBasis, dvec3 yBasis);
+	vec3 computeColor(vec3 viewDirection);
+	void generateFace(GLenum face, vec3 base, vec3 xBasis, vec3 yBasis);
 	void generateFaces();
 
 	public:

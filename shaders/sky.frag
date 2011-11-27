@@ -63,7 +63,7 @@ float rayleighPhaseFunction(float lightAngle) {
 
 float miePhaseFunction(float lightAngle) {
 	float mu = cos(lightAngle);
-	float g = 0.5; // 0.76
+	float g = 0.85; // 0.76
 	return 3.0 / (8.0 * PI) *
 		(1 - pow2(g)) * (1 + pow2(mu)) /
 		((2 + pow2(g)) * pow(1 + pow2(g) - 2.0 * g * mu, 3.0 / 2.0));
@@ -106,7 +106,8 @@ void main() {
 		Ray viewRay = Ray(height, rayAngleUpwards(groundViewRay, height));
 		float rayLength = rayLengthUpwards(viewRay, layers.heights[layer + 1]);
 
-		float sunAngle = groundSunRay.angle; //rayAngleUpwards(groundSunRay, height);
+		// TODO lies, damn lies!
+		float sunAngle = groundSunRay.angle + viewRay.angle - groundViewRay.angle; //rayAngleUpwards(groundSunRay, height);
 
 		// Add inscattering, attenuated by optical depth to the sun
 		vec3 rayleighInscattering =
@@ -124,4 +125,6 @@ void main() {
 		vec3 layerTransmittance = sampleTable(transmittanceSampler, layer, viewRay.angle);
 		scatteredLight *= layerTransmittance;
 	}
+	// Poor man's HDR
+	scatteredLight = 0.3 * log(vec3(1.0) + 10.0 * scatteredLight);
 }

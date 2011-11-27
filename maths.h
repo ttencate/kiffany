@@ -33,6 +33,8 @@ using glm::log;
 using glm::mix;
 using glm::mod;
 using glm::length;
+using glm::max;
+using glm::min;
 using glm::normalize;
 using glm::perspective;
 using glm::pow;
