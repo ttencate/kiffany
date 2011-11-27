@@ -108,6 +108,21 @@ bool ShaderProgram::loadAndLink(std::string const &vertexShaderFileName, std::st
 				<< "fragment shader '" << fragmentShaderFileName << "':\n"
 				<< getProgramInfoLog(program);
 		}
+		uniforms.clear();
 	}
 	return success;
+}
+
+GLint ShaderProgram::getUniformLocation(std::string const &name) const {
+	UniformMap::const_iterator i = uniforms.find(name);
+	if (i != uniforms.end()) {
+		return i->second;
+	}
+	GLint uniform = glGetUniformLocation(program.getName(), name.c_str());
+	if (uniform == -1) {
+		*shaderErrorStream << "Uniform not found: '" << name << "'\n";
+	} else {
+		uniforms[name] = uniform;
+	}
+	return uniform;
 }

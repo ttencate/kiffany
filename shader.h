@@ -4,6 +4,7 @@
 #include "gl.h"
 
 #include <iosfwd>
+#include <map>
 #include <string>
 
 bool loadShaderFromFile(GLShader &shader, std::string const &fileName);
@@ -21,9 +22,20 @@ class ShaderProgram {
 	GLFragmentShader fragmentShader;
 	GLProgram program;
 
+	typedef std::map<std::string, GLint> UniformMap;
+	UniformMap mutable uniforms;
+
 	public:
 
 		bool loadAndLink(std::string const &vertexShaderFileName, std::string const &fragmentShaderFileName);
+
+		GLint getUniformLocation(std::string const &name) const;
+
+		template<typename T>
+		void setUniform(std::string const &name, T const &value) {
+			GLint uniform = getUniformLocation(name);
+			glUniform(uniform, value);
+		}
 
 };
 
