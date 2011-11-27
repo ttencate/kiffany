@@ -90,9 +90,6 @@ class TimerStat
 struct Stats {
 	TimerStat runningTime;
 
-	CounterStat buffersCreated;
-	CounterStat buffersDeleted;
-
 	CounterStat octreeNodes;
 	CounterStat runs;
 	CounterStat quadsGenerated;

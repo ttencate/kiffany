@@ -23,8 +23,6 @@ void Stats::print() const {
 		<< "Irrelevant jobs skipped: " << irrelevantJobsSkipped.get() << '\n'
 		<< "Irrelevant jobs run: " << irrelevantJobsRun.get() << '\n'
 		<< '\n'
-		<< "Buffers created: " << buffersCreated.get() << '\n'
-		<< "Buffers deleted: " << buffersDeleted.get() << '\n'
 		<< "Runs created: " << runs.get() << '\n'
 		<< "Runs per chunk: " << ((float)runs.get() / chunksCompressed.get()) << '\n'
 		<< "Octree nodes built: " << octreeNodes.get() << '\n'

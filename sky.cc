@@ -432,7 +432,7 @@ Sky::Sky(Scatterer const &scatterer, Sun const *sun)
 	};
 	vertices.putData(sizeof(v), v, GL_STATIC_DRAW);
 
-	glBindTexture(GL_TEXTURE_CUBE_MAP, texture.getName());
+	bindTexture(GL_TEXTURE_CUBE_MAP, texture);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -479,7 +479,7 @@ void Sky::generateFace(GLenum face, vec3 base, vec3 xBasis, vec3 yBasis) {
 void Sky::generateFaces() {
 	float const N = -0.5f;
 	float const P = 0.5f;
-	glBindTexture(GL_TEXTURE_CUBE_MAP, texture.getName());
+	bindTexture(GL_TEXTURE_CUBE_MAP, texture);
 	generateFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, vec3(N, P, N), vec3(0, 0, 1), vec3(0, -1, 0));
 	generateFace(GL_TEXTURE_CUBE_MAP_POSITIVE_X, vec3(P, P, P), vec3(0, 0, -1), vec3(0, -1, 0));
 	generateFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, vec3(N, N, P), vec3(1, 0, 0), vec3(0, 0, -1));
@@ -501,11 +501,17 @@ void Sky::render() {
 	glDisableClientState(GL_NORMAL_ARRAY);	
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vertices.getName());
+	bindBuffer(GL_ARRAY_BUFFER, vertices);
 	glVertexPointer(3, GL_INT, 0, 0);
 	glTexCoordPointer(3, GL_INT, 0, 0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, texture.getName());
+
+	bindTexture(GL_TEXTURE_CUBE_MAP, texture);
+
+	useProgram(shaderProgram);
+
 	glDrawArrays(GL_QUADS, 0, vertices.getSizeInBytes() / sizeof(int) / 3);
+
+	useFixedProcessing();
 
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 	glDisable(GL_TEXTURE_CUBE_MAP);

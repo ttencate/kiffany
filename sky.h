@@ -1,6 +1,7 @@
 #ifndef SKY_H
 #define SKY_H
 
+#include "buffer.h"
 #include "gl.h"
 #include "maths.h"
 #include "shader.h"
@@ -133,7 +134,7 @@ class Sky {
 	unsigned const size;
 	boost::scoped_array<unsigned char> textureImage;
 
-	GLBuffer vertices;
+	Buffer vertices;
 	GLTexture texture;
 
 	ShaderProgram shaderProgram;

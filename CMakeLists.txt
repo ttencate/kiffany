@@ -22,6 +22,7 @@ set(GLEW_LIBRARY GLEW)
 
 set(sources
 	block.cc block.h
+	buffer.cc buffer.h
 	camera.cc camera.h
 	chunk.cc chunk.h
 	chunkdata.cc chunkdata.h

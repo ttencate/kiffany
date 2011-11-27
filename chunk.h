@@ -1,6 +1,7 @@
 #ifndef CHUNK_H
 #define CHUNK_H
 
+#include "buffer.h"
 #include "chunkdata.h"
 #include "octree.h"
 #include "gl.h"
@@ -69,17 +70,17 @@ class ChunkBuffers
 :
 	boost::noncopyable
 {
-	GLBuffer vertexBuffer;
-	GLBuffer normalBuffer;
+	Buffer vertexBuffer;
+	Buffer normalBuffer;
 
 	Ranges ranges;
 
 	public:
 
-		GLBuffer const &getVertexBuffer() const { return vertexBuffer; }
-		GLBuffer &getVertexBuffer() { return vertexBuffer; }
-		GLBuffer const &getNormalBuffer() const { return normalBuffer; }
-		GLBuffer &getNormalBuffer() { return normalBuffer; }
+		Buffer const &getVertexBuffer() const { return vertexBuffer; }
+		Buffer &getVertexBuffer() { return vertexBuffer; }
+		Buffer const &getNormalBuffer() const { return normalBuffer; }
+		Buffer &getNormalBuffer() { return normalBuffer; }
 		Ranges const &getRanges() const { return ranges; }
 		void setRanges(Ranges const &ranges) { this->ranges = ranges; }
 

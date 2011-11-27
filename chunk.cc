@@ -215,10 +215,10 @@ void upload(ChunkGeometry const &geometry, ChunkBuffers *buffers) {
 }
 
 void render(ChunkBuffers const &buffers) {
-	glBindBuffer(GL_ARRAY_BUFFER, buffers.getVertexBuffer().getName());
+	bindBuffer(GL_ARRAY_BUFFER, buffers.getVertexBuffer());
 	glVertexPointer(3, GL_SHORT, 0, 0);
 
-	glBindBuffer(GL_ARRAY_BUFFER, buffers.getNormalBuffer().getName());
+	bindBuffer(GL_ARRAY_BUFFER, buffers.getNormalBuffer());
 	glNormalPointer(GL_BYTE, 0, 0);
 
 	glDrawArrays(GL_QUADS, 0, buffers.getVertexBuffer().getSizeInBytes() / sizeof(short) / 3);

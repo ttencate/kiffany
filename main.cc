@@ -6,6 +6,8 @@
 #include "terragen.h"
 #include "world.h"
 
+#include <GL/glfw.h>
+
 #include <iostream>
 #include <cstdlib>
 
