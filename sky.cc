@@ -86,11 +86,14 @@ AtmosphereLayers::Heights AtmosphereLayers::computeHeights(Atmosphere const &atm
 }
 
 AtmosphereLayers::Densities AtmosphereLayers::computeDensities(Atmosphere const &atmosphere, float thickness) {
-	// TODO integrate numerically to find the average
 	Densities densities(numLayers);
-	for (unsigned i = 0; i < numLayers; ++i) {
-		densities[i] = exp(-(heights[i] - atmosphere.earthRadius) / thickness);
+	for (unsigned i = 0; i < numLayers - 1; ++i) {
+		// Density, averaged analytically over the space between the layers
+		densities[i] = thickness / (heights[i + 1] - heights[i]) * (
+				exp(-(heights[i] - atmosphere.earthRadius) / thickness) -
+				exp(-(heights[i + 1] - atmosphere.earthRadius) / thickness));
 	}
+	densities[numLayers - 1] = 0.0f;
 	return densities;
 }
 
