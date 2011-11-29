@@ -51,6 +51,7 @@ struct Atmosphere {
 	vec3 rayleighCoefficient;
 	vec3 mieCoefficient;
 	vec3 mieAbsorption;
+	float mieDirectionality;
 
 	Atmosphere();
 };

@@ -270,8 +270,8 @@ int main(int argc, char **argv) {
 		std::cerr << "Error: " << glewGetErrorString(err) << "\n";
 		return EXIT_FAILURE;
 	}
-	if (!GLEW_VERSION_2_1) {
-		std::cerr << "Error: OpenGL 2.1 not supported\n";
+	if (!GLEW_VERSION_3_0) {
+		std::cerr << "Error: OpenGL 3.0 not supported\n";
 		return EXIT_FAILURE;
 	}
 
@@ -285,8 +285,8 @@ int main(int argc, char **argv) {
 			radians(flags.latitude),
 			radians(flags.axialTilt),
 			flags.dayLength,
-			0.04f, // 0.0046 in reality
-			20.0f * vec3(1.0f),
+			radians(flags.sunAngularDiameter / 2.0f),
+			flags.sunBrightness * vec3(1.0f),
 			flags.startTime / 24.0f);
 	World world(
 			&camera,

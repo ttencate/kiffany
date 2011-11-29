@@ -1,7 +1,6 @@
 #version 150
 
 const float PI = 3.1415926535;
-const vec3 RED = vec3(1.0, 0.0, 0.0); // for debugging
 
 struct Ray {
 	float height;
@@ -12,6 +11,7 @@ struct Atmosphere {
 	float earthRadius;
 	vec3 rayleighCoefficient;
 	vec3 mieCoefficient;
+	float mieDirectionality;
 };
 
 struct Sun {
@@ -63,7 +63,7 @@ float rayleighPhaseFunction(float lightAngle) {
 
 float miePhaseFunction(float lightAngle) {
 	float mu = cos(lightAngle);
-	float g = 0.85; // 0.76
+	float g = atmosphere.mieDirectionality;
 	return 3.0 / (8.0 * PI) *
 		(1 - pow2(g)) * (1 + pow2(mu)) /
 		((2 + pow2(g)) * pow(1 + pow2(g) - 2.0 * g * mu, 3.0 / 2.0));

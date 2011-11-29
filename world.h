@@ -12,6 +12,7 @@ class TerrainGenerator;
 
 class World {
 
+	// TODO ownership is a mess here
 	Camera *camera;
 	Terrain terrain;
 	boost::scoped_ptr<Sun> sun;

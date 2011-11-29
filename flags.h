@@ -20,6 +20,16 @@ struct Flags {
 	unsigned dayOfYear;
 	float latitude;
 	float axialTilt;
+	float sunAngularDiameter;
+	float sunBrightness;
+	float earthRadius;
+	float atmosphereThickness;
+	float rayleighThickness;
+	float mieThickness;
+	float rayleighCoefficient;
+	float mieCoefficient;
+	float mieAbsorption;
+	float mieDirectionality;
 	unsigned atmosphereLayers;
 	unsigned atmosphereAngles;
 };

@@ -74,10 +74,6 @@ void testPhaseFunctionIsValid(F phaseFunction) {
 		float const area = 4.0 * M_PI * (sin(0.5 * endAngle) - sin(0.5 * startAngle));
 		integral += meanValue * area;
 	}
-	// The phase function integrated over a sphere should be 1
-	// TODO figure out if this is true
-	// float const EPS = 1e0;
-	// BOOST_CHECK_CLOSE(1.0, integral, EPS);
 }
 
 BOOST_AUTO_TEST_CASE(TestRayleighPhaseFunctionIsValid) {

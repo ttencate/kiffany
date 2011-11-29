@@ -1,5 +1,6 @@
 #include "sky.h"
 
+#include "flags.h"
 #include "shader.h"
 
 #include <boost/assert.hpp>
@@ -61,17 +62,17 @@ inline float rayAngleDownwards(Ray ray, float targetHeight) {
 	return rayAngle;
 }
 
-// TODO make all parameters into flags
 Atmosphere::Atmosphere()
 :
 	lambda(680e-9f, 550e-9f, 440e-9f), // Bruneton and Neyret
-	earthRadius(6731.0e3f),
-	atmosphereThickness(100.0e3f),
-	rayleighThickness(7994.0f),
-	mieThickness(1200.0f),
-	rayleighCoefficient(5.8e-6f, 13.5e-6f, 33.1e-6f), // Bruneton and Neyret; they use n ~ 1.0003 apparently
-	mieCoefficient(2e-6f), // 2e-5f // Bruneton and Neyret
-	mieAbsorption(mieCoefficient / 9.0f)
+	earthRadius(flags.earthRadius),
+	atmosphereThickness(flags.atmosphereThickness),
+	rayleighThickness(flags.rayleighThickness),
+	mieThickness(flags.mieThickness),
+	rayleighCoefficient(flags.rayleighCoefficient * vec3(1.00f, 2.33f, 5.71f)),
+	mieCoefficient(flags.mieCoefficient),
+	mieAbsorption(flags.mieAbsorption),
+	mieDirectionality(flags.mieDirectionality)
 {
 }
 
@@ -322,6 +323,7 @@ void Sky::render() {
 	shaderProgram.setUniform("atmosphere.earthRadius", atmosphere.earthRadius);
 	shaderProgram.setUniform("atmosphere.rayleighCoefficient", vec3(atmosphere.rayleighCoefficient));
 	shaderProgram.setUniform("atmosphere.mieCoefficient", vec3(atmosphere.mieCoefficient));
+	shaderProgram.setUniform("atmosphere.mieDirectionality", atmosphere.mieDirectionality);
 	shaderProgram.setUniform("sun.angularRadius", sun->getAngularRadius());
 	shaderProgram.setUniform("sun.color", sun->getColor());
 	shaderProgram.setUniform("sun.direction", sun->getDirection());

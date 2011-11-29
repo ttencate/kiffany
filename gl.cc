@@ -1,5 +1,7 @@
 #include "gl.h"
 
+#include <boost/static_assert.hpp>
+
 GLBuffer::GLBuffer() {
 	glGenBuffers(1, &name);
 }
@@ -186,15 +188,18 @@ void uniform(GLUniform const &uniform, std::vector<float> const &v) {
 }
 
 void uniform(GLUniform const &uniform, std::vector<glm::vec2> const &v) {
-	glUniform2fv(uniform.getLocation(), v.size(), (float const *)&v[0]); // TODO undefined behaviour
+	BOOST_STATIC_ASSERT(sizeof(glm::vec2) == 2 * sizeof(float));
+	glUniform2fv(uniform.getLocation(), v.size(), (float const *)&v[0]);
 }
 
 void uniform(GLUniform const &uniform, std::vector<glm::vec3> const &v) {
-	glUniform3fv(uniform.getLocation(), v.size(), (float const *)&v[0]); // TODO undefined behaviour
+	BOOST_STATIC_ASSERT(sizeof(glm::vec3) == 3 * sizeof(float));
+	glUniform3fv(uniform.getLocation(), v.size(), (float const *)&v[0]);
 }
 
 void uniform(GLUniform const &uniform, std::vector<glm::vec4> const &v) {
-	glUniform4fv(uniform.getLocation(), v.size(), (float const *)&v[0]); // TODO undefined behaviour
+	BOOST_STATIC_ASSERT(sizeof(glm::vec4) == 4 * sizeof(float));
+	glUniform4fv(uniform.getLocation(), v.size(), (float const *)&v[0]);
 }
 
 void uniform(GLUniform const &uniform, std::vector<int> const &v) {
@@ -202,13 +207,16 @@ void uniform(GLUniform const &uniform, std::vector<int> const &v) {
 }
 
 void uniform(GLUniform const &uniform, std::vector<glm::ivec2> const &v) {
-	glUniform2iv(uniform.getLocation(), v.size(), (int const *)&v[0]); // TODO undefined behaviour
+	BOOST_STATIC_ASSERT(sizeof(glm::ivec2) == 2 * sizeof(int));
+	glUniform2iv(uniform.getLocation(), v.size(), (int const *)&v[0]);
 }
 
 void uniform(GLUniform const &uniform, std::vector<glm::ivec3> const &v) {
-	glUniform3iv(uniform.getLocation(), v.size(), (int const *)&v[0]); // TODO undefined behaviour
+	BOOST_STATIC_ASSERT(sizeof(glm::ivec3) == 3 * sizeof(int));
+	glUniform3iv(uniform.getLocation(), v.size(), (int const *)&v[0]);
 }
 
 void uniform(GLUniform const &uniform, std::vector<glm::ivec4> const &v) {
-	glUniform4iv(uniform.getLocation(), v.size(), (int const *)&v[0]); // TODO undefined behaviour
+	BOOST_STATIC_ASSERT(sizeof(glm::ivec4) == 4 * sizeof(int));
+	glUniform4iv(uniform.getLocation(), v.size(), (int const *)&v[0]);
 }
