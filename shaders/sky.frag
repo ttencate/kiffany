@@ -10,8 +10,8 @@ struct Ray {
 
 struct Atmosphere {
 	float earthRadius;
-	vec3 rayleighScatteringCoefficient;
-	vec3 mieScatteringCoefficient;
+	vec3 rayleighCoefficient;
+	vec3 mieCoefficient;
 	float rayleighThickness;
 	float mieThickness;
 };
@@ -115,11 +115,11 @@ void main() {
 		// Add inscattering, attenuated by optical depth to the sun
 		// TODO tabulate rayleigh and mie density
 		vec3 rayleighInscattering =
-			atmosphere.rayleighScatteringCoefficient *
+			atmosphere.rayleighCoefficient *
 			vec3(rayleighDensityAtHeight(height)) *
 			rayleighPhase;
 		vec3 mieInscattering =
-			atmosphere.mieScatteringCoefficient *
+			atmosphere.mieCoefficient *
 			vec3(mieDensityAtHeight(height)) *
 			miePhase;
 		vec3 transmittance = sampleTable(totalTransmittanceSampler, layer, sunAngle);

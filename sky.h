@@ -41,50 +41,23 @@ float rayAngleUpwards(Ray ray, float targetHeight);
 float rayAngleToSameHeight(Ray ray);
 float rayAngleDownwards(Ray ray, float targetHeight);
 
-class Scattering {
+struct Atmosphere {
 
-	protected:
+	vec3 lambda;
 
-		static vec3 const lambda;
+	float earthRadius;
+	float atmosphereThickness;
+	float rayleighThickness;
+	float mieThickness;
 
-		Scattering(float unityHeight, float thickness, vec3 coefficient);
+	vec3 rayleighCoefficient;
+	vec3 mieCoefficient;
+	vec3 mieAbsorption;
 
-	public:
+	Atmosphere();
 
-		float const unityHeight;
-		float const thickness;
-		vec3 const coefficient;
-
-		float densityAtHeight(float height) const;
-
-};
-
-class RayleighScattering : public Scattering {
-	vec3 computeCoefficient() const;
-	public:
-		RayleighScattering(float unityHeight);
-		float phaseFunction(float lightAngle) const;
-};
-
-class MieScattering : public Scattering {
-	vec3 computeCoefficient() const;
-	public:
-		vec3 const absorption;
-		MieScattering(float unityHeight);
-		float phaseFunction(float lightAngle) const;
-};
-
-class Atmosphere {
-
-	public:
-
-		float const earthRadius;
-		float const thickness;
-
-		RayleighScattering const rayleighScattering;
-		MieScattering const mieScattering;
-
-		Atmosphere(float earthRadius = 6371e3, float thickness = 100e3);
+	float rayleighDensityAtHeight(float height) const;
+	float mieDensityAtHeight(float height) const;
 };
 
 class AtmosphereLayers {
@@ -95,7 +68,7 @@ class AtmosphereLayers {
 	
 	private:
 
-		Heights computeHeights(float earthRadius, float rayleighHeight, float atmosphereHeight);
+		Heights computeHeights(float earthRadius, float rayleighThickness, float atmosphereThickness);
 
 	public:
 
@@ -118,26 +91,19 @@ Vec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, Atmospher
 
 class Sky : boost::noncopyable {
 
-	Atmosphere atmosphere;
-	AtmosphereLayers layers;
+	Atmosphere const atmosphere;
+	AtmosphereLayers const layers;
 	Sun const *sun;
 
 	Vec3Table2D transmittanceTable;
 	Vec3Table2D totalTransmittanceTable;
+
 	GLTexture transmittanceTexture;
 	GLTexture totalTransmittanceTexture;
 
-	unsigned const size;
-	boost::scoped_array<unsigned char> textureImage;
-
 	Buffer vertices;
-	GLTexture texture;
 
 	ShaderProgram shaderProgram;
-
-	vec3 computeColor(vec3 viewDirection);
-	void generateFace(GLenum face, vec3 base, vec3 xBasis, vec3 yBasis);
-	void generateFaces();
 
 	public:
 
