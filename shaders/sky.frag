@@ -106,8 +106,10 @@ void main() {
 		Ray viewRay = Ray(height, rayAngleUpwards(groundViewRay, height));
 		float rayLength = rayLengthUpwards(viewRay, layers.heights[layer + 1]);
 
-		// TODO lies, damn lies!
-		float sunAngle = groundSunRay.angle + viewRay.angle - groundViewRay.angle; //rayAngleUpwards(groundSunRay, height);
+		vec3 vertical = normalize(vec3(0.0, 0.0, atmosphere.earthRadius) + vec3(rayLength) * viewDirection);
+		// Compensate for roundoff errors when the dot product is near 1
+		// TODO index the tables by cos(angle) instead of angle so this doesn't happen
+		float sunAngle = acos(0.99999 * dot(sun.direction, vertical));
 
 		// Add inscattering, attenuated by optical depth to the sun
 		vec3 rayleighInscattering =
@@ -125,9 +127,9 @@ void main() {
 		vec3 layerTransmittance = sampleTable(transmittanceSampler, layer, viewRay.angle);
 		scatteredLight *= layerTransmittance;
 	}
+	// TODO apply these as post-processing effect to entire scene
 	// Poor man's HDR
 	scatteredLight = 0.3 * log(vec3(1.0) + 10.0 * scatteredLight);
 	// Poor man's dithering
-	// TODO apply as post-processing effect
-	scatteredLight += 1.0/64.0 * fract(sin(dot(viewDirection.xy, vec2(12.9898,78.233))) * 43758.5453);
+	scatteredLight += (fract(sin(dot(viewDirection, vec3(12.9898, 23.957, 78.233))) * 43758.5453) - 0.5) / 64.0;
 }
