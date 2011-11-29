@@ -23,8 +23,6 @@
  * - things measured from sea level are called "thickness"
  */
 
-// TODO elevations instead of zenith angles?
-
 struct Ray {
 	float height;
 	float angle;

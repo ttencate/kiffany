@@ -109,7 +109,6 @@ void main() {
 
 		vec3 vertical = normalize(vec3(0.0, 0.0, atmosphere.earthRadius) + vec3(rayLength) * viewDirection);
 		// Compensate for roundoff errors when the dot product is near 1
-		// TODO index the tables by cos(angle) instead of angle so this doesn't happen
 		float sunAngle = acos(0.99999 * dot(sun.direction, vertical));
 
 		// Add inscattering, attenuated by optical depth to the sun

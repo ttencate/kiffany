@@ -199,7 +199,6 @@ Vec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, Atmospher
 			} else {
 				// Ray passes through some layers
 				float const nextAngle = rayAngleUpwards(ray, layers.heights[layer + 1]);
-				BOOST_ASSERT(nextAngle <= 0.5f * M_PI);
 				
 				totalTransmittance =
 					transmittanceTable(vec2(layer, angle)) *
@@ -222,14 +221,12 @@ Vec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, Atmospher
 			} else if (rayHitsHeight(ray, layers.heights[layer - 1])) {
 				// Ray hits the layer below
 				float const nextAngle = rayAngleDownwards(ray, layers.heights[layer - 1]);
-				BOOST_ASSERT(nextAngle >= 0.5f * M_PI);
 				totalTransmittance =
 					transmittanceTable(vec2(layer, angle)) *
 					totalTransmittanceTable(vec2(layer - 1, nextAngle));
 			} else {
 				// Ray misses the layer below, hits the current one from below
 				float const nextAngle = rayAngleToSameHeight(ray);
-				BOOST_ASSERT(nextAngle <= 0.5f * M_PI);
 				totalTransmittance =
 					transmittanceTable(vec2(layer, angle)) *
 					totalTransmittanceTable(vec2(layer, nextAngle));
