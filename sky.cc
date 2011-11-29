@@ -75,29 +75,32 @@ Atmosphere::Atmosphere()
 {
 }
 
-float Atmosphere::rayleighDensityAtHeight(float height) const {
-	return exp(-(height - earthRadius) / rayleighThickness);
-}
-
-float Atmosphere::mieDensityAtHeight(float height) const {
-	return exp(-(height - earthRadius) / mieThickness);
-}
-
-AtmosphereLayers::Heights AtmosphereLayers::computeHeights(float earthRadius, float rayleighThickness, float atmosphereThickness) {
+AtmosphereLayers::Heights AtmosphereLayers::computeHeights(Atmosphere const &atmosphere) {
 	Heights heights(numLayers);
 	for (unsigned i = 0; i < numLayers - 1; ++i) {
 		float const containedFraction = 1.0f - (float)i / (numLayers - 1);
-		heights[i] = earthRadius - rayleighThickness * log(containedFraction);
+		heights[i] = atmosphere.earthRadius - atmosphere.rayleighThickness * log(containedFraction);
 	}
-	heights[numLayers - 1] = std::max(heights[numLayers - 1] * 1.01f, earthRadius + atmosphereThickness);
+	heights[numLayers - 1] = std::max(heights[numLayers - 1] * 1.01f, atmosphere.earthRadius + atmosphere.atmosphereThickness);
 	return heights;
+}
+
+AtmosphereLayers::Densities AtmosphereLayers::computeDensities(Atmosphere const &atmosphere, float thickness) {
+	// TODO integrate numerically to find the average
+	Densities densities(numLayers);
+	for (unsigned i = 0; i < numLayers; ++i) {
+		densities[i] = exp(-(heights[i] - atmosphere.earthRadius) / thickness);
+	}
+	return densities;
 }
 
 AtmosphereLayers::AtmosphereLayers(Atmosphere const &atmosphere, unsigned numLayers, unsigned numAngles)
 :
 	numLayers(numLayers),
 	numAngles(numAngles),
-	heights(computeHeights(atmosphere.earthRadius, atmosphere.rayleighThickness, atmosphere.atmosphereThickness))
+	heights(computeHeights(atmosphere)),
+	rayleighDensities(computeDensities(atmosphere, atmosphere.rayleighThickness)),
+	mieDensities(computeDensities(atmosphere, atmosphere.mieThickness))
 {
 }
 
@@ -129,9 +132,10 @@ inline vec3 transmittanceToNextLayer(Ray ray, Atmosphere const &atmosphere, Atmo
 	vec3 const mieExtinctionCoefficient = atmosphere.mieCoefficient + atmosphere.mieAbsorption;
 
 	float rayLength = rayLengthToNextLayer(ray, layers, layer);
+	unsigned nextLayer = ray.angle <= 0.5 * M_PI ? layer : (std::max(1u, layer) - 1);
 	vec3 const extinction =
-		rayleighExtinctionCoefficient * atmosphere.rayleighDensityAtHeight(ray.height) +
-		mieExtinctionCoefficient * atmosphere.mieDensityAtHeight(ray.height);
+		rayleighExtinctionCoefficient * layers.rayleighDensities[nextLayer] +
+		mieExtinctionCoefficient * layers.mieDensities[nextLayer];
 	return exp(-extinction * rayLength);
 }
 
@@ -301,9 +305,6 @@ void Sky::update(float dt) {
 }
 
 void Sky::render() {
-	unsigned const numLayers = layers.numLayers;
-	unsigned const numAngles = layers.numAngles;
-
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
 
@@ -315,21 +316,17 @@ void Sky::render() {
 
 	useProgram(shaderProgram.getProgram());
 
-	shaderProgram.setUniform("atmosphere.earthRadius", (float)atmosphere.earthRadius);
-	shaderProgram.setUniform("atmosphere.rayleighThickness", (float)atmosphere.rayleighThickness);
-	shaderProgram.setUniform("atmosphere.mieThickness", (float)atmosphere.mieThickness);
+	shaderProgram.setUniform("atmosphere.earthRadius", atmosphere.earthRadius);
 	shaderProgram.setUniform("atmosphere.rayleighCoefficient", vec3(atmosphere.rayleighCoefficient));
 	shaderProgram.setUniform("atmosphere.mieCoefficient", vec3(atmosphere.mieCoefficient));
-	shaderProgram.setUniform("sun.angularRadius", (float)sun->getAngularRadius());
+	shaderProgram.setUniform("sun.angularRadius", sun->getAngularRadius());
 	shaderProgram.setUniform("sun.color", sun->getColor());
 	shaderProgram.setUniform("sun.direction", sun->getDirection());
-	shaderProgram.setUniform("layers.numLayers", (int)numLayers);
-	shaderProgram.setUniform("layers.numAngles", (int)numAngles);
-	std::vector<float> heights(numLayers);
-	for (unsigned i = 0; i < numLayers; ++i) {
-		heights[i] = layers.heights[i];
-	}
-	shaderProgram.setUniform("layers.heights", heights);
+	shaderProgram.setUniform("layers.numLayers", (int)layers.numLayers);
+	shaderProgram.setUniform("layers.numAngles", (int)layers.numAngles);
+	shaderProgram.setUniform("layers.heights", layers.heights);
+	shaderProgram.setUniform("layers.rayleighDensities", layers.rayleighDensities);
+	shaderProgram.setUniform("layers.mieDensities", layers.mieDensities);
 
 	activeTexture(1);
 	bindTexture(GL_TEXTURE_RECTANGLE, totalTransmittanceTexture);

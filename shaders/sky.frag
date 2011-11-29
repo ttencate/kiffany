@@ -12,8 +12,6 @@ struct Atmosphere {
 	float earthRadius;
 	vec3 rayleighCoefficient;
 	vec3 mieCoefficient;
-	float rayleighThickness;
-	float mieThickness;
 };
 
 struct Sun {
@@ -26,6 +24,8 @@ struct Layers {
 	int numLayers;
 	int numAngles;
 	float heights[32];
+	float rayleighDensities[32];
+	float mieDensities[32];
 };
 
 uniform Atmosphere atmosphere;
@@ -69,14 +69,6 @@ float miePhaseFunction(float lightAngle) {
 		((2 + pow2(g)) * pow(1 + pow2(g) - 2.0 * g * mu, 3.0 / 2.0));
 }
 
-float rayleighDensityAtHeight(float height) {
-	return exp(-(height - atmosphere.earthRadius) / atmosphere.rayleighThickness);
-}
-
-float mieDensityAtHeight(float height) {
-	return exp(-(height - atmosphere.earthRadius) / atmosphere.mieThickness);
-}
-
 vec3 sampleTable(sampler2DRect tableSampler, int layer, float angle) {
 	return vec3(texture(tableSampler, vec2(
 					layer + 0.5,
@@ -111,14 +103,13 @@ void main() {
 		float sunAngle = acos(0.99999 * dot(sun.direction, vertical));
 
 		// Add inscattering, attenuated by optical depth to the sun
-		// TODO tabulate rayleigh and mie density
 		vec3 rayleighInscattering =
 			atmosphere.rayleighCoefficient *
-			vec3(rayleighDensityAtHeight(height)) *
+			layers.rayleighDensities[layer] *
 			rayleighPhase;
 		vec3 mieInscattering =
 			atmosphere.mieCoefficient *
-			vec3(mieDensityAtHeight(height)) *
+			layers.mieDensities[layer] *
 			miePhase;
 		vec3 transmittance = sampleTable(totalTransmittanceSampler, layer, sunAngle);
 		scatteredLight += rayLength * sun.color * transmittance * (rayleighInscattering + mieInscattering);

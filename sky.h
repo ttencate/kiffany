@@ -53,9 +53,6 @@ struct Atmosphere {
 	vec3 mieAbsorption;
 
 	Atmosphere();
-
-	float rayleighDensityAtHeight(float height) const;
-	float mieDensityAtHeight(float height) const;
 };
 
 class AtmosphereLayers {
@@ -63,16 +60,20 @@ class AtmosphereLayers {
 	public:
 
 		typedef std::vector<float> Heights;
+		typedef std::vector<float> Densities;
 	
 	private:
 
-		Heights computeHeights(float earthRadius, float rayleighThickness, float atmosphereThickness);
+		Heights computeHeights(Atmosphere const &atmosphere);
+		Densities computeDensities(Atmosphere const &atmosphere, float thickness);
 
 	public:
 
 		unsigned const numLayers;
 		unsigned const numAngles;
 		Heights const heights;
+		Densities const rayleighDensities;
+		Densities const mieDensities;
 
 		AtmosphereLayers(Atmosphere const &atmosphere, unsigned numLayers, unsigned numAngles);
 };
