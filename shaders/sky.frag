@@ -84,6 +84,7 @@ vec3 sampleTable(sampler2DRect tableSampler, int layer, float angle) {
 }
 
 void main() {
+	// TODO fix the black bands at sunrise/sunset
 	if (viewDirectionUnnormalized.z < 0.0) {
 		scatteredLight = vec3(0.0);
 		return;
