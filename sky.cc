@@ -32,8 +32,8 @@ float rayLengthUpwards(Ray ray, float targetHeight) {
 	BOOST_ASSERT(ray.angle <= 0.5f * M_PI);
 	float cosAngle = cos(ray.angle);
 	float rayLength = sqrt(
-			sqr(ray.height) * (sqr(cosAngle) - 1.0f) +
-			sqr(targetHeight))
+			pow2(ray.height) * (pow2(cosAngle) - 1.0f) +
+			pow2(targetHeight))
 		- ray.height * cosAngle;
 	BOOST_ASSERT(rayLength >= 0.0f);
 	return rayLength;
@@ -52,8 +52,8 @@ float rayLengthDownwards(Ray ray, float targetHeight) {
 	BOOST_ASSERT(rayHitsHeight(ray, targetHeight));
 	float cosAngle = cos(ray.angle);
 	float rayLength = -sqrt(
-			sqr(ray.height) * (sqr(cosAngle) - 1.0f) +
-			sqr(targetHeight))
+			pow2(ray.height) * (pow2(cosAngle) - 1.0f) +
+			pow2(targetHeight))
 		- ray.height * cosAngle;
 	BOOST_ASSERT(rayLength >= 0.0f);
 	return rayLength;
@@ -104,7 +104,7 @@ vec3 RayleighScattering::computeCoefficient() const {
 
 	float const n = 1.000293f; // index of refraction of air
 	float const Ns = 2.545e25f; // number density in standard atmosphere (molecules/m^3)
-	float const K = 2.0f * M_PI * M_PI * sqr(sqr(n) - 1.0f) / (3.0f * Ns);
+	float const K = 2.0f * M_PI * M_PI * pow2(pow2(n) - 1.0f) / (3.0f * Ns);
 	return K / pow(lambda, vec3(4.0f));
 }
 
@@ -119,7 +119,7 @@ float RayleighScattering::phaseFunction(float lightAngle) const {
 	float const mu = cos(lightAngle);
 	return
 		3.0f / (16.0f * M_PI)
-		* (1.0f + sqr(mu));
+		* (1.0f + pow2(mu));
 }
 
 vec3 MieScattering::computeCoefficient() const {
@@ -153,9 +153,9 @@ float MieScattering::phaseFunction(float lightAngle) const {
 		+ pow(x, 1.0f/3.0f);
 	// -1 <= g <= 1, backscattering through isotropic through forward
 	return
-		(1 - sqr(g))
+		(1 - pow2(g))
 		/
-		(4.0f * M_PI * pow(1 - 2.0f * g * cos(lightAngle) + sqr(g), 3.0f/2.0f));
+		(4.0f * M_PI * pow(1 - 2.0f * g * cos(lightAngle) + pow2(g), 3.0f/2.0f));
 		*/
 }
 

@@ -24,7 +24,6 @@
  */
 
 // TODO elevations instead of zenith angles?
-// TODO remove sqr, use pow2
 
 struct Ray {
 	float height;

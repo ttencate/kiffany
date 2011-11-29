@@ -57,11 +57,6 @@ extern int3 const Y_STEP;
 extern int3 const Z_STEP;
 
 template<typename T>
-inline T sqr(T x) {
-	return x * x;
-}
-
-template<typename T>
 std::ostream &operator<<(std::ostream &stream, glm::detail::tvec2<T> const &v) {
 	stream << glm::to_string(v);
 	return stream;
