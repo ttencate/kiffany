@@ -93,11 +93,10 @@ AtmosphereLayers::Heights AtmosphereLayers::computeHeights(float earthRadius, fl
 	return heights;
 }
 
-// TODO make numAngles into flag
-AtmosphereLayers::AtmosphereLayers(Atmosphere const &atmosphere, unsigned numLayers)
+AtmosphereLayers::AtmosphereLayers(Atmosphere const &atmosphere, unsigned numLayers, unsigned numAngles)
 :
 	numLayers(numLayers),
-	numAngles(255),
+	numAngles(numAngles),
 	heights(computeHeights(atmosphere.earthRadius, atmosphere.rayleighThickness, atmosphere.atmosphereThickness))
 {
 }

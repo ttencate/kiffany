@@ -21,6 +21,7 @@ struct Flags {
 	float latitude;
 	float axialTilt;
 	unsigned atmosphereLayers;
+	unsigned atmosphereAngles;
 };
 
 extern Flags flags;

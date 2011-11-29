@@ -74,7 +74,7 @@ class AtmosphereLayers {
 		unsigned const numAngles;
 		Heights const heights;
 
-		AtmosphereLayers(Atmosphere const &atmosphere, unsigned numLayers);
+		AtmosphereLayers(Atmosphere const &atmosphere, unsigned numLayers, unsigned numAngles);
 };
 
 typedef Table<vec3, uvec2, vec2> Vec3Table2D;
