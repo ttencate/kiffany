@@ -112,6 +112,7 @@ void main() {
 		float sunAngle = acos(0.99999 * dot(sun.direction, vertical));
 
 		// Add inscattering, attenuated by optical depth to the sun
+		// TODO tabulate rayleigh and mie density
 		vec3 rayleighInscattering =
 			atmosphere.rayleighScatteringCoefficient *
 			vec3(rayleighDensityAtHeight(height)) *
