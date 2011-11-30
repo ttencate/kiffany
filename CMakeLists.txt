@@ -35,7 +35,6 @@ set(sources
 	occlusion.cc occlusion.h
 	octree.cc octree.h
 	perlin.cc perlin.h
-	queues.cc queues.h
 	raycaster.cc raycaster.h
 	shader.cc shader.h
 	sky.cc sky.h

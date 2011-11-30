@@ -18,6 +18,7 @@ class World {
 	boost::scoped_ptr<Sun> sun;
 	boost::scoped_ptr<Lighting> lighting;
 	boost::scoped_ptr<Sky> sky;
+	ViewSpherePtr viewSphere;
 
 	public:
 

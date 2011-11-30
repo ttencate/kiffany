@@ -160,6 +160,8 @@ void debugPrintTable(std::ostream &out, Vec3Table2D const &table) {
 	}
 }
 
+// TODO We don't really need this table; the totalTransmittanceTable can simply call the function,
+// and the shader only needs a subset of what the function does (upwards only) and already has it.
 Vec3Table2D buildTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers) {
 	unsigned const numAngles = layers.numAngles;
 	unsigned const numLayers = layers.numLayers;

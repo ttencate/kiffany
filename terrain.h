@@ -2,71 +2,53 @@
 #define TERRAIN_H
 
 #include "chunkmap.h"
+#include "maths.h"
 #include "octree.h"
 #include "terragen.h"
 #include "threadpool.h"
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/weak_ptr.hpp>
+
+struct ViewSphere {
+	vec3 center;
+	float radius;
+	ViewSphere(vec3 center, float radius) : center(center), radius(radius) { }
+};
+
+typedef boost::shared_ptr<ViewSphere> ViewSpherePtr;
+typedef boost::shared_ptr<ViewSphere const> ConstViewSpherePtr;
+typedef boost::weak_ptr<ViewSphere const> WeakConstViewSpherePtr;
 
 class ChunkManager {
-
-	struct Job {
-
-		typedef boost::function<void(void)> Worker;
-
-		int3 const index;
-		float const multiplier;
-		Worker const worker;
-
-		Job(int3 index, float multiplier, Worker const &worker) : index(index), multiplier(multiplier), worker(worker) { }
-
-		void operator()() const {
-			worker();
-		}
-
-	};
-
-	struct JobPriorityFunction {
-		ChunkPriorityFunction const chunkPriorityFunction;
-		JobPriorityFunction(ChunkPriorityFunction const &chunkPriorityFunction)
-		:
-			chunkPriorityFunction(chunkPriorityFunction)
-		{
-		}
-		float operator()(Job const &job) const {
-			return chunkPriorityFunction(job.index) * job.multiplier;
-		}
-	};
-
-	typedef ThreadPool<Job> JobThreadPool;
-	typedef boost::function<void(void)> Finalizer;
-	typedef WorkQueue<Finalizer> FinalizerQueue;
 
 	ChunkMap &chunkMap;
 
 	boost::scoped_ptr<TerrainGenerator> terrainGenerator;
 
-	FinalizerQueue finalizerQueue;
-	JobThreadPool threadPool;
+	std::vector<WeakConstViewSpherePtr> viewSpheres;
+
+	WorkQueue finalizerQueue;
+	ThreadPool threadPool;
 
 	public:
 
 		ChunkManager(ChunkMap &chunkMap, TerrainGenerator *terrainGenerator);
 
-		void requestGeneration(ChunkPtr chunk);
-		void requestTesselation(ChunkPtr chunk);
-		void requestLighting(ChunkPtr chunk);
+		void addViewSphere(WeakConstViewSpherePtr viewSphere);
 
-		void setPriorityFunction(ChunkPriorityFunction const &priorityFunction);
-		void gather();
+		void sow();
+		void reap();
 
 	private:
 
 		ChunkDataPtr chunkDataOrNull(int3 index);
 		NeighbourChunkData getNeighbourChunkData(int3 index);
 
-		bool isJobIrrelevant(Job const &job);
+		void requestGeneration(ChunkPtr chunk);
+		void requestTesselation(ChunkPtr chunk);
+		void requestLighting(ChunkPtr chunk);
 
 		void generate(int3 index);
 		void finalizeGeneration(int3 index, ChunkDataPtr chunkData, OctreePtr octree);
@@ -91,6 +73,8 @@ class Terrain
 		~Terrain();
 
 		ChunkMap const &getChunkMap() const { return chunkMap; }
+
+		void addViewSphere(WeakConstViewSpherePtr viewSphere);
 
 		void update(float dt);
 		void render(Camera const &camera);

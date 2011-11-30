@@ -4,7 +4,6 @@
 #include "camera.h"
 #include "chunk.h"
 #include "maths.h"
-#include "queues.h"
 
 #include <boost/noncopyable.hpp>
 #include <boost/thread.hpp>
@@ -35,11 +34,9 @@ class ChunkMap
 	unsigned const maxSize;
 
 	typedef boost::unordered_map<int3, ChunkPtr, CoordsHasher> PositionMap;
-	typedef DynamicPriorityQueue<int3> EvictionQueue;
 
 	boost::shared_mutex mutable mapMutex;
 	PositionMap map;
-	EvictionQueue evictionQueue;
 
 	public:
 
@@ -48,8 +45,7 @@ class ChunkMap
 		ChunkPtr operator[](int3 index);
 		ChunkConstPtr operator[](int3 index) const;
 		bool contains(int3 index) const;
-
-		void setPriorityFunction(ChunkPriorityFunction const &priorityFunction);
+		Chunk::State getChunkState(int3 index) const;
 
 	private:
 
