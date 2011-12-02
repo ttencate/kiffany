@@ -298,7 +298,7 @@ int main(int argc, char **argv) {
 
 	run();
 
-	// stats.print();
+	stats.print();
 	glfwTerminate();
 
 	return EXIT_SUCCESS;

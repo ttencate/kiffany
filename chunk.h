@@ -98,13 +98,9 @@ class Chunk
 
 		enum State {
 			NEW,
-			GENERATING,
 			GENERATED,
-			TESSELATING,
 			TESSELATED,
-			LIGHTING,
-			LIGHTED,
-			UPLOADED
+			LIGHTED
 		};
 
 	private:
@@ -113,6 +109,7 @@ class Chunk
 		int3 const position;
 
 		State state;
+		bool upgrading;
 
 		ChunkDataPtr data;
 		OctreePtr octree;
@@ -127,13 +124,13 @@ class Chunk
 		int3 const &getPosition() const { return position; }
 
 		State getState() const { return state; }
+		bool isUpgrading() const { return upgrading; }
 
-		void setGenerating();
+		void startUpgrade();
+		void endUpgrade();
 		void setData(ChunkDataPtr data);
 		void setOctree(OctreePtr octree);
-		void setTesselating();
 		void setGeometry(ChunkGeometryPtr geometry);
-		void setLighting();
 
 		ChunkDataPtr getData() const { return data; }
 		OctreePtr getOctree() { return octree; }
@@ -141,10 +138,6 @@ class Chunk
 		ChunkGeometryConstPtr getGeometry() const { return geometry; }
 
 		void render();
-
-	private:
-
-		void upload();
 	
 };
 

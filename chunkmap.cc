@@ -19,7 +19,6 @@ ChunkPtr ChunkMap::operator[](int3 index) {
 			boost::upgrade_to_unique_lock<boost::shared_mutex> writeLock(readLock);
 
 			map[index] = chunk;
-			trim();
 		}
 
 		return chunk;
@@ -50,11 +49,11 @@ Chunk::State ChunkMap::getChunkState(int3 index) const {
 	return i->second->getState();
 }
 
-void ChunkMap::trim() {
-	// Caution: assumes that we hold the write lock!
-	// while (overCapacity()) {
-		// stats.chunksEvicted.increment();
-		// TODO reinstate
-		// map.erase(index);
-	// }
+bool ChunkMap::isChunkUpgrading(int3 index) const {
+	boost::shared_lock<boost::shared_mutex> readLock(mapMutex);
+	PositionMap::const_iterator i = map.find(index);
+	if (i == map.end()) {
+		return false;
+	}
+	return i->second->isUpgrading();
 }

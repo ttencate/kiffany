@@ -5,73 +5,20 @@
 #include "stats.h"
 #include "terragen.h"
 
-#include <queue>
+#include <boost/assert.hpp>
 
 ChunkManager::ChunkManager(ChunkMap &chunkMap, TerrainGenerator *terrainGenerator)
 :
 	chunkMap(chunkMap),
 	terrainGenerator(terrainGenerator),
-	finalizerQueue(ThreadPool::defaultNumThreads()),
+	finalizerQueue(0), // infinite, otherwise threads may block at program exit
 	threadPool(ThreadPool::defaultNumThreads())
 {
-}
-
-// TODO refactor these to be nonblocking
-// TODO refactor Chunk::State to be an integer, combined with an "upgrading" boolean,
-// and make a generic "upgrade" function
-void ChunkManager::requestGeneration(ChunkPtr chunk) {
-	if (chunk->getState() == Chunk::NEW) {
-		chunk->setGenerating();
-		threadPool.enqueue(
-				boost::bind(
-					&ChunkManager::generate, this,
-					chunk->getIndex()));
-	}
-}
-
-void ChunkManager::requestTesselation(ChunkPtr chunk) {
-	if (chunk->getState() == Chunk::GENERATED) {
-		int3 index = chunk->getIndex();
-		NeighbourChunkData neighbourChunkData = getNeighbourChunkData(index);
-		if (neighbourChunkData.isComplete()) {
-			chunk->setTesselating();
-			threadPool.enqueue(
-					boost::bind(
-						&ChunkManager::tesselate, this,
-						index, chunk->getData(), neighbourChunkData));
-		}
-	}
-}
-
-void ChunkManager::requestLighting(ChunkPtr chunk) {
-	if (chunk->getState() >= Chunk::TESSELATED && chunk->getState() != Chunk::LIGHTING) {
-		int3 index = chunk->getIndex();
-		chunk->setLighting();
-		ChunkGeometryConstPtr chunkGeometry = chunk->getGeometry();
-		threadPool.enqueue(
-				boost::bind(
-					&ChunkManager::computeLighting, this,
-					index, boost::cref(chunkMap), chunkGeometry));
-	}
 }
 
 void ChunkManager::addViewSphere(WeakConstViewSpherePtr viewSphere) {
 	viewSpheres.push_back(viewSphere);
 }
-
-// TODO move elsewhere
-template<typename T>
-struct Prioritized {
-	float priority; // lower number is higher priority
-	T item;
-	Prioritized(float priority, T item) : priority(priority), item(item) { }
-	bool operator<(Prioritized<T> const &other) const {
-		return priority > other.priority;
-	}
-};
-
-template<typename T>
-Prioritized<T> makePrioritized(float priority, T item) { return Prioritized<T>(priority, item); }
 
 void ChunkManager::sow() {
 	unsigned jobsToAdd = threadPool.getMaxQueueSize() - threadPool.getQueueSize();
@@ -79,7 +26,7 @@ void ChunkManager::sow() {
 		return;
 	}
 
-	std::priority_queue<Prioritized<int3> > pq;
+	PriorityQueue queue;
 	for (unsigned i = 0; i < viewSpheres.size(); ++i) {
 		if (ConstViewSpherePtr sphere = viewSpheres[i].lock()) {
 			// TODO write chunksInSphere iterator
@@ -92,8 +39,8 @@ void ChunkManager::sow() {
 						// TODO filter on the sphere
 						int3 index(x, y, z);
 						float priority = length(chunkCenter(index) - sphere->center); // lower is better
-						if (chunkMap.getChunkState(index) < Chunk::LIGHTED) {
-							pq.push(makePrioritized(priority, index));
+						if (chunkMap.getChunkState(index) < Chunk::LIGHTED && !chunkMap.isChunkUpgrading(index)) {
+							queue.push(makePrioritized(priority, index));
 						}
 					}
 				}
@@ -103,49 +50,66 @@ void ChunkManager::sow() {
 		}
 	}
 
-	while (jobsToAdd && !pq.empty()) {
-		int3 index = pq.top().item;
-		pq.pop();
-		Chunk::State state = chunkMap.getChunkState(index);
-		if (state <= Chunk::NEW) {
-			requestGeneration(chunkMap[index]);
+	while (jobsToAdd && !queue.empty()) {
+		PrioritizedIndex prioIndex = queue.top();
+		queue.pop();
+		if (tryUpgradeChunk(prioIndex, queue)) {
 			--jobsToAdd;
-			continue;
-		} else if (state == Chunk::GENERATED) {
-			bool canTesselate = true;
-			// TODO get from lighting radius
-			int3 min = index - 1;
-			int3 max = index + 1;
-			// TODO write chunksInCube iterator
-			for (int z = min.z; z <= max.z; ++z) {
-				for (int y = min.y; y <= max.y; ++y) {
-					for (int x = min.x; x <= max.x; ++x) {
-						int3 neighIndex(x, y, z);
-						if (neighIndex == index) {
-							continue;
-						}
-						Chunk::State neighState = chunkMap.getChunkState(neighIndex);
-						if (neighState < Chunk::GENERATING) {
-							canTesselate = false;
-							requestGeneration(chunkMap[neighIndex]);
-							--jobsToAdd;
-							if (!jobsToAdd) {
-								return;
-							}
-						}
-					}
-				}
-			}
-			if (canTesselate) {
-				requestTesselation(chunkMap[index]);
-				--jobsToAdd;
-			}
 		}
 	}
 }
 
 void ChunkManager::reap() {
 	finalizerQueue.runAll();
+}
+
+bool ChunkManager::tryUpgradeChunk(PrioritizedIndex prioIndex, PriorityQueue &queue) {
+	int3 const index = prioIndex.item;
+	if (chunkMap.isChunkUpgrading(index)) {
+		return 0;
+	}
+
+	Chunk::State const state = chunkMap.getChunkState(index);
+	// TODO replace by helper function
+	if (state >= Chunk::LIGHTED) {
+		return 0;
+	}
+
+	Chunk::State const nextState = (Chunk::State)(state + 1);
+	int radius;
+	// TODO replace by helper function
+	switch (nextState) {
+		case Chunk::GENERATED: radius = 0; break;
+		case Chunk::TESSELATED: radius = 1; break;
+		case Chunk::LIGHTED: radius = 0; break; // TODO get from lighting radius
+		default: BOOST_ASSERT(false);
+	}
+
+	Chunk::State const minNeighState = state;
+	int3 const min = index - radius;
+	int3 const max = index + radius;
+	bool upgradeSelf = true;
+	// TODO write chunksInCube iterator
+	for (int z = min.z; z <= max.z; ++z) {
+		for (int y = min.y; y <= max.y; ++y) {
+			for (int x = min.x; x <= max.x; ++x) {
+				int3 const neighIndex(x, y, z);
+				if (neighIndex == index) {
+					continue;
+				}
+				// We can only upgrade a chunk if all its neighbours
+				// within the radius are in at least the same state.
+				if (chunkMap.getChunkState(neighIndex) < minNeighState) {
+					upgradeSelf = false;
+					queue.push(makePrioritized(prioIndex.priority, neighIndex));
+				}
+			}
+		}
+	}
+	if (upgradeSelf) {
+		enqueueUpgrade(chunkMap[index]);
+	}
+	return upgradeSelf;
 }
 
 ChunkDataPtr ChunkManager::chunkDataOrNull(int3 index) {
@@ -156,6 +120,7 @@ ChunkDataPtr ChunkManager::chunkDataOrNull(int3 index) {
 	return chunk->getData();
 }
 
+// TODO get rid of NeighbourChunkData, read chunk map directly
 NeighbourChunkData ChunkManager::getNeighbourChunkData(int3 index) {
 	NeighbourChunkData data;
 	data.xn = chunkDataOrNull(index + int3(-1,  0,  0));
@@ -165,6 +130,54 @@ NeighbourChunkData ChunkManager::getNeighbourChunkData(int3 index) {
 	data.zn = chunkDataOrNull(index + int3( 0,  0, -1));
 	data.zp = chunkDataOrNull(index + int3( 0,  0,  1));
 	return data;
+}
+
+void ChunkManager::enqueueUpgrade(ChunkPtr chunk) {
+	switch (chunk->getState()) {
+		case Chunk::NEW: enqueueGeneration(chunk); break;
+		case Chunk::GENERATED: enqueueTesselation(chunk); break;
+		case Chunk::TESSELATED: enqueueLighting(chunk); break;
+		default: BOOST_ASSERT(false);
+	}
+}
+
+void ChunkManager::enqueueGeneration(ChunkPtr chunk) {
+	BOOST_ASSERT(chunk->getState() == Chunk::NEW);
+	BOOST_ASSERT(!chunk->isUpgrading());
+
+	chunk->startUpgrade();
+	threadPool.enqueue(
+			boost::bind(
+				&ChunkManager::generate, this,
+				chunk->getIndex()));
+}
+
+void ChunkManager::enqueueTesselation(ChunkPtr chunk) {
+	BOOST_ASSERT(chunk->getState() == Chunk::GENERATED);
+	BOOST_ASSERT(!chunk->isUpgrading());
+
+	int3 index = chunk->getIndex();
+	NeighbourChunkData neighbourChunkData = getNeighbourChunkData(index);
+	BOOST_ASSERT(neighbourChunkData.isComplete());
+
+	chunk->startUpgrade();
+	threadPool.enqueue(
+			boost::bind(
+				&ChunkManager::tesselate, this,
+				index, chunk->getData(), neighbourChunkData));
+}
+
+void ChunkManager::enqueueLighting(ChunkPtr chunk) {
+	BOOST_ASSERT(chunk->getState() == Chunk::TESSELATED);
+	BOOST_ASSERT(!chunk->isUpgrading());
+
+	int3 index = chunk->getIndex();
+	chunk->startUpgrade();
+	ChunkGeometryConstPtr chunkGeometry = chunk->getGeometry();
+	threadPool.enqueue(
+			boost::bind(
+				&ChunkManager::computeLighting, this,
+				index, boost::cref(chunkMap), chunkGeometry));
 }
 
 void ChunkManager::generate(int3 index) {
@@ -187,6 +200,7 @@ void ChunkManager::finalizeGeneration(int3 index, ChunkDataPtr chunkData, Octree
 	ChunkPtr chunk = chunkMap[index];
 	chunk->setData(chunkData);
 	chunk->setOctree(octree);
+	chunk->endUpgrade();
 }
 
 void ChunkManager::tesselate(int3 index, ChunkDataPtr chunkData, NeighbourChunkData neighbourChunkData) {
@@ -200,6 +214,7 @@ void ChunkManager::tesselate(int3 index, ChunkDataPtr chunkData, NeighbourChunkD
 void ChunkManager::finalizeTesselation(int3 index, ChunkGeometryPtr chunkGeometry) {
 	ChunkPtr chunk = chunkMap[index];
 	chunk->setGeometry(chunkGeometry);
+	chunk->endUpgrade();
 }
 
 void ChunkManager::computeLighting(int3 index, ChunkMap const &chunkMap, ChunkGeometryConstPtr chunkGeometry) {
@@ -218,6 +233,7 @@ void ChunkManager::finalizeLighting(int3 index, ChunkGeometryPtr chunkGeometry) 
 		return;
 	}
 	chunk->setGeometry(chunkGeometry);
+	chunk->endUpgrade();
 }
 
 Terrain::Terrain(TerrainGenerator *terrainGenerator)

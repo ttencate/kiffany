@@ -24,6 +24,7 @@ bool WorkQueue::tryPost(Worker worker) {
 void WorkQueue::runOne() {
 	boost::unique_lock<boost::mutex> lock(queueMutex);
 	while (deque.empty()) {
+		// TODO what happens if interrupted? seems to ignore it...
 		conditionVariable.wait(lock);
 	}
 	Worker worker(deque.front());

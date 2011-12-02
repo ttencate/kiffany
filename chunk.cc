@@ -229,47 +229,41 @@ Chunk::Chunk(int3 const &index)
 :
 	index(index),
 	position(CHUNK_SIZE * index.x, CHUNK_SIZE * index.y, CHUNK_SIZE * index.z),
-	state(NEW)
+	state(NEW),
+	upgrading(false)
 {
 }
 
-void Chunk::setGenerating() {
-	state = GENERATING;
+void Chunk::startUpgrade() {
+	upgrading = true;
+}
+
+void Chunk::endUpgrade() {
+	upgrading = false;
+	BOOST_ASSERT(state < LIGHTED);
+	state = (State)(state + 1);
 }
 
 void Chunk::setData(ChunkDataPtr data) {
 	this->data = data;
-	if (octree) {
-		state = GENERATED;
-	}
 }
 
 void Chunk::setOctree(OctreePtr octree) {
 	this->octree = octree;
-	if (data) {
-		state = GENERATED;
-	}
-}
-
-void Chunk::setTesselating() {
-	state = TESSELATING;
 }
 
 void Chunk::setGeometry(ChunkGeometryPtr geometry) {
 	this->geometry = geometry;
-	state = TESSELATED;
-}
-
-void Chunk::setLighting() {
-	state = LIGHTING;
+	buffers.reset();
 }
 
 void Chunk::render() {
-	if (state < TESSELATED) {
+	if (!geometry || geometry->isEmpty()) {
 		return;
 	}
-	if (state == TESSELATED || state == LIGHTED) {
-		upload();
+	if (!buffers) {
+		buffers.reset(new ChunkBuffers());
+		::upload(*geometry, buffers.get());
 	}
 	if (buffers) {
 		glPushMatrix();
@@ -280,14 +274,4 @@ void Chunk::render() {
 	} else {
 		stats.chunksEmpty.increment();
 	}
-}
-
-void Chunk::upload() { 
-	if (geometry) {
-		if (!geometry->isEmpty()) {
-			buffers.reset(new ChunkBuffers());
-			::upload(*geometry, buffers.get());
-		}
-	}
-	state = UPLOADED;
 }

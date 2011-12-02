@@ -16,16 +16,6 @@ struct CoordsHasher {
 	}
 };
 
-class ChunkPriorityFunction {
-	Camera camera;
-	public:
-		ChunkPriorityFunction() { }
-		explicit ChunkPriorityFunction(Camera const &camera) : camera(camera) { }
-		float operator()(Chunk const &chunk) const;
-		float operator()(int3 index) const;
-		float operator()(vec3 chunkCenter) const;
-};
-
 class ChunkMap
 :
 	boost::noncopyable
@@ -46,12 +36,7 @@ class ChunkMap
 		ChunkConstPtr operator[](int3 index) const;
 		bool contains(int3 index) const;
 		Chunk::State getChunkState(int3 index) const;
-
-	private:
-
-		bool atCapacity() const { return map.size() >= maxSize; }
-		bool overCapacity() const { return map.size() > maxSize; }
-		void trim();
+		bool isChunkUpgrading(int3 index) const;
 
 };
 

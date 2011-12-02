@@ -11,6 +11,8 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 
+#include <queue>
+
 struct ViewSphere {
 	vec3 center;
 	float radius;
@@ -21,7 +23,24 @@ typedef boost::shared_ptr<ViewSphere> ViewSpherePtr;
 typedef boost::shared_ptr<ViewSphere const> ConstViewSpherePtr;
 typedef boost::weak_ptr<ViewSphere const> WeakConstViewSpherePtr;
 
+template<typename T>
+struct Prioritized {
+	float priority; // lower number is higher priority
+	T item;
+	Prioritized(float priority, T item) : priority(priority), item(item) { }
+	bool operator<(Prioritized<T> const &other) const {
+		return priority > other.priority;
+	}
+};
+
+template<typename T>
+Prioritized<T> makePrioritized(float priority, T item) { return Prioritized<T>(priority, item); }
+
+typedef Prioritized<int3> PrioritizedIndex;
+
 class ChunkManager {
+
+	typedef std::priority_queue<PrioritizedIndex> PriorityQueue;
 
 	ChunkMap &chunkMap;
 
@@ -43,12 +62,15 @@ class ChunkManager {
 
 	private:
 
+		bool tryUpgradeChunk(PrioritizedIndex prioIndex, PriorityQueue &queue);
+
 		ChunkDataPtr chunkDataOrNull(int3 index);
 		NeighbourChunkData getNeighbourChunkData(int3 index);
 
-		void requestGeneration(ChunkPtr chunk);
-		void requestTesselation(ChunkPtr chunk);
-		void requestLighting(ChunkPtr chunk);
+		void enqueueUpgrade(ChunkPtr chunk);
+		void enqueueGeneration(ChunkPtr chunk);
+		void enqueueTesselation(ChunkPtr chunk);
+		void enqueueLighting(ChunkPtr chunk);
 
 		void generate(int3 index);
 		void finalizeGeneration(int3 index, ChunkDataPtr chunkData, OctreePtr octree);
