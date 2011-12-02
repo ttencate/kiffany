@@ -279,6 +279,7 @@ unsigned Terrain::computeMaxNumChunks() const {
 }
 
 void Terrain::renderChunk(Camera const &camera, int3 const &index) {
+	// TODO avoid creating 'em (change [] semantics?)
 	ChunkPtr chunk = chunkMap[index];
 	if (!chunk) {
 		return;
