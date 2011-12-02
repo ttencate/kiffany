@@ -30,7 +30,6 @@ void ChunkManager::sow() {
 	for (unsigned i = 0; i < viewSpheres.size(); ++i) {
 		if (ConstViewSpherePtr sphere = viewSpheres[i].lock()) {
 			// TODO write chunksInSphere iterator
-			// TODO move some of this to ChunkMap to lock more coarsely
 			int3 min = chunkIndexFromPoint(sphere->center - sphere->radius);
 			int3 max = chunkIndexFromPoint(sphere->center + sphere->radius);
 			for (int z = min.z; z <= max.z; ++z) {
@@ -39,9 +38,7 @@ void ChunkManager::sow() {
 						// TODO filter on the sphere
 						int3 index(x, y, z);
 						float priority = length(chunkCenter(index) - sphere->center); // lower is better
-						if (chunkMap.getChunkState(index) < Chunk::LIGHTED && !chunkMap.isChunkUpgrading(index)) {
-							queue.push(makePrioritized(priority, index));
-						}
+						queue.push(makePrioritized(priority, index));
 					}
 				}
 			}
@@ -269,6 +266,7 @@ void Terrain::render(Camera const &camera) {
 	for (int z = -radius; z <= radius; ++z) {
 		for (int y = -radius; y <= radius; ++y) {
 			for (int x = -radius; x <= radius; ++x) {
+				// TODO sphere check
 				renderChunk(camera, center + int3(x, y, z));
 			}
 		}

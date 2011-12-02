@@ -65,7 +65,7 @@ RleCompressor::~RleCompressor() {
 	pushRun();
 }
 
-void RleCompressor::put(Block block) {
+inline void RleCompressor::put(Block block) {
 	if (currentRun.block != block || currentRun.length >= std::numeric_limits<ChunkData::Length>::max()) {
 		pushRun();
 		currentRun.block = block;
@@ -74,7 +74,7 @@ void RleCompressor::put(Block block) {
 	++currentRun.length;
 }
 
-void RleCompressor::pushRun() {
+inline void RleCompressor::pushRun() {
 	if (currentRun.length > 0) {
 		chunkData.getRuns().push_back(currentRun);
 	}
@@ -89,7 +89,7 @@ RleDecompressor::RleDecompressor(ChunkData const &chunkData)
 	currentRun.length = 0;
 }
 
-Block RleDecompressor::get() {
+inline Block RleDecompressor::get() {
 	while (currentRun.length == 0 && nextRunIndex < chunkData.getRuns().size()) {
 		currentRun = chunkData.getRuns()[nextRunIndex];
 		++nextRunIndex;
