@@ -64,8 +64,8 @@ class ChunkManager {
 
 		bool tryUpgradeChunk(PrioritizedIndex prioIndex, PriorityQueue &queue);
 
-		ChunkDataPtr chunkDataOrNull(int3 index);
-		NeighbourChunkData getNeighbourChunkData(int3 index);
+		OctreePtr octreeOrNull(int3 index);
+		NeighbourOctrees getNeighbourOctrees(int3 index);
 
 		void enqueueUpgrade(ChunkPtr chunk);
 		void enqueueGeneration(ChunkPtr chunk);
@@ -73,8 +73,8 @@ class ChunkManager {
 		void enqueueLighting(ChunkPtr chunk);
 
 		void generate(int3 index);
-		void finalizeGeneration(int3 index, ChunkDataPtr chunkData, OctreePtr octree);
-		void tesselate(int3 index, ChunkDataPtr chunkData, NeighbourChunkData neighbourChunkData);
+		void finalizeGeneration(int3 index, OctreePtr octree);
+		void tesselate(int3 index, OctreePtr octree, NeighbourOctrees neighbourOctrees);
 		void finalizeTesselation(int3 index, ChunkGeometryPtr chunkGeometry);
 		void computeLighting(int3 index, ChunkMap const &chunkMap, ChunkGeometryConstPtr chunkGeometry);
 		void finalizeLighting(int3 index, ChunkGeometryPtr chunkGeometry);

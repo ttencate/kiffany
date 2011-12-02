@@ -91,7 +91,6 @@ struct Stats {
 	TimerStat runningTime;
 
 	CounterStat octreeNodes;
-	CounterStat runs;
 	CounterStat quadsGenerated;
 	CounterStat quadsLit;
 
@@ -100,10 +99,10 @@ struct Stats {
 
 	CounterStat chunksGenerated;
 	TimerStat chunkGenerationTime;
-	CounterStat chunksCompressed;
-	TimerStat chunkCompressionTime;
 	CounterStat octreesBuilt;
 	TimerStat octreeBuildTime;
+	CounterStat octreesUnpacked;
+	TimerStat octreeUnpackTime;
 	CounterStat chunksTesselated;
 	TimerStat chunkTesselationTime;
 	CounterStat chunksLit;

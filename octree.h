@@ -39,6 +39,8 @@ class Octree {
 		OctreeNodes &getNodes() { return nodes; }
 		OctreeNodes const &getNodes() const { return nodes; }
 
+		bool isEmpty() const { return nodes.size() == 0; }
+
 		void getBlock(int3 position, Block *block, int3 *base, unsigned *size) const;
 
 };
@@ -49,5 +51,6 @@ typedef boost::shared_ptr<Octree const> OctreeConstPtr;
 class RawChunkData;
 
 void buildOctree(RawChunkData const &rawChunkData, Octree &octree);
+void unpackOctree(Octree const &octree, RawChunkData &rawChunkData);
 
 #endif

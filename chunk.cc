@@ -176,26 +176,26 @@ void tesselateFace(Block const *rawData, Block const *rawNeighData, ChunkGeometr
 	geometry->setRange(FaceIndex<dx, dy, dz>::value, Range(begin, end));
 }
 
-void tesselate(ChunkDataPtr data, NeighbourChunkData const &neighbourData, ChunkGeometryPtr geometry) {
+void tesselate(OctreePtr octree, NeighbourOctrees const &neighbourOctrees, ChunkGeometryPtr geometry) {
 	TimerStat::Timed t = stats.chunkTesselationTime.timed();
 
-	if (!data->isEmpty()) {
+	if (!octree->isEmpty()) {
 		boost::scoped_ptr<RawChunkData> rawData(new RawChunkData());
-		decompress(*data, *rawData);
+		unpackOctree(*octree, *rawData);
 
 		boost::scoped_ptr<RawChunkData> rawNeighData(new RawChunkData());
 
-		decompress(*neighbourData.xn, *rawNeighData);
+		unpackOctree(*neighbourOctrees.xn, *rawNeighData);
 		tesselateFace<-1,  0,  0>(rawData->raw(), rawNeighData->raw(), geometry);
-		decompress(*neighbourData.xp, *rawNeighData);
+		unpackOctree(*neighbourOctrees.xp, *rawNeighData);
 		tesselateFace< 1,  0,  0>(rawData->raw(), rawNeighData->raw(), geometry);
-		decompress(*neighbourData.yn, *rawNeighData);
+		unpackOctree(*neighbourOctrees.yn, *rawNeighData);
 		tesselateFace< 0, -1,  0>(rawData->raw(), rawNeighData->raw(), geometry);
-		decompress(*neighbourData.yp, *rawNeighData);
+		unpackOctree(*neighbourOctrees.yp, *rawNeighData);
 		tesselateFace< 0,  1,  0>(rawData->raw(), rawNeighData->raw(), geometry);
-		decompress(*neighbourData.zn, *rawNeighData);
+		unpackOctree(*neighbourOctrees.zn, *rawNeighData);
 		tesselateFace< 0,  0, -1>(rawData->raw(), rawNeighData->raw(), geometry);
-		decompress(*neighbourData.zp, *rawNeighData);
+		unpackOctree(*neighbourOctrees.zp, *rawNeighData);
 		tesselateFace< 0,  0,  1>(rawData->raw(), rawNeighData->raw(), geometry);
 	}
 
@@ -242,10 +242,6 @@ void Chunk::endUpgrade() {
 	upgrading = false;
 	BOOST_ASSERT(state < LIGHTED);
 	state = (State)(state + 1);
-}
-
-void Chunk::setData(ChunkDataPtr data) {
-	this->data = data;
 }
 
 void Chunk::setOctree(OctreePtr octree) {

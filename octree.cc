@@ -99,3 +99,42 @@ void buildOctree(RawChunkData const &rawChunkData, Octree &octree) {
 	stats.octreesBuilt.increment();
 	stats.octreeNodes.increment(octree.getNodes().size());
 }
+
+void unpackOctreeNodes(unsigned size, unsigned index, OctreeNodes const &nodes, Block *base) {
+	Block block = AIR_BLOCK;
+	if ((index != 0 || size == CHUNK_SIZE) && index < nodes.size()) {
+		block = nodes[index].block;
+	}
+	if (block == INVALID_BLOCK) {
+		OctreeNode const &node = nodes[index];
+		unsigned const s = size / 2;
+		unsigned const sx = s;
+		unsigned const sy = CHUNK_SIZE * s;
+		unsigned const sz = CHUNK_SIZE * CHUNK_SIZE * s;
+		unpackOctreeNodes(s, node.children[0], nodes, base               );
+		unpackOctreeNodes(s, node.children[1], nodes, base +           sx);
+		unpackOctreeNodes(s, node.children[2], nodes, base +      sy     );
+		unpackOctreeNodes(s, node.children[3], nodes, base +      sy + sx);
+		unpackOctreeNodes(s, node.children[4], nodes, base + sz          );
+		unpackOctreeNodes(s, node.children[5], nodes, base + sz +      sx);
+		unpackOctreeNodes(s, node.children[6], nodes, base + sz + sy     );
+		unpackOctreeNodes(s, node.children[7], nodes, base + sz + sy + sx);
+	} else {
+		for (unsigned z = 0; z < size; ++z) {
+			for (unsigned y = 0; y < size; ++y) {
+				for (unsigned x = 0; x < size; ++x) {
+					*base = block;
+					++base;
+				}
+				base += CHUNK_SIZE - size;
+			}
+			base += CHUNK_SIZE * (CHUNK_SIZE - size);
+		}
+	}
+}
+
+void unpackOctree(Octree const &octree, RawChunkData &rawChunkData) {
+	TimerStat::Timed timed = stats.octreeUnpackTime.timed();
+	unpackOctreeNodes(CHUNK_SIZE, 0, octree.getNodes(), rawChunkData.raw());
+	stats.octreesUnpacked.increment();
+}

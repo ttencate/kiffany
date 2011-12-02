@@ -54,17 +54,17 @@ class ChunkGeometry {
 typedef boost::shared_ptr<ChunkGeometry> ChunkGeometryPtr;
 typedef boost::shared_ptr<ChunkGeometry const> ChunkGeometryConstPtr;
 
-struct NeighbourChunkData {
-	ChunkDataPtr xn;
-	ChunkDataPtr xp;
-	ChunkDataPtr yn;
-	ChunkDataPtr yp;
-	ChunkDataPtr zn;
-	ChunkDataPtr zp;
+struct NeighbourOctrees {
+	OctreePtr xn;
+	OctreePtr xp;
+	OctreePtr yn;
+	OctreePtr yp;
+	OctreePtr zn;
+	OctreePtr zp;
 	bool isComplete() const { return xn && xp && yn && yp && zn && zp; }
 };
 
-void tesselate(ChunkDataPtr data, NeighbourChunkData const &neighbourData, ChunkGeometryPtr geometry);
+void tesselate(OctreePtr octree, NeighbourOctrees const &neighbourOctrees, ChunkGeometryPtr geometry);
 
 class ChunkBuffers
 :
@@ -111,7 +111,6 @@ class Chunk
 		State state;
 		bool upgrading;
 
-		ChunkDataPtr data;
 		OctreePtr octree;
 		ChunkGeometryPtr geometry;
 		boost::scoped_ptr<ChunkBuffers> buffers;
@@ -128,11 +127,9 @@ class Chunk
 
 		void startUpgrade();
 		void endUpgrade();
-		void setData(ChunkDataPtr data);
 		void setOctree(OctreePtr octree);
 		void setGeometry(ChunkGeometryPtr geometry);
 
-		ChunkDataPtr getData() const { return data; }
 		OctreePtr getOctree() { return octree; }
 		OctreeConstPtr getOctree() const { return octree; }
 		ChunkGeometryConstPtr getGeometry() const { return geometry; }

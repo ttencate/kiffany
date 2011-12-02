@@ -109,24 +109,24 @@ bool ChunkManager::tryUpgradeChunk(PrioritizedIndex prioIndex, PriorityQueue &qu
 	return upgradeSelf;
 }
 
-ChunkDataPtr ChunkManager::chunkDataOrNull(int3 index) {
+OctreePtr ChunkManager::octreeOrNull(int3 index) {
 	ChunkPtr chunk = chunkMap[index];
 	if (!chunk) {
-		return ChunkDataPtr();
+		return OctreePtr();
 	}
-	return chunk->getData();
+	return chunk->getOctree();
 }
 
-// TODO get rid of NeighbourChunkData, read chunk map directly
-NeighbourChunkData ChunkManager::getNeighbourChunkData(int3 index) {
-	NeighbourChunkData data;
-	data.xn = chunkDataOrNull(index + int3(-1,  0,  0));
-	data.xp = chunkDataOrNull(index + int3( 1,  0,  0));
-	data.yn = chunkDataOrNull(index + int3( 0, -1,  0));
-	data.yp = chunkDataOrNull(index + int3( 0,  1,  0));
-	data.zn = chunkDataOrNull(index + int3( 0,  0, -1));
-	data.zp = chunkDataOrNull(index + int3( 0,  0,  1));
-	return data;
+// TODO get rid of NeighbourOctrees, read chunk map directly
+NeighbourOctrees ChunkManager::getNeighbourOctrees(int3 index) {
+	NeighbourOctrees octrees;
+	octrees.xn = octreeOrNull(index + int3(-1,  0,  0));
+	octrees.xp = octreeOrNull(index + int3( 1,  0,  0));
+	octrees.yn = octreeOrNull(index + int3( 0, -1,  0));
+	octrees.yp = octreeOrNull(index + int3( 0,  1,  0));
+	octrees.zn = octreeOrNull(index + int3( 0,  0, -1));
+	octrees.zp = octreeOrNull(index + int3( 0,  0,  1));
+	return octrees;
 }
 
 void ChunkManager::enqueueUpgrade(ChunkPtr chunk) {
@@ -154,14 +154,14 @@ void ChunkManager::enqueueTesselation(ChunkPtr chunk) {
 	BOOST_ASSERT(!chunk->isUpgrading());
 
 	int3 index = chunk->getIndex();
-	NeighbourChunkData neighbourChunkData = getNeighbourChunkData(index);
-	BOOST_ASSERT(neighbourChunkData.isComplete());
+	NeighbourOctrees neighbourOctrees = getNeighbourOctrees(index);
+	BOOST_ASSERT(neighbourOctrees.isComplete());
 
 	chunk->startUpgrade();
 	threadPool.enqueue(
 			boost::bind(
 				&ChunkManager::tesselate, this,
-				index, chunk->getData(), neighbourChunkData));
+				index, chunk->getOctree(), neighbourOctrees));
 }
 
 void ChunkManager::enqueueLighting(ChunkPtr chunk) {
@@ -183,26 +183,22 @@ void ChunkManager::generate(int3 index) {
 	RawChunkData rawChunkData;
 	terrainGenerator->generateChunk(position, rawChunkData);
 
-	ChunkDataPtr chunkData(new ChunkData());
-	compress(rawChunkData, *chunkData);
-
 	OctreePtr octree(new Octree());
 	buildOctree(rawChunkData, *octree);
 
 	finalizerQueue.post(boost::bind(
-				&ChunkManager::finalizeGeneration, this, index, chunkData, octree));
+				&ChunkManager::finalizeGeneration, this, index, octree));
 }
 
-void ChunkManager::finalizeGeneration(int3 index, ChunkDataPtr chunkData, OctreePtr octree) {
+void ChunkManager::finalizeGeneration(int3 index, OctreePtr octree) {
 	ChunkPtr chunk = chunkMap[index];
-	chunk->setData(chunkData);
 	chunk->setOctree(octree);
 	chunk->endUpgrade();
 }
 
-void ChunkManager::tesselate(int3 index, ChunkDataPtr chunkData, NeighbourChunkData neighbourChunkData) {
+void ChunkManager::tesselate(int3 index, OctreePtr octree, NeighbourOctrees neighbourOctrees) {
 	ChunkGeometryPtr chunkGeometry(new ChunkGeometry());
-	::tesselate(chunkData, neighbourChunkData, chunkGeometry);
+	::tesselate(octree, neighbourOctrees, chunkGeometry);
 
 	finalizerQueue.post(boost::bind(
 				&ChunkManager::finalizeTesselation, this, index, chunkGeometry));
