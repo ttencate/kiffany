@@ -58,6 +58,7 @@ target_link_libraries(kiffany
 	${Boost_LIBRARIES}
 	${OPENGL_LIBRARY} ${GLFW_LIBRARY} ${GLEW_LIBRARY}
 	rt
+	Xrandr
 	)
 include_directories(
 	${Boost_INCLUDE_DIRS}
@@ -76,5 +77,4 @@ target_link_libraries(kiffany_test
 	${Boost_LIBRARIES}
 	${OPENGL_LIBRARY} ${GLFW_LIBRARY} ${GLEW_LIBRARY}
 	boost_unit_test_framework-mt.a
-	rt
 	)

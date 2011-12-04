@@ -32,7 +32,7 @@ class Stat {
 
 };
 
-typedef Stat<long> CounterStat;
+typedef Stat<unsigned long> CounterStat;
 
 class TimerStat
 :
