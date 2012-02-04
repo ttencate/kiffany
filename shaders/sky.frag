@@ -102,6 +102,10 @@ void main() {
 		// Compensate for roundoff errors when the dot product is near 1
 		float sunAngle = acos(0.99999 * dot(sun.direction, vertical));
 
+		// Multiply transmittance
+		vec3 layerTransmittance = sampleTable(transmittanceSampler, layer, viewRay.angle);
+		scatteredLight *= layerTransmittance;
+
 		// Add inscattering, attenuated by optical depth to the sun
 		vec3 rayleighInscattering =
 			atmosphere.rayleighCoefficient *
@@ -113,10 +117,6 @@ void main() {
 			miePhase;
 		vec3 transmittance = sampleTable(totalTransmittanceSampler, layer, sunAngle);
 		scatteredLight += rayLength * sun.color * transmittance * (rayleighInscattering + mieInscattering);
-
-		// Multiply transmittance
-		vec3 layerTransmittance = sampleTable(transmittanceSampler, layer, viewRay.angle);
-		scatteredLight *= layerTransmittance;
 	}
 	// TODO apply these as post-processing effect to entire scene
 	// Poor man's HDR
