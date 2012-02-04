@@ -270,8 +270,8 @@ int main(int argc, char **argv) {
 		std::cerr << "Error: " << glewGetErrorString(err) << "\n";
 		return EXIT_FAILURE;
 	}
-	if (!GLEW_VERSION_3_0) {
-		std::cerr << "Error: OpenGL 3.0 not supported\n";
+	if (!GLEW_VERSION_1_4) {
+		std::cerr << "Error: OpenGL 2.0 not supported\n";
 		return EXIT_FAILURE;
 	}
 
