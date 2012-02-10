@@ -26,6 +26,9 @@ bool compileShaderFromStream(GLShader &shader, std::istream &stream) {
 
 bool compileShaderFromFile(GLShader &shader, std::string const &fileName) {
 	std::ifstream file(fileName.c_str());
+	if (!file.good()) {
+		throw std::runtime_error("File " + fileName + " not found");
+	}
 	return compileShaderFromStream(shader, file);
 }
 
