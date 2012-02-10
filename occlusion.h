@@ -1,5 +1,5 @@
-#ifndef LIGHTING_H
-#define LIGHTING_H
+#ifndef OCCLUSION_H
+#define OCCLUSION_H
 
 #include "chunk.h"
 #include "chunkmap.h"
