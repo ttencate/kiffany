@@ -4,6 +4,7 @@
 #include "chunkmap.h"
 #include "maths.h"
 #include "octree.h"
+#include "shader.h"
 #include "terragen.h"
 #include "threadpool.h"
 
@@ -12,6 +13,9 @@
 #include <boost/weak_ptr.hpp>
 
 #include <queue>
+
+class Camera;
+class Lighting;
 
 struct ViewSphere {
 	vec3 center;
@@ -89,6 +93,8 @@ class Terrain
 	ChunkMap chunkMap;
 	ChunkManager chunkManager;
 
+	ShaderProgram shaderProgram;
+
 	public:
 
 		Terrain(TerrainGenerator *terrainGenerator);
@@ -99,7 +105,7 @@ class Terrain
 		void addViewSphere(WeakConstViewSpherePtr viewSphere);
 
 		void update(float dt);
-		void render(Camera const &camera);
+		void render(Camera const &camera, Lighting const &lighting);
 
 	private:
 

@@ -29,6 +29,5 @@ void World::render() {
 
 	glLoadMatrixf(value_ptr(camera->getViewMatrix()));
 
-	lighting->setup();
-	terrain.render(*camera);
+	terrain.render(*camera, *lighting);
 }
