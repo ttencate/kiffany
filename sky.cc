@@ -24,11 +24,11 @@
  * http://www.springerlink.com/content/nrq497r40xmw4821/fulltext.pdf
  */
 
-inline bool rayHitsHeight(Ray ray, float targetHeight) {
+bool rayHitsHeight(Ray ray, float targetHeight) {
 	return ray.height * sin(ray.angle) < targetHeight;
 }
 
-inline float rayLengthUpwards(Ray ray, float targetHeight) {
+float rayLengthUpwards(Ray ray, float targetHeight) {
 	float cosAngle = cos(ray.angle);
 	return sqrt(
 			pow2(ray.height) * (pow2(cosAngle) - 1.0f) +
@@ -36,11 +36,11 @@ inline float rayLengthUpwards(Ray ray, float targetHeight) {
 		- ray.height * cosAngle;
 }
 
-inline float rayLengthToSameHeight(Ray ray) {
+float rayLengthToSameHeight(Ray ray) {
 	return -2.0f * ray.height * cos(ray.angle);
 }
 
-inline float rayLengthDownwards(Ray ray, float targetHeight) {
+float rayLengthDownwards(Ray ray, float targetHeight) {
 	float cosAngle = cos(ray.angle);
 	return -sqrt(
 			pow2(ray.height) * (pow2(cosAngle) - 1.0f) +
@@ -48,16 +48,16 @@ inline float rayLengthDownwards(Ray ray, float targetHeight) {
 		- ray.height * cosAngle;
 }
 
-inline float rayAngleUpwards(Ray ray, float targetHeight) {
+float rayAngleUpwards(Ray ray, float targetHeight) {
 	float rayAngle = asin(ray.height * sin(ray.angle) / targetHeight);
 	return rayAngle;
 }
 
-inline float rayAngleToSameHeight(Ray ray) {
+float rayAngleToSameHeight(Ray ray) {
 	return M_PI - ray.angle;
 }
 
-inline float rayAngleDownwards(Ray ray, float targetHeight) {
+float rayAngleDownwards(Ray ray, float targetHeight) {
 	float rayAngle = M_PI - asin(ray.height * sin(ray.angle) / targetHeight);
 	return rayAngle;
 }

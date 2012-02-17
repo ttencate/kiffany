@@ -26,7 +26,7 @@ namespace {
 		AtmosphereLayers layers;
 		Fixture()
 		:
-			layers(atmosphere, 8)
+			layers(atmosphere, 8, 256)
 		{
 		}
 	};
@@ -57,63 +57,8 @@ BOOST_AUTO_TEST_CASE(TestRayLengthDownwards) {
 	BOOST_CHECK_EQUAL(10.0, rayLengthDownwards(Ray(20.0, M_PI), 10.0));
 }
 
-template<typename F>
-void testPhaseFunctionIsValid(F phaseFunction) {
-	unsigned const slices = 1024;
-	float integral = 0;
-	for (unsigned i = 0; i < slices; ++i) {
-		float const startAngle = M_PI * i / slices;
-		float const endAngle = M_PI * (i + 1) / slices;
-		float const startValue = phaseFunction(startAngle);
-		float const endValue = phaseFunction(endAngle);
-		// The phase function should not be negative
-		BOOST_REQUIRE_LE(0, startValue);
-		BOOST_REQUIRE_LE(0, endValue);
-		// Trapezoid integration
-		float const meanValue = 0.5 * (startValue + endValue);
-		float const area = 4.0 * M_PI * (sin(0.5 * endAngle) - sin(0.5 * startAngle));
-		integral += meanValue * area;
-	}
-}
-
-BOOST_AUTO_TEST_CASE(TestRayleighPhaseFunctionIsValid) {
-	testPhaseFunctionIsValid(boost::bind(&RayleighScattering::phaseFunction, atmosphere.rayleighScattering, _1));
-}
-
-BOOST_AUTO_TEST_CASE(TestMiePhaseFunctionIsValid) {
-	testPhaseFunctionIsValid(boost::bind(&MieScattering::phaseFunction, atmosphere.mieScattering, _1));
-}
-
-BOOST_AUTO_TEST_CASE(TestRayleighPhaseFunctionIsSymmetric) {
-	float const EPS = 1e-6;
-	for (unsigned a = 0; a < 16; ++a) {
-		float const angle = 0.5 * M_PI * a / 16;
-		BOOST_REQUIRE_CLOSE(
-				atmosphere.rayleighScattering.phaseFunction(angle),
-				atmosphere.rayleighScattering.phaseFunction(M_PI - angle), EPS);
-	}
-}
-
-BOOST_AUTO_TEST_CASE(TestRayleighPhaseFunctionIsForward) {
-	for (unsigned a = 1; a < 16; ++a) {
-		float const angle = 0.5 * M_PI * a / 16;
-		BOOST_REQUIRE_LT(
-				atmosphere.rayleighScattering.phaseFunction(angle),
-				atmosphere.rayleighScattering.phaseFunction(0.0));
-	}
-}
-
-BOOST_AUTO_TEST_CASE(TestMiePhaseFunctionIsForward) {
-	for (unsigned a = 1; a < 32; ++a) {
-		float const angle = M_PI * a / 32;
-		BOOST_REQUIRE_LT(
-				atmosphere.mieScattering.phaseFunction(angle),
-				atmosphere.mieScattering.phaseFunction(0.0));
-	}
-}
-
 BOOST_AUTO_TEST_CASE(TestLayerHeights) {
-	float const thickness = atmosphere.rayleighScattering.thickness;
+	float const thickness = atmosphere.rayleighThickness;
 	float const EPS = 1e-4;
 	BOOST_CHECK_CLOSE(atmosphere.earthRadius, layers.heights[0], EPS);
 	for (unsigned i = 0; i < layers.numLayers - 1; ++i) {
@@ -122,7 +67,7 @@ BOOST_AUTO_TEST_CASE(TestLayerHeights) {
 		float cumulativeDensity = thickness * (1.0 - exp(-(layers.heights[i] - atmosphere.earthRadius) / thickness));
 		BOOST_CHECK_CLOSE((float)i / (layers.numLayers - 1) * thickness, cumulativeDensity, EPS);
 	}
-	BOOST_CHECK_EQUAL(atmosphere.earthRadius + atmosphere.thickness, layers.heights[layers.numLayers - 1]);
+	BOOST_CHECK_EQUAL(atmosphere.earthRadius + atmosphere.atmosphereThickness, layers.heights[layers.numLayers - 1]);
 }
 
 BOOST_AUTO_TEST_CASE(TestBuildTransmittanceTable) {
@@ -147,7 +92,7 @@ BOOST_AUTO_TEST_CASE(TestBuildTransmittanceTable) {
 }
 
 BOOST_AUTO_TEST_CASE(TestBuildTransmittanceTableForZeroRadiusEarth) {
-	Atmosphere atmosphere(0.0);
+	atmosphere.earthRadius = 0.0;
 	Vec3Table2D transmittanceTable = buildTransmittanceTable(atmosphere, layers);
 	unsigned numLayers = layers.numLayers;
 	unsigned numAngles = layers.numAngles;
@@ -199,7 +144,7 @@ BOOST_AUTO_TEST_CASE(TestBuildTotalTransmittanceTable) {
 }
 
 BOOST_AUTO_TEST_CASE(TestBuildTotalTransmittanceTableForZeroRadiusEarth) {
-	Atmosphere atmosphere(0.0);
+	atmosphere.earthRadius = 0.0;
 	Vec3Table2D transmittanceTable = buildTransmittanceTable(atmosphere, layers);
 	Vec3Table2D totalTransmittanceTable = buildTotalTransmittanceTable(atmosphere, layers, transmittanceTable);
 	unsigned numLayers = layers.numLayers;
@@ -224,27 +169,6 @@ BOOST_AUTO_TEST_CASE(TestBuildTotalTransmittanceTableForZeroRadiusEarth) {
 			}
 		}
 	}
-}
-
-BOOST_AUTO_TEST_CASE(TestScatterer) {
-	Scatterer scatterer(atmosphere, layers);
-	Sun sun(0.5f, 0.0f, 0.0f, 0.0f, 0.0f, vec3(1.0f), 0.5f);
-
-	vec3 intoSunFactor = scatterer.scatteredLight(vec3(0.0, 0.0, 1.0), sun);
-	BOOST_CHECK_LE_3(0.0, intoSunFactor);
-	BOOST_CHECK_GE_3(1.0, intoSunFactor);
-
-	vec3 nextToSunFactor = scatterer.scatteredLight(normalize(vec3(1.0, 0.0, 1.0)), sun);
-	BOOST_CHECK_LE_3(0.0, nextToSunFactor);
-	BOOST_CHECK_GE_3(1.0, nextToSunFactor);
-
-	BOOST_CHECK_GE_3(intoSunFactor, nextToSunFactor);
-	BOOST_CHECK_LE(nextToSunFactor.r, nextToSunFactor.g);
-	BOOST_CHECK_LE(nextToSunFactor.g, nextToSunFactor.b);
-
-	vec3 closeToHorizonFactor = scatterer.scatteredLight(normalize(vec3(100.0, 0.0, 1.0)), sun);
-	BOOST_CHECK_LE_3(0.0, closeToHorizonFactor);
-	BOOST_CHECK_GE_3(1.0, closeToHorizonFactor);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
