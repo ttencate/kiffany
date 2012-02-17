@@ -26,7 +26,7 @@ namespace {
 		AtmosphereLayers layers;
 		Fixture()
 		:
-			layers(atmosphere, 8, 256)
+			layers(atmosphere, 8, 16)
 		{
 		}
 	};
@@ -34,7 +34,7 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(SkyTest, Fixture)
 
-float const EPS = 1e-4;
+float const EPS = 0.01; // %
 
 BOOST_AUTO_TEST_CASE(TestRayLengthUpwardsStraightUp) {
 	BOOST_CHECK_CLOSE( 5.0, rayLengthUpwards(Ray( 0.0, 0.0),  5.0), EPS);
@@ -59,13 +59,13 @@ BOOST_AUTO_TEST_CASE(TestRayLengthDownwards) {
 
 BOOST_AUTO_TEST_CASE(TestLayerHeights) {
 	float const thickness = atmosphere.rayleighThickness;
-	float const EPS = 1e-4;
+	float const EPS = 0.1; // %
 	BOOST_CHECK_CLOSE(atmosphere.earthRadius, layers.heights[0], EPS);
 	for (unsigned i = 0; i < layers.numLayers - 1; ++i) {
 		BOOST_CHECK_LE(0.0, layers.heights[i]);
 		BOOST_CHECK_LT(layers.heights[i], layers.heights[i + 1]);
 		float cumulativeDensity = thickness * (1.0 - exp(-(layers.heights[i] - atmosphere.earthRadius) / thickness));
-		BOOST_CHECK_CLOSE((float)i / (layers.numLayers - 1) * thickness, cumulativeDensity, EPS);
+		BOOST_CHECK_CLOSE((float)i / (float)(layers.numLayers - 1) * thickness, cumulativeDensity, EPS);
 	}
 	BOOST_CHECK_EQUAL(atmosphere.earthRadius + atmosphere.atmosphereThickness, layers.heights[layers.numLayers - 1]);
 }
