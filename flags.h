@@ -36,6 +36,8 @@ struct Flags {
 
 extern Flags flags;
 
+bool setDefaultFlags();
 bool parseCommandLine(int argc, char **argv);
+void printHelp();
 
 #endif

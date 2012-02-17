@@ -242,6 +242,10 @@ int main(int argc, char **argv) {
 	if (!parseCommandLine(argc, argv)) {
 		return EXIT_FAILURE;
 	}
+	if (flags.help) {
+		printHelp();
+		return EXIT_SUCCESS;
+	}
 
 	if (!glfwInit()) {
 		return EXIT_FAILURE;
