@@ -49,7 +49,7 @@ float rayLengthDownwards(Ray ray, float targetHeight) {
 }
 
 float rayAngleUpwards(Ray ray, float targetHeight) {
-	float rayAngle = asin(ray.height * sin(ray.angle) / targetHeight);
+	float rayAngle = asinf(clamp(ray.height * sinf(ray.angle) / targetHeight, -1.0f, 1.0f));
 	return rayAngle;
 }
 
@@ -58,7 +58,7 @@ float rayAngleToSameHeight(Ray ray) {
 }
 
 float rayAngleDownwards(Ray ray, float targetHeight) {
-	float rayAngle = M_PI - asin(ray.height * sin(ray.angle) / targetHeight);
+	float rayAngle = M_PI - asinf(clamp(ray.height * sinf(ray.angle) / targetHeight, -1.0f, 1.0f));
 	return rayAngle;
 }
 
