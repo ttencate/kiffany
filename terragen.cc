@@ -29,7 +29,7 @@ Octaves PerlinTerrainGenerator::buildOctaves2D(unsigned seed) const {
 	boost::normal_distribution<float> normal(1.0f, 0.1f);
 	boost::variate_generator<boost::mt11213b, boost::normal_distribution<float> > gen(engine, normal);
 	Octaves octaves;
-	for (int i = 512; i >= 8; i /= 2) {
+	for (int i = 128; i >= 4; i /= 2) {
 		float period = i * gen();
 		float amplitude = 0.5f * i;
 		octaves.push_back(Octave(period, amplitude));
@@ -42,7 +42,7 @@ Octaves PerlinTerrainGenerator::buildOctaves3D(unsigned seed) const {
 	boost::normal_distribution<float> normal(1.0f, 0.1f);
 	boost::variate_generator<boost::mt11213b, boost::normal_distribution<float> > gen(engine, normal);
 	Octaves octaves;
-	for (int i = 64; i >= 8; i /= 2) {
+	for (int i = 16; i >= 4; i /= 2) {
 		float period = i * gen();
 		float amplitude = i;
 		octaves.push_back(Octave(period, amplitude));
