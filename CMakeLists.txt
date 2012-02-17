@@ -67,6 +67,7 @@ include_directories(
 set(test_sources
 	octree_test.cc
 	perlin_test.cc
+	raycaster_test.cc
 	sky_test.cc
 	table_test.cc
 	)
