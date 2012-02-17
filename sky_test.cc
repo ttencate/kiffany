@@ -24,10 +24,20 @@ namespace {
 	struct Fixture {
 		Atmosphere atmosphere;
 		AtmosphereLayers layers;
+		Atmosphere zeroRadiusEarthAtmosphere;
+		AtmosphereLayers zeroRadiusEarthLayers;
 		Fixture()
 		:
-			layers(atmosphere, 8, 16)
+			atmosphere(),
+			layers(atmosphere, 8, 16),
+			zeroRadiusEarthAtmosphere(createZeroRadiusEarthAtmosphere()),
+			zeroRadiusEarthLayers(zeroRadiusEarthAtmosphere, 8, 16)
 		{
+		}
+		static Atmosphere createZeroRadiusEarthAtmosphere() {
+			Atmosphere atmosphere;
+			atmosphere.earthRadius = 0;
+			return atmosphere;
 		}
 	};
 }
@@ -92,7 +102,9 @@ BOOST_AUTO_TEST_CASE(TestBuildTransmittanceTable) {
 }
 
 BOOST_AUTO_TEST_CASE(TestBuildTransmittanceTableForZeroRadiusEarth) {
-	atmosphere.earthRadius = 0.0;
+	Atmosphere const &atmosphere = zeroRadiusEarthAtmosphere;
+	AtmosphereLayers const &layers = zeroRadiusEarthLayers;
+
 	Vec3Table2D transmittanceTable = buildTransmittanceTable(atmosphere, layers);
 	unsigned numLayers = layers.numLayers;
 	unsigned numAngles = layers.numAngles;
@@ -144,7 +156,9 @@ BOOST_AUTO_TEST_CASE(TestBuildTotalTransmittanceTable) {
 }
 
 BOOST_AUTO_TEST_CASE(TestBuildTotalTransmittanceTableForZeroRadiusEarth) {
-	atmosphere.earthRadius = 0.0;
+	Atmosphere const &atmosphere = zeroRadiusEarthAtmosphere;
+	AtmosphereLayers const &layers = zeroRadiusEarthLayers;
+
 	Vec3Table2D transmittanceTable = buildTransmittanceTable(atmosphere, layers);
 	Vec3Table2D totalTransmittanceTable = buildTotalTransmittanceTable(atmosphere, layers, transmittanceTable);
 	unsigned numLayers = layers.numLayers;
