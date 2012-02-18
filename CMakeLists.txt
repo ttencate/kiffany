@@ -30,6 +30,7 @@ set(sources
 	chunkmap.cc chunkmap.h
 	coords.cc coords.h
 	flags.cc flags.h
+	geometry.cc geometry.h
 	gl.cc gl.h
 	lighting.cc lighting.h
 	maths.cc maths.h
