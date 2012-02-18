@@ -232,7 +232,7 @@ void ChunkManager::finalizeLighting(int3 index, ChunkGeometryPtr chunkGeometry) 
 
 Terrain::Terrain(TerrainGenerator *terrainGenerator)
 :
-	chunkMap(computeMaxNumChunks()),
+	chunkMap(),
 	chunkManager(chunkMap, terrainGenerator)
 {
 	shaderProgram.loadAndLink("shaders/terrain.vert", "shaders/terrain.frag");
@@ -274,6 +274,7 @@ void Terrain::render(Camera const &camera, Lighting const &lighting) {
 	}
 }
 
+// TODO this is currently unused
 unsigned Terrain::computeMaxNumChunks() const {
 	if (flags.maxNumChunks != 0) {
 		return flags.maxNumChunks;

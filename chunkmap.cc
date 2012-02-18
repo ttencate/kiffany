@@ -2,10 +2,7 @@
 
 #include "stats.h"
 
-ChunkMap::ChunkMap(unsigned maxSize)
-:
-	maxSize(maxSize)
-{
+ChunkMap::ChunkMap() {
 }
 
 ChunkPtr ChunkMap::operator[](int3 index) {

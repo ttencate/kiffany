@@ -21,8 +21,6 @@ class ChunkMap
 	boost::noncopyable
 {
 
-	unsigned const maxSize;
-
 	typedef boost::unordered_map<int3, ChunkPtr, CoordsHasher> PositionMap;
 
 	boost::shared_mutex mutable mapMutex;
@@ -30,7 +28,7 @@ class ChunkMap
 
 	public:
 
-		ChunkMap(unsigned maxSize);
+		ChunkMap();
 
 		ChunkPtr operator[](int3 index);
 		ChunkConstPtr operator[](int3 index) const;
