@@ -33,7 +33,9 @@ class ChunkMap
 		ChunkPtr operator[](int3 index);
 		ChunkConstPtr operator[](int3 index) const;
 		bool contains(int3 index) const;
+
 		Chunk::State getChunkState(int3 index) const;
+		OctreeConstPtr getOctreeOrNull(int3 index) const;
 		bool isChunkUpgrading(int3 index) const;
 
 };

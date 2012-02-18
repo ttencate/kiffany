@@ -110,23 +110,15 @@ bool ChunkManager::tryUpgradeChunk(PrioritizedIndex prioIndex, PriorityQueue &qu
 	return upgradeSelf;
 }
 
-OctreePtr ChunkManager::octreeOrNull(int3 index) {
-	ChunkPtr chunk = chunkMap[index];
-	if (!chunk) {
-		return OctreePtr();
-	}
-	return chunk->getOctree();
-}
-
 // TODO get rid of NeighbourOctrees, read chunk map directly
 NeighbourOctrees ChunkManager::getNeighbourOctrees(int3 index) {
 	NeighbourOctrees octrees;
-	octrees.xn = octreeOrNull(index + int3(-1,  0,  0));
-	octrees.xp = octreeOrNull(index + int3( 1,  0,  0));
-	octrees.yn = octreeOrNull(index + int3( 0, -1,  0));
-	octrees.yp = octreeOrNull(index + int3( 0,  1,  0));
-	octrees.zn = octreeOrNull(index + int3( 0,  0, -1));
-	octrees.zp = octreeOrNull(index + int3( 0,  0,  1));
+	octrees.xn = chunkMap.getOctreeOrNull(index + int3(-1,  0,  0));
+	octrees.xp = chunkMap.getOctreeOrNull(index + int3( 1,  0,  0));
+	octrees.yn = chunkMap.getOctreeOrNull(index + int3( 0, -1,  0));
+	octrees.yp = chunkMap.getOctreeOrNull(index + int3( 0,  1,  0));
+	octrees.zn = chunkMap.getOctreeOrNull(index + int3( 0,  0, -1));
+	octrees.zp = chunkMap.getOctreeOrNull(index + int3( 0,  0,  1));
 	return octrees;
 }
 

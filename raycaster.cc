@@ -20,7 +20,7 @@ RaycastResult Raycaster::operator()(int3 const startChunkIndex, vec3 const start
 	int3 currentChunkIndex = chunkIndexFromPosition(startChunkPosition + currentPositionInStartChunk);
 	int3 currentChunkOffset = chunkPositionFromIndex(currentChunkIndex) - chunkPositionFromIndex(startChunkIndex);
 
-	OctreeConstPtr octree = getOctreeOrNull(currentChunkIndex);
+	OctreeConstPtr octree = chunkMap.getOctreeOrNull(currentChunkIndex);
 	if (!octree) {
 		return RaycastResult::indeterminate(startPointInStartChunk, direction, length);
 	}
@@ -116,7 +116,7 @@ RaycastResult Raycaster::operator()(int3 const startChunkIndex, vec3 const start
 		int3 newChunkIndex = chunkIndexFromPosition(startChunkPosition + currentPositionInStartChunk);
 		if (newChunkIndex != currentChunkIndex) {
 			currentChunkIndex = newChunkIndex;
-			octree = getOctreeOrNull(currentChunkIndex);
+			octree = chunkMap.getOctreeOrNull(currentChunkIndex);
 			if (!octree) {
 				return RaycastResult::indeterminate(startPointInStartChunk, direction, length);
 			}
@@ -126,12 +126,4 @@ RaycastResult Raycaster::operator()(int3 const startChunkIndex, vec3 const start
 		octree->getBlock(currentPositionInStartChunk - currentChunkOffset, &block, &base, &size);
 	}
 	return RaycastResult::cutoff(startPointInStartChunk, direction, length);
-}
-
-OctreeConstPtr Raycaster::getOctreeOrNull(int3 chunkIndex) const {
-	ChunkConstPtr chunk = chunkMap[chunkIndex];
-	if (!chunk) {
-		return OctreeConstPtr();
-	}
-	return chunk->getOctree();
 }

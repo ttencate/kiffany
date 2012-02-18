@@ -55,12 +55,12 @@ typedef boost::shared_ptr<ChunkGeometry> ChunkGeometryPtr;
 typedef boost::shared_ptr<ChunkGeometry const> ChunkGeometryConstPtr;
 
 struct NeighbourOctrees {
-	OctreePtr xn;
-	OctreePtr xp;
-	OctreePtr yn;
-	OctreePtr yp;
-	OctreePtr zn;
-	OctreePtr zp;
+	OctreeConstPtr xn;
+	OctreeConstPtr xp;
+	OctreeConstPtr yn;
+	OctreeConstPtr yp;
+	OctreeConstPtr zn;
+	OctreeConstPtr zp;
 	bool isComplete() const { return xn && xp && yn && yp && zn && zp; }
 };
 

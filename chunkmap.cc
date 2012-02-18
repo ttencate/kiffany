@@ -37,6 +37,15 @@ bool ChunkMap::contains(int3 index) const {
 	return map.find(index) != map.end();
 }
 
+OctreeConstPtr ChunkMap::getOctreeOrNull(int3 index) const {
+	boost::shared_lock<boost::shared_mutex> readLock(mapMutex);
+	PositionMap::const_iterator i = map.find(index);
+	if (i == map.end()) {
+		return OctreePtr();
+	}
+	return i->second->getOctree();
+}
+
 Chunk::State ChunkMap::getChunkState(int3 index) const {
 	boost::shared_lock<boost::shared_mutex> readLock(mapMutex);
 	PositionMap::const_iterator i = map.find(index);

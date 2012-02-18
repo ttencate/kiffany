@@ -62,7 +62,6 @@ class Raycaster {
 
 	private:
 
-		inline OctreeConstPtr getOctreeOrNull(int3 index) const;
 		inline bool isHitBlock(Block block) const { return (block & mask) == maskedBlock; }
 
 };
