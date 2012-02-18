@@ -18,7 +18,7 @@ template<> int FaceIndex< 0,  0, -1>::value = 4;
 template<> int FaceIndex< 0,  0,  1>::value = 5;
 
 template<int dx, int dy, int dz>
-inline void tess(
+inline void tesselateSingleBlockFace(
 		Block block, Block neigh,
 		unsigned x, unsigned y, unsigned z,
 		VertexArray &vertices, NormalArray &normals, unsigned &end)
@@ -65,7 +65,7 @@ inline void tesselateNeigh<-1, 0, 0>(Block const *p, Block const *q, VertexArray
 	q += CHUNK_SIZE - 1;
 	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
 		for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
-			tess<-1, 0, 0>(*p, *q, (unsigned)0, y, z, vertices, normals, end);
+			tesselateSingleBlockFace<-1, 0, 0>(*p, *q, (unsigned)0, y, z, vertices, normals, end);
 			p += CHUNK_SIZE;
 			q += CHUNK_SIZE;
 		}
@@ -77,7 +77,7 @@ inline void tesselateNeigh<1, 0, 0>(Block const *p, Block const *q, VertexArray 
 	p += CHUNK_SIZE - 1;
 	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
 		for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
-			tess<1, 0, 0>(*p, *q, CHUNK_SIZE - 1, y, z, vertices, normals, end);
+			tesselateSingleBlockFace<1, 0, 0>(*p, *q, CHUNK_SIZE - 1, y, z, vertices, normals, end);
 			p += CHUNK_SIZE;
 			q += CHUNK_SIZE;
 		}
@@ -89,7 +89,7 @@ inline void tesselateNeigh<0, -1, 0>(Block const *p, Block const *q, VertexArray
 	q += CHUNK_SIZE * (CHUNK_SIZE - 1);
 	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
 		for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
-			tess<0, -1, 0>(*p, *q, x, (unsigned)0, z, vertices, normals, end);
+			tesselateSingleBlockFace<0, -1, 0>(*p, *q, x, (unsigned)0, z, vertices, normals, end);
 			++p;
 			++q;
 		}
@@ -103,7 +103,7 @@ inline void tesselateNeigh<0, 1, 0>(Block const *p, Block const *q, VertexArray 
 	p += CHUNK_SIZE * (CHUNK_SIZE - 1);
 	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
 		for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
-			tess<0, 1, 0>(*p, *q, x, CHUNK_SIZE - 1, z, vertices, normals, end);
+			tesselateSingleBlockFace<0, 1, 0>(*p, *q, x, CHUNK_SIZE - 1, z, vertices, normals, end);
 			++p;
 			++q;
 		}
@@ -117,7 +117,7 @@ inline void tesselateNeigh<0, 0, -1>(Block const *p, Block const *q, VertexArray
 	q += CHUNK_SIZE * CHUNK_SIZE * (CHUNK_SIZE - 1);
 	for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
 		for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
-			tess<0, 0, -1>(*p, *q, x, y, (unsigned)0, vertices, normals, end);
+			tesselateSingleBlockFace<0, 0, -1>(*p, *q, x, y, (unsigned)0, vertices, normals, end);
 			++p;
 			++q;
 		}
@@ -129,7 +129,7 @@ inline void tesselateNeigh<0, 0, 1>(Block const *p, Block const *q, VertexArray 
 	p += CHUNK_SIZE * CHUNK_SIZE * (CHUNK_SIZE - 1);
 	for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
 		for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
-			tess<0, 0, 1>(*p, *q, x, y, CHUNK_SIZE - 1, vertices, normals, end);
+			tesselateSingleBlockFace<0, 0, 1>(*p, *q, x, y, CHUNK_SIZE - 1, vertices, normals, end);
 			++p;
 			++q;
 		}
@@ -137,7 +137,7 @@ inline void tesselateNeigh<0, 0, 1>(Block const *p, Block const *q, VertexArray 
 }
 
 template<int dx, int dy, int dz>
-void tesselateFace(RawChunkData &rawData, int3 index, ChunkMap const &chunkMap, RawChunkData &rawNeighData, ChunkGeometryPtr geometry) {
+void tesselateDirection(RawChunkData &rawData, int3 index, ChunkMap const &chunkMap, RawChunkData &rawNeighData, ChunkGeometryPtr geometry) {
 	static int const neighOffset = dx + (int)CHUNK_SIZE * dy + (int)CHUNK_SIZE * (int)CHUNK_SIZE * dz;
 
 	VertexArray &vertices = geometry->getVertexData();
@@ -160,7 +160,7 @@ void tesselateFace(RawChunkData &rawData, int3 index, ChunkMap const &chunkMap, 
 	for (unsigned z = zMin; z < zMax; ++z) {
 		for (unsigned y = yMin; y < yMax; ++y) {
 			for (unsigned x = xMin; x < xMax; ++x) {
-				tess<dx, dy, dz>(*p, p[neighOffset], x, y, z, vertices, normals, end);
+				tesselateSingleBlockFace<dx, dy, dz>(*p, p[neighOffset], x, y, z, vertices, normals, end);
 				++p;
 			}
 			if (dx != 0) {
@@ -256,12 +256,12 @@ void tesselate(int3 index, ChunkMap const &chunkMap, ChunkGeometryPtr geometry) 
 		unpackOctree(*octree, rawData);
 
 		RawChunkData rawNeighData;
-		tesselateFace<-1,  0,  0>(rawData, index, chunkMap, rawNeighData, geometry);
-		tesselateFace< 1,  0,  0>(rawData, index, chunkMap, rawNeighData, geometry);
-		tesselateFace< 0, -1,  0>(rawData, index, chunkMap, rawNeighData, geometry);
-		tesselateFace< 0,  1,  0>(rawData, index, chunkMap, rawNeighData, geometry);
-		tesselateFace< 0,  0, -1>(rawData, index, chunkMap, rawNeighData, geometry);
-		tesselateFace< 0,  0,  1>(rawData, index, chunkMap, rawNeighData, geometry);
+		tesselateDirection<-1,  0,  0>(rawData, index, chunkMap, rawNeighData, geometry);
+		tesselateDirection< 1,  0,  0>(rawData, index, chunkMap, rawNeighData, geometry);
+		tesselateDirection< 0, -1,  0>(rawData, index, chunkMap, rawNeighData, geometry);
+		tesselateDirection< 0,  1,  0>(rawData, index, chunkMap, rawNeighData, geometry);
+		tesselateDirection< 0,  0, -1>(rawData, index, chunkMap, rawNeighData, geometry);
+		tesselateDirection< 0,  0,  1>(rawData, index, chunkMap, rawNeighData, geometry);
 	}
 
 	stats.chunksTesselated.increment();
