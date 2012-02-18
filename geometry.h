@@ -3,6 +3,8 @@
 
 #include "octree.h"
 
+class ChunkMap;
+
 struct Range {
 	unsigned begin;
 	unsigned end;
@@ -46,16 +48,6 @@ class ChunkGeometry {
 typedef boost::shared_ptr<ChunkGeometry> ChunkGeometryPtr;
 typedef boost::shared_ptr<ChunkGeometry const> ChunkGeometryConstPtr;
 
-struct NeighbourOctrees {
-	OctreeConstPtr xn;
-	OctreeConstPtr xp;
-	OctreeConstPtr yn;
-	OctreeConstPtr yp;
-	OctreeConstPtr zn;
-	OctreeConstPtr zp;
-	bool isComplete() const { return xn && xp && yn && yp && zn && zp; }
-};
-
-void tesselate(OctreePtr octree, NeighbourOctrees const &neighbourOctrees, ChunkGeometryPtr geometry);
+void tesselate(int3 index, ChunkMap const &chunkMap, ChunkGeometryPtr geometry);
 
 #endif

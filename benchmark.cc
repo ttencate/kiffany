@@ -55,29 +55,17 @@ int main(int argc, char **argv) {
 		<< "Generated " << generated << " total, " << empty << " empty" << ", " << full << " full" << std::endl;
 
 	unsigned tesselated = 0;
-	for (int z = min.z; z < max.z; ++z) {
-		for (int y = min.y; y < max.y; ++y) {
-			for (int x = min.x; x < max.x; ++x) {
+	for (int z = min.z + 1; z < max.z - 1; ++z) {
+		for (int y = min.y + 1; y < max.y - 1; ++y) {
+			for (int x = min.x + 1; x < max.x - 1; ++x) {
 				int3 const index = int3(x, y, z);
 				ChunkPtr chunk = chunkMap[index];
-				OctreePtr octree = chunk->getOctree();
+				ChunkGeometryPtr chunkGeometry(new ChunkGeometry());
+				::tesselate(index, chunkMap, chunkGeometry);
+				chunk->setGeometry(chunkGeometry);
 
-				NeighbourOctrees neighbourOctrees;
-				neighbourOctrees.xn = chunkMap.getOctreeOrNull(index + int3(-1,  0,  0));
-				neighbourOctrees.xp = chunkMap.getOctreeOrNull(index + int3( 1,  0,  0));
-				neighbourOctrees.yn = chunkMap.getOctreeOrNull(index + int3( 0, -1,  0));
-				neighbourOctrees.yp = chunkMap.getOctreeOrNull(index + int3( 0,  1,  0));
-				neighbourOctrees.zn = chunkMap.getOctreeOrNull(index + int3( 0,  0, -1));
-				neighbourOctrees.zp = chunkMap.getOctreeOrNull(index + int3( 0,  0,  1));
-				if (neighbourOctrees.isComplete()) {
-					ChunkGeometryPtr chunkGeometry(new ChunkGeometry());
-					::tesselate(octree, neighbourOctrees, chunkGeometry);
-					chunk->setGeometry(chunkGeometry);
-					++tesselated;
-					std::cout << "T" << std::flush;
-				} else {
-					std::cout << "." << std::flush;
-				}
+				++tesselated;
+				std::cout << "T" << std::flush;
 			}
 		}
 	}
@@ -86,9 +74,9 @@ int main(int argc, char **argv) {
 		<< "Tesselated " << tesselated << std::endl;
 
 	unsigned lit = 0;
-	for (int z = min.z; z < max.z; ++z) {
-		for (int y = min.y; y < max.y; ++y) {
-			for (int x = min.x; x < max.x; ++x) {
+	for (int z = min.z + 1; z < max.z - 1; ++z) {
+		for (int y = min.y + 1; y < max.y - 1; ++y) {
+			for (int x = min.x + 1; x < max.x - 1; ++x) {
 				int3 const index = int3(x, y, z);
 				ChunkPtr chunk = chunkMap[index];
 				ChunkGeometryConstPtr chunkGeometry = chunk->getGeometry();

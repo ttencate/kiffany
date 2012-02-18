@@ -107,18 +107,6 @@ bool ChunkManager::tryUpgradeChunk(PrioritizedIndex prioIndex, PriorityQueue &qu
 	return upgradeSelf;
 }
 
-// TODO get rid of NeighbourOctrees, read chunk map directly
-NeighbourOctrees ChunkManager::getNeighbourOctrees(int3 index) {
-	NeighbourOctrees octrees;
-	octrees.xn = chunkMap.getOctreeOrNull(index + int3(-1,  0,  0));
-	octrees.xp = chunkMap.getOctreeOrNull(index + int3( 1,  0,  0));
-	octrees.yn = chunkMap.getOctreeOrNull(index + int3( 0, -1,  0));
-	octrees.yp = chunkMap.getOctreeOrNull(index + int3( 0,  1,  0));
-	octrees.zn = chunkMap.getOctreeOrNull(index + int3( 0,  0, -1));
-	octrees.zp = chunkMap.getOctreeOrNull(index + int3( 0,  0,  1));
-	return octrees;
-}
-
 void ChunkManager::enqueueUpgrade(ChunkPtr chunk) {
 	switch (chunk->getState()) {
 		case Chunk::NEW: enqueueGeneration(chunk); break;
@@ -144,14 +132,11 @@ void ChunkManager::enqueueTesselation(ChunkPtr chunk) {
 	BOOST_ASSERT(!chunk->isUpgrading());
 
 	int3 index = chunk->getIndex();
-	NeighbourOctrees neighbourOctrees = getNeighbourOctrees(index);
-	BOOST_ASSERT(neighbourOctrees.isComplete());
-
 	chunk->startUpgrade();
 	threadPool.enqueue(
 			boost::bind(
 				&ChunkManager::tesselate, this,
-				index, chunk->getOctree(), neighbourOctrees));
+				index, boost::cref(chunkMap)));
 }
 
 void ChunkManager::enqueueLighting(ChunkPtr chunk) {
@@ -186,9 +171,9 @@ void ChunkManager::finalizeGeneration(int3 index, OctreePtr octree) {
 	chunk->endUpgrade();
 }
 
-void ChunkManager::tesselate(int3 index, OctreePtr octree, NeighbourOctrees neighbourOctrees) {
+void ChunkManager::tesselate(int3 index, ChunkMap const &chunkMap) {
 	ChunkGeometryPtr chunkGeometry(new ChunkGeometry());
-	::tesselate(octree, neighbourOctrees, chunkGeometry);
+	::tesselate(index, chunkMap, chunkGeometry);
 
 	finalizerQueue.post(boost::bind(
 				&ChunkManager::finalizeTesselation, this, index, chunkGeometry));

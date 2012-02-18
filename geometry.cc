@@ -1,6 +1,7 @@
 #include "geometry.h"
 
 #include "chunkdata.h"
+#include "chunkmap.h"
 #include "stats.h"
 
 template<int dx, int dy, int dz>
@@ -135,7 +136,7 @@ inline void tesselateNeigh<0, 0, 1>(Block const *p, Block const *q, VertexArray 
 }
 
 template<int dx, int dy, int dz>
-void tesselateFace(Block const *rawData, Block const *rawNeighData, ChunkGeometryPtr geometry) {
+void tesselateFace(RawChunkData &rawData, int3 index, ChunkMap const &chunkMap, RawChunkData &rawNeighData, ChunkGeometryPtr geometry) {
 	static int const neighOffset = dx + (int)CHUNK_SIZE * dy + (int)CHUNK_SIZE * (int)CHUNK_SIZE * dz;
 
 	VertexArray &vertices = geometry->getVertexData();
@@ -150,7 +151,8 @@ void tesselateFace(Block const *rawData, Block const *rawNeighData, ChunkGeometr
 	unsigned const xMax = CHUNK_SIZE - (dx == 1 ? 1 : 0);
 	unsigned const yMax = CHUNK_SIZE - (dy == 1 ? 1 : 0);
 	unsigned const zMax = CHUNK_SIZE - (dz == 1 ? 1 : 0);
-	Block const *p = rawData +
+	Block const *raw = rawData.raw();
+	Block const *p = raw +
 		xMin +
 		yMin * CHUNK_SIZE +
 		zMin * CHUNK_SIZE * CHUNK_SIZE;
@@ -169,34 +171,31 @@ void tesselateFace(Block const *rawData, Block const *rawNeighData, ChunkGeometr
 		}
 	}
 
-	tesselateNeigh<dx, dy, dz>(rawData, rawNeighData, vertices, normals, end);
+	OctreeConstPtr neighOctree = chunkMap.getOctreeOrNull(index + int3(dx, dy, dz));
+	BOOST_ASSERT(neighOctree);
+	unpackOctree(*neighOctree, rawNeighData);
+	tesselateNeigh<dx, dy, dz>(raw, rawNeighData.raw(), vertices, normals, end);
 
 	stats.quadsGenerated.increment(vertices.size() / 4);
 
 	geometry->setRange(FaceIndex<dx, dy, dz>::value, Range(begin, end));
 }
 
-void tesselate(OctreePtr octree, NeighbourOctrees const &neighbourOctrees, ChunkGeometryPtr geometry) {
+void tesselate(int3 index, ChunkMap const &chunkMap, ChunkGeometryPtr geometry) {
 	TimerStat::Timed t = stats.chunkTesselationTime.timed();
 
-	if (!octree->isEmpty()) {
-		boost::scoped_ptr<RawChunkData> rawData(new RawChunkData());
-		unpackOctree(*octree, *rawData);
+	OctreeConstPtr octree = chunkMap.getOctreeOrNull(index);
+	if (octree && !octree->isEmpty()) {
+		RawChunkData rawData;
+		unpackOctree(*octree, rawData);
 
-		boost::scoped_ptr<RawChunkData> rawNeighData(new RawChunkData());
-
-		unpackOctree(*neighbourOctrees.xn, *rawNeighData);
-		tesselateFace<-1,  0,  0>(rawData->raw(), rawNeighData->raw(), geometry);
-		unpackOctree(*neighbourOctrees.xp, *rawNeighData);
-		tesselateFace< 1,  0,  0>(rawData->raw(), rawNeighData->raw(), geometry);
-		unpackOctree(*neighbourOctrees.yn, *rawNeighData);
-		tesselateFace< 0, -1,  0>(rawData->raw(), rawNeighData->raw(), geometry);
-		unpackOctree(*neighbourOctrees.yp, *rawNeighData);
-		tesselateFace< 0,  1,  0>(rawData->raw(), rawNeighData->raw(), geometry);
-		unpackOctree(*neighbourOctrees.zn, *rawNeighData);
-		tesselateFace< 0,  0, -1>(rawData->raw(), rawNeighData->raw(), geometry);
-		unpackOctree(*neighbourOctrees.zp, *rawNeighData);
-		tesselateFace< 0,  0,  1>(rawData->raw(), rawNeighData->raw(), geometry);
+		RawChunkData rawNeighData;
+		tesselateFace<-1,  0,  0>(rawData, index, chunkMap, rawNeighData, geometry);
+		tesselateFace< 1,  0,  0>(rawData, index, chunkMap, rawNeighData, geometry);
+		tesselateFace< 0, -1,  0>(rawData, index, chunkMap, rawNeighData, geometry);
+		tesselateFace< 0,  1,  0>(rawData, index, chunkMap, rawNeighData, geometry);
+		tesselateFace< 0,  0, -1>(rawData, index, chunkMap, rawNeighData, geometry);
+		tesselateFace< 0,  0,  1>(rawData, index, chunkMap, rawNeighData, geometry);
 	}
 
 	stats.chunksTesselated.increment();
