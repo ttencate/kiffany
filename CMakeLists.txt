@@ -26,6 +26,7 @@ set(sources
 	camera.cc camera.h
 	chunk.cc chunk.h
 	chunkdata.cc chunkdata.h
+	chunkmanager.cc chunkmanager.h
 	chunkmap.cc chunkmap.h
 	coords.cc coords.h
 	flags.cc flags.h
