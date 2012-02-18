@@ -85,6 +85,11 @@ RaycastResult Raycaster::operator()(int3 const startChunkIndex, vec3 const start
 		}
 		length = t;
 
+		if (length >= cutoff) {
+			// If the next chunk is unavailable, we still want to cut off rather than return INDETERMINATE.
+			break;
+		}
+
 		// Due to roundoff in the floors' arguments above,
 		// we might end up taking a step "backwards" and this can lead to cycles.
 		// Ensure that we are never going backwards, using integer arithmetic only.

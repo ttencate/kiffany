@@ -58,6 +58,8 @@ class Raycaster {
 
 		RaycastResult operator()(int3 startChunkIndex, vec3 startPointInStartChunk, vec3 direction) const;
 
+		float getCutoff() const { return cutoff; }
+
 	private:
 
 		inline OctreeConstPtr getOctreeOrNull(int3 index) const;
