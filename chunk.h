@@ -45,8 +45,7 @@ class Chunk
 		enum State {
 			NEW,
 			GENERATED,
-			TESSELATED,
-			LIGHTED
+			TESSELATED
 		};
 
 	private:

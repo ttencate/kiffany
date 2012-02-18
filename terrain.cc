@@ -2,7 +2,6 @@
 
 #include "flags.h"
 #include "lighting.h"
-#include "occlusion.h"
 #include "stats.h"
 #include "terragen.h"
 

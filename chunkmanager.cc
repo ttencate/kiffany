@@ -1,7 +1,6 @@
 #include "chunkmanager.h"
 
 #include "chunkmap.h"
-#include "occlusion.h"
 #include "stats.h"
 #include "terragen.h"
 
@@ -66,7 +65,7 @@ bool ChunkManager::tryUpgradeChunk(PrioritizedIndex prioIndex, PriorityQueue &qu
 
 	Chunk::State const state = chunkMap.getChunkState(index);
 	// TODO replace by helper function
-	if (state >= Chunk::LIGHTED) {
+	if (state >= Chunk::TESSELATED) {
 		return 0;
 	}
 
@@ -75,8 +74,7 @@ bool ChunkManager::tryUpgradeChunk(PrioritizedIndex prioIndex, PriorityQueue &qu
 	// TODO replace by helper function
 	switch (nextState) {
 		case Chunk::GENERATED: radius = 0; break;
-		case Chunk::TESSELATED: radius = 1; break;
-		case Chunk::LIGHTED: radius = 0; break; // TODO get from lighting radius
+		case Chunk::TESSELATED: radius = 1; break; // TODO get from lighting radius
 		default: BOOST_ASSERT(false);
 	}
 
@@ -111,7 +109,6 @@ void ChunkManager::enqueueUpgrade(ChunkPtr chunk) {
 	switch (chunk->getState()) {
 		case Chunk::NEW: enqueueGeneration(chunk); break;
 		case Chunk::GENERATED: enqueueTesselation(chunk); break;
-		case Chunk::TESSELATED: enqueueLighting(chunk); break;
 		default: BOOST_ASSERT(false);
 	}
 }
@@ -137,19 +134,6 @@ void ChunkManager::enqueueTesselation(ChunkPtr chunk) {
 			boost::bind(
 				&ChunkManager::tesselate, this,
 				index, boost::cref(chunkMap)));
-}
-
-void ChunkManager::enqueueLighting(ChunkPtr chunk) {
-	BOOST_ASSERT(chunk->getState() == Chunk::TESSELATED);
-	BOOST_ASSERT(!chunk->isUpgrading());
-
-	int3 index = chunk->getIndex();
-	chunk->startUpgrade();
-	ChunkGeometryConstPtr chunkGeometry = chunk->getGeometry();
-	threadPool.enqueue(
-			boost::bind(
-				&ChunkManager::computeLighting, this,
-				index, boost::cref(chunkMap), chunkGeometry));
 }
 
 void ChunkManager::generate(int3 index) {
@@ -184,24 +168,3 @@ void ChunkManager::finalizeTesselation(int3 index, ChunkGeometryPtr chunkGeometr
 	chunk->setGeometry(chunkGeometry);
 	chunk->endUpgrade();
 }
-
-void ChunkManager::computeLighting(int3 index, ChunkMap const &chunkMap, ChunkGeometryConstPtr chunkGeometry) {
-	// TODO Split out vertex and normal data
-	ChunkGeometryPtr newGeometry(new ChunkGeometry(*chunkGeometry));
-	::computeLighting(index, chunkMap, newGeometry);
-
-	finalizerQueue.post(boost::bind(
-				&ChunkManager::finalizeLighting, this, index, newGeometry));
-}
-
-void ChunkManager::finalizeLighting(int3 index, ChunkGeometryPtr chunkGeometry) {
-	ChunkPtr chunk = chunkMap[index];
-	if (!chunk) {
-		stats.irrelevantJobsRun.increment();
-		return;
-	}
-	chunk->setGeometry(chunkGeometry);
-	chunk->endUpgrade();
-}
-
-

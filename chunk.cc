@@ -41,7 +41,7 @@ void Chunk::startUpgrade() {
 
 void Chunk::endUpgrade() {
 	upgrading = false;
-	BOOST_ASSERT(state < LIGHTED);
+	BOOST_ASSERT(state < TESSELATED);
 	state = (State)(state + 1);
 }
 

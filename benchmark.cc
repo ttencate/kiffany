@@ -1,6 +1,5 @@
 #include "chunkdata.h"
 #include "chunkmap.h"
-#include "occlusion.h"
 #include "octree.h"
 #include "stats.h"
 #include "terragen.h"
@@ -72,29 +71,6 @@ int main(int argc, char **argv) {
 	std::cout
 		<< '\n'
 		<< "Tesselated " << tesselated << std::endl;
-
-	unsigned lit = 0;
-	for (int z = min.z + 1; z < max.z - 1; ++z) {
-		for (int y = min.y + 1; y < max.y - 1; ++y) {
-			for (int x = min.x + 1; x < max.x - 1; ++x) {
-				int3 const index = int3(x, y, z);
-				ChunkPtr chunk = chunkMap[index];
-				ChunkGeometryConstPtr chunkGeometry = chunk->getGeometry();
-				if (chunkGeometry) {
-					ChunkGeometryPtr newChunkGeometry(new ChunkGeometry(*chunkGeometry));
-					computeLighting(index, chunkMap, newChunkGeometry);
-					chunk->setGeometry(newChunkGeometry);
-					++lit;
-					std::cout << "L" << std::flush;
-				} else {
-					std::cout << "." << std::flush;
-				}
-			}
-		}
-	}
-	std::cout
-		<< '\n'
-		<< "Lit " << lit << std::endl;
 
 	stats.print();
 }

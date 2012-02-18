@@ -74,8 +74,6 @@ class ChunkManager {
 		void finalizeGeneration(int3 index, OctreePtr octree);
 		void tesselate(int3 index, ChunkMap const &chunkMap);
 		void finalizeTesselation(int3 index, ChunkGeometryPtr chunkGeometry);
-		void computeLighting(int3 index, ChunkMap const &chunkMap, ChunkGeometryConstPtr chunkGeometry);
-		void finalizeLighting(int3 index, ChunkGeometryPtr chunkGeometry);
 
 		template<typename T>
 		static Prioritized<T> makePrioritized(float priority, T item) { return Prioritized<T>(priority, item); }
