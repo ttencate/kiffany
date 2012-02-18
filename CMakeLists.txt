@@ -79,3 +79,10 @@ target_link_libraries(kiffany_test
 	${OPENGL_LIBRARY} ${GLFW_LIBRARY} ${GLEW_LIBRARY}
 	boost_unit_test_framework-mt.a
 	)
+
+add_executable(benchmark ${sources} benchmark.cc)
+
+target_link_libraries(benchmark
+	${Boost_LIBRARIES}
+	${OPENGL_LIBRARY} ${GLFW_LIBRARY} ${GLEW_LIBRARY}
+	)
