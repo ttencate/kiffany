@@ -131,8 +131,6 @@ class Tesselator {
 
 	private:
 
-		static short const CUBE_FACES[6][12];
-
 		template<int dx, int dy, int dz>
 		struct FaceIndex {
 			static int value;
@@ -170,7 +168,7 @@ class Tesselator {
 		}
 
 		template<int dx, int dy, int dz>
-		inline vec3 computeBentNormal(vec3 vertex) {
+		inline vec3 computeBentNormal(int3 pos) {
 			static unsigned raycastDirectionIndicesTable[6][4] = {
 				{ 0, 2, 4, 6 },
 				{ 1, 3, 5, 7 },
@@ -181,8 +179,7 @@ class Tesselator {
 			};
 			static unsigned *raycastDirectionIndices = raycastDirectionIndicesTable[FaceIndex<dx, dy, dz>::value];
 
-			// TODO try not to do this
-			int3 const pos = int3(vertex.x, vertex.y, vertex.z);
+			vec3 vertex(pos);
 			vec3 bentNormal(0, 0, 0);
 			for (unsigned i = 0; i < 4; ++i) {
 				unsigned const directionIndex = raycastDirectionIndices[i];
@@ -211,6 +208,16 @@ class Tesselator {
 
 		template<int dx, int dy, int dz>
 		inline void tesselateSingleBlockFace(Block block, Block neigh, unsigned x, unsigned y, unsigned z) {
+			static short const CUBE_FACES[6][12] = {
+				{ 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0 },
+				{ 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1 },
+				{ 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1 },
+				{ 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0 },
+				{ 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0 },
+				{ 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1 }
+			};
+			static short const *face = CUBE_FACES[FaceIndex<dx, dy, dz>::value];
+
 			static char const N = 0x7F;
 			static char const n[12] = {
 				dx * N, dy * N, dz * N,
@@ -218,7 +225,6 @@ class Tesselator {
 				dx * N, dy * N, dz * N,
 				dx * N, dy * N, dz * N,
 			};
-			static short const *face = CUBE_FACES[FaceIndex<dx, dy, dz>::value];
 
 			if (needsDrawing(block) && needsDrawing(block, neigh)) {
 				int3 const pos(x, y, z);
@@ -237,9 +243,8 @@ class Tesselator {
 				memcpy(&(*vertices)[writeIndex], v, 12 * sizeof(short));
 				if (flags.bentNormals) {
 					for (unsigned j = 0; j < 4; ++j) {
-						// TODO try not to convert from short
-						vec3 const vertex((*vertices)[writeIndex], (*vertices)[writeIndex + 1], (*vertices)[writeIndex + 2]);
-						vec3 normal = computeBentNormal<dx, dy, dz>(vertex);
+						int3 pos((*vertices)[writeIndex], (*vertices)[writeIndex + 1], (*vertices)[writeIndex + 2]);
+						vec3 normal = computeBentNormal<dx, dy, dz>(pos);
 						(*normals)[writeIndex++] = (int)(N * normal.x);
 						(*normals)[writeIndex++] = (int)(N * normal.y);
 						(*normals)[writeIndex++] = (int)(N * normal.z);
@@ -296,14 +301,6 @@ class Tesselator {
 
 };
 
-short const Tesselator::CUBE_FACES[6][12] = {
-	{ 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0 },
-	{ 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1 },
-	{ 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1 },
-	{ 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0 },
-	{ 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0 },
-	{ 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1 }
-};
 
 template<> int Tesselator::FaceIndex<-1,  0,  0>::value = 0;
 template<> int Tesselator::FaceIndex< 1,  0,  0>::value = 1;
