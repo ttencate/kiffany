@@ -64,6 +64,28 @@ std::vector<vec3> computeRaycastDirections() {
 }
 
 template<int dx, int dy, int dz>
+inline vec3 computeBentNormal(vec3 vertex, int3 index, ChunkMap const &chunkMap) {
+	static std::vector<vec3> const raycastDirections = computeRaycastDirections<dx, dy, dz>();
+
+	float const cutoff = CHUNK_SIZE;
+	Raycaster raycast(chunkMap, cutoff, STONE_BLOCK, BLOCK_MASK);
+	vec3 bentNormal(0, 0, 0);
+	vec3 sum(0, 0, 0);
+	for (unsigned i = 0; i < raycastDirections.size(); ++i) {
+		vec3 const direction = raycastDirections[i];
+		sum += direction;
+
+		RaycastResult result = raycast(index, vertex + 0.1f * direction, direction);
+		float factor = 1.0f;
+		if (result.status == RaycastResult::HIT) {
+			factor = result.length / cutoff;
+		}
+		bentNormal += factor * direction;
+	}
+	return bentNormal / length(sum);
+}
+
+template<int dx, int dy, int dz>
 inline void tesselateSingleBlockFace(
 		Block block, Block neigh,
 		int3 index, ChunkMap const &chunkMap,
@@ -80,7 +102,6 @@ inline void tesselateSingleBlockFace(
 	};
 	*/
 	static short const *face = CUBE_FACES[FaceIndex<dx, dy, dz>::value];
-	static std::vector<vec3> const raycastDirections = computeRaycastDirections<dx, dy, dz>();
 
 	if (needsDrawing(block) && needsDrawing(block, neigh)) {
 		int3 const pos(x, y, z);
@@ -96,31 +117,13 @@ inline void tesselateSingleBlockFace(
 		normals.resize(end + 12);
 		memcpy(&vertices[end], v, 12 * sizeof(short));
 
-		float const cutoff = CHUNK_SIZE;
-		Raycaster raycast(chunkMap, cutoff, STONE_BLOCK, BLOCK_MASK);
-
 		for (unsigned j = 0; j < 4; ++j) {
 			// TODO try not to convert from short
 			vec3 const vertex(vertices[end], vertices[end + 1], vertices[end + 2]);
-
-			vec3 bentNormal(0, 0, 0);
-			vec3 sum(0, 0, 0);
-			for (unsigned i = 0; i < raycastDirections.size(); ++i) {
-				vec3 const direction = raycastDirections[i];
-				sum += direction;
-
-				RaycastResult result = raycast(index, vertex + 0.1f * direction, direction);
-				float factor = 1.0f;
-				if (result.status == RaycastResult::HIT) {
-					factor = result.length / cutoff;
-				}
-				bentNormal += factor * direction;
-			}
-			bentNormal /= length(sum);
-
-			normals[end++] = (int)(N * bentNormal.x);
-			normals[end++] = (int)(N * bentNormal.y);
-			normals[end++] = (int)(N * bentNormal.z);
+			vec3 normal = computeBentNormal<dx, dy, dz>(vertex, index, chunkMap);
+			normals[end++] = (int)(N * normal.x);
+			normals[end++] = (int)(N * normal.y);
+			normals[end++] = (int)(N * normal.z);
 		}
 	}
 }
