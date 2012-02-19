@@ -8,6 +8,72 @@
 
 #include <boost/unordered_map.hpp>
 
+#include <algorithm>
+#include <vector>
+
+class RaycastCache {
+
+	struct ResultsForPos {
+		vec3 results[8];
+		unsigned valid;
+		ResultsForPos() {
+			valid = 0x00;
+		}
+		inline bool has(unsigned directionIndex) const {
+			return valid & (1 << directionIndex);
+		}
+		inline void set(unsigned directionIndex, vec3 result) {
+			results[directionIndex] = result;
+			valid |= (1 << directionIndex);
+		}
+	};
+
+	static unsigned const SIZE;
+
+	std::vector<int> indices;
+	std::vector<ResultsForPos> results;
+
+	public:
+
+		RaycastCache()
+		:
+			indices(SIZE * SIZE * SIZE, -1)
+		{
+		}
+
+		inline bool get(int3 pos, unsigned directionIndex, vec3 &result) const {
+			int index = indices[pos.x + SIZE * pos.y + SIZE * SIZE * pos.z];
+			if (index < 0) {
+				return false;
+			}
+			ResultsForPos const &resultsForPos = results[index];
+			if (!resultsForPos.has(directionIndex)) {
+				return false;
+			}
+			result = resultsForPos.results[directionIndex];
+			return true;
+		}
+
+		inline void put(int3 pos, unsigned directionIndex, vec3 result) {
+			unsigned i = pos.x + SIZE * pos.y + SIZE * SIZE * pos.z;
+			int index = indices[i];
+			if (index < 0) {
+				index = results.size();
+				indices[i] = index;
+				results.push_back(ResultsForPos());
+			}
+			results[index].set(directionIndex, result);
+		}
+
+		inline void clear() {
+			std::fill(indices.begin(), indices.end(), -1);
+			results.clear();
+		}
+
+};
+
+unsigned const RaycastCache::SIZE = CHUNK_SIZE + 1;
+
 class Tesselator {
 
 	std::vector<vec3> raycastDirections[8];
@@ -23,20 +89,6 @@ class Tesselator {
 
 	RawChunkData rawData;
 	RawChunkData rawNeighData;
-
-	typedef std::pair<int3, unsigned> RaycastOrigin;
-	struct RaycastOriginHasher {
-		size_t operator()(RaycastOrigin origin) const {
-			static boost::hash<int> intHasher;
-			static boost::hash<unsigned> unsignedHasher;
-			return
-				intHasher(origin.first.x) ^
-				intHasher(origin.first.y) ^
-				intHasher(origin.first.z) ^
-				unsignedHasher(origin.second);
-		}
-	};
-	typedef boost::unordered_map<RaycastOrigin, vec3, RaycastOriginHasher> RaycastCache;
 	RaycastCache raycastCache;
 
 	public:
@@ -129,13 +181,15 @@ class Tesselator {
 			};
 			static unsigned *raycastDirectionIndices = raycastDirectionIndicesTable[FaceIndex<dx, dy, dz>::value];
 
-			int3 const intVertex = int3(vertex.x, vertex.y, vertex.z);
+			// TODO try not to do this
+			int3 const pos = int3(vertex.x, vertex.y, vertex.z);
 			vec3 bentNormal(0, 0, 0);
 			for (unsigned i = 0; i < 4; ++i) {
 				unsigned const directionIndex = raycastDirectionIndices[i];
-				RaycastOrigin origin(intVertex, directionIndex);
-				RaycastCache::const_iterator iter = raycastCache.find(origin);
-				if (iter == raycastCache.end()) {
+				vec3 partialBentNormal;
+				if (raycastCache.get(pos, directionIndex, partialBentNormal)) {
+					stats.raycastCacheHits.increment();
+				} else {
 					std::vector<vec3> const &raycastDirections = this->raycastDirections[directionIndex];
 					for (unsigned j = 0; j < raycastDirections.size(); ++j) {
 						vec3 const direction = raycastDirections[j];
@@ -145,14 +199,12 @@ class Tesselator {
 						if (result.status == RaycastResult::HIT) {
 							factor = result.length / raycast.getCutoff();
 						}
-						bentNormal += factor * direction;
+						partialBentNormal += factor * direction;
 					}
-					raycastCache[origin] = bentNormal;
+					raycastCache.put(pos, directionIndex, partialBentNormal);
 					stats.raycastCacheMisses.increment();
-				} else {
-					bentNormal += iter->second;
-					stats.raycastCacheHits.increment();
 				}
+				bentNormal += partialBentNormal;
 			}
 			return raycastMultiplier * bentNormal;
 		}
