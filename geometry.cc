@@ -6,9 +6,12 @@
 #include "raycaster.h"
 #include "stats.h"
 
+#include <boost/unordered_map.hpp>
+
 class Tesselator {
 
 	std::vector<vec3> raycastDirections[8];
+	float raycastMultiplier;
 	Raycaster raycast;
 
 	ChunkMap const &chunkMap;
@@ -21,6 +24,21 @@ class Tesselator {
 	RawChunkData rawData;
 	RawChunkData rawNeighData;
 
+	typedef std::pair<int3, unsigned> RaycastOrigin;
+	struct RaycastOriginHasher {
+		size_t operator()(RaycastOrigin origin) const {
+			static boost::hash<int> intHasher;
+			static boost::hash<unsigned> unsignedHasher;
+			return
+				intHasher(origin.first.x) ^
+				intHasher(origin.first.y) ^
+				intHasher(origin.first.z) ^
+				unsignedHasher(origin.second);
+		}
+	};
+	typedef boost::unordered_map<RaycastOrigin, vec3, RaycastOriginHasher> RaycastCache;
+	RaycastCache raycastCache;
+
 	public:
 
 		Tesselator(ChunkMap const &chunkMap, float raycastCutoff = CHUNK_SIZE)
@@ -32,6 +50,8 @@ class Tesselator {
 		}
 
 		void tesselate(int3 index, ChunkGeometryPtr geometry) {
+			raycastCache.clear();
+
 			TimerStat::Timed t = stats.chunkTesselationTime.timed();
 
 			this->index = index;
@@ -86,6 +106,15 @@ class Tesselator {
 					}
 				}
 			}
+
+			vec3 sum;
+			for (unsigned i = 0; i < 4; ++i) {
+				std::vector<vec3> const &directions = raycastDirections[i];
+				for (unsigned j = 0; j < directions.size(); ++j) {
+					sum += directions[j];
+				}
+			}
+			raycastMultiplier = 1.0f / length(sum);
 		}
 
 		template<int dx, int dy, int dz>
@@ -100,23 +129,32 @@ class Tesselator {
 			};
 			static unsigned *raycastDirectionIndices = raycastDirectionIndicesTable[FaceIndex<dx, dy, dz>::value];
 
+			int3 const intVertex = int3(vertex.x, vertex.y, vertex.z);
 			vec3 bentNormal(0, 0, 0);
-			vec3 sum(0, 0, 0);
 			for (unsigned i = 0; i < 4; ++i) {
-				std::vector<vec3> const &raycastDirections = this->raycastDirections[raycastDirectionIndices[i]];
-				for (unsigned j = 0; j < raycastDirections.size(); ++j) {
-					vec3 const direction = raycastDirections[j];
-					sum += direction;
+				unsigned const directionIndex = raycastDirectionIndices[i];
+				RaycastOrigin origin(intVertex, directionIndex);
+				RaycastCache::const_iterator iter = raycastCache.find(origin);
+				if (iter == raycastCache.end()) {
+					std::vector<vec3> const &raycastDirections = this->raycastDirections[directionIndex];
+					for (unsigned j = 0; j < raycastDirections.size(); ++j) {
+						vec3 const direction = raycastDirections[j];
 
-					RaycastResult result = raycast(index, vertex + 0.1f * direction, direction);
-					float factor = 1.0f;
-					if (result.status == RaycastResult::HIT) {
-						factor = result.length / raycast.getCutoff();
+						RaycastResult result = raycast(index, vertex + 0.1f * direction, direction);
+						float factor = 1.0f;
+						if (result.status == RaycastResult::HIT) {
+							factor = result.length / raycast.getCutoff();
+						}
+						bentNormal += factor * direction;
 					}
-					bentNormal += factor * direction;
+					raycastCache[origin] = bentNormal;
+					stats.raycastCacheMisses.increment();
+				} else {
+					bentNormal += iter->second;
+					stats.raycastCacheHits.increment();
 				}
 			}
-			return bentNormal / length(sum);
+			return raycastMultiplier * bentNormal;
 		}
 
 		template<int dx, int dy, int dz>

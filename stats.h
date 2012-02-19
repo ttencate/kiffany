@@ -104,6 +104,8 @@ struct Stats {
 	TimerStat octreeUnpackTime;
 	CounterStat chunksTesselated;
 	TimerStat chunkTesselationTime;
+	CounterStat raycastCacheHits;
+	CounterStat raycastCacheMisses;
 
 	CounterStat irrelevantJobsSkipped;
 	CounterStat irrelevantJobsRun;

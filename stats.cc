@@ -25,6 +25,8 @@ void Stats::print() const {
 		<< "Unpack time per octree: " << (octreeUnpackTime.get() / octreesUnpacked.get()) << '\n'
 		<< "Quads generated: " << quadsGenerated.get() << '\n'
 		<< "Quads per chunk: " << ((float)quadsGenerated.get() / chunksGenerated.get()) << '\n'
+		<< "Raycast cache hits: " << raycastCacheHits.get() << '\n'
+		<< "Raycast cache misses: " << raycastCacheMisses.get() << '\n'
 		<< '\n'
 		<< "Chunks considered for rendering: " << chunksConsidered.get() << '\n'
 		<< "Chunks skipped: " << chunksSkipped.get() << '\n'
