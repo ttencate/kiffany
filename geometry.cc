@@ -49,7 +49,7 @@ class Tesselator {
 			}
 
 			stats.chunksTesselated.increment();
-			// TODO stat for quads generated
+			stats.quadsGenerated.increment(vertices->size() / 4);
 		}
 
 	private:
@@ -121,11 +121,7 @@ class Tesselator {
 		}
 
 		template<int dx, int dy, int dz>
-		inline void tesselateSingleBlockFace(
-				Block block, Block neigh,
-				unsigned x, unsigned y, unsigned z,
-				unsigned &end)
-		{
+		inline void tesselateSingleBlockFace(Block block, Block neigh, unsigned x, unsigned y, unsigned z) {
 			static char const N = 0x7F;
 			static char const n[12] = {
 				dx * N, dy * N, dz * N,
@@ -145,27 +141,28 @@ class Tesselator {
 					face[9] + m.x, face[10] + m.y, face[11] + m.z
 				};
 
-				vertices->resize(end + 12);
-				normals->resize(end + 12);
-				memcpy(&(*vertices)[end], v, 12 * sizeof(short));
+				unsigned writeIndex = vertices->size();
+				vertices->resize(writeIndex + 12);
+				normals->resize(writeIndex + 12);
+
+				memcpy(&(*vertices)[writeIndex], v, 12 * sizeof(short));
 				if (flags.bentNormals) {
 					for (unsigned j = 0; j < 4; ++j) {
 						// TODO try not to convert from short
-						vec3 const vertex((*vertices)[end], (*vertices)[end + 1], (*vertices)[end + 2]);
+						vec3 const vertex((*vertices)[writeIndex], (*vertices)[writeIndex + 1], (*vertices)[writeIndex + 2]);
 						vec3 normal = computeBentNormal<dx, dy, dz>(vertex);
-						(*normals)[end++] = (int)(N * normal.x);
-						(*normals)[end++] = (int)(N * normal.y);
-						(*normals)[end++] = (int)(N * normal.z);
+						(*normals)[writeIndex++] = (int)(N * normal.x);
+						(*normals)[writeIndex++] = (int)(N * normal.y);
+						(*normals)[writeIndex++] = (int)(N * normal.z);
 					}
 				} else {
-					memcpy(&(*normals)[end], n, 12 * sizeof(char));
-					end += 12;
+					memcpy(&(*normals)[writeIndex], n, 12 * sizeof(char));
 				}
 			}
 		}
 
 		template<int dx, int dy, int dz>
-		inline void tesselateNeigh(Block const *rawData, Block const *rawNeighData, unsigned &end);
+		inline void tesselateNeigh(Block const *rawData, Block const *rawNeighData);
 
 		template<int dx, int dy, int dz>
 		void tesselateDirection() {
@@ -173,7 +170,6 @@ class Tesselator {
 
 			unsigned const begin = vertices->size();
 
-			unsigned end = begin;
 			unsigned const xMin = (dx == -1 ? 1 : 0);
 			unsigned const yMin = (dy == -1 ? 1 : 0);
 			unsigned const zMin = (dz == -1 ? 1 : 0);
@@ -188,7 +184,7 @@ class Tesselator {
 			for (unsigned z = zMin; z < zMax; ++z) {
 				for (unsigned y = yMin; y < yMax; ++y) {
 					for (unsigned x = xMin; x < xMax; ++x) {
-						tesselateSingleBlockFace<dx, dy, dz>(*p, p[neighOffset], x, y, z, end);
+						tesselateSingleBlockFace<dx, dy, dz>(*p, p[neighOffset], x, y, z);
 						++p;
 					}
 					if (dx != 0) {
@@ -203,10 +199,9 @@ class Tesselator {
 			OctreeConstPtr neighOctree = chunkMap.getOctreeOrNull(index + int3(dx, dy, dz));
 			BOOST_ASSERT(neighOctree);
 			unpackOctree(*neighOctree, rawNeighData);
-			tesselateNeigh<dx, dy, dz>(raw, rawNeighData.raw(), end);
+			tesselateNeigh<dx, dy, dz>(raw, rawNeighData.raw());
 
-			stats.quadsGenerated.increment(vertices->size() / 4);
-
+			unsigned const end = vertices->size();
 			geometry->setRange(FaceIndex<dx, dy, dz>::value, Range(begin, end));
 		}
 
@@ -229,11 +224,11 @@ template<> int Tesselator::FaceIndex< 0,  0, -1>::value = 4;
 template<> int Tesselator::FaceIndex< 0,  0,  1>::value = 5;
 
 template<>
-inline void Tesselator::tesselateNeigh<-1, 0, 0>(Block const *p, Block const *q, unsigned &end) {
+inline void Tesselator::tesselateNeigh<-1, 0, 0>(Block const *p, Block const *q) {
 	q += CHUNK_SIZE - 1;
 	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
 		for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
-			tesselateSingleBlockFace<-1, 0, 0>(*p, *q, (unsigned)0, y, z, end);
+			tesselateSingleBlockFace<-1, 0, 0>(*p, *q, (unsigned)0, y, z);
 			p += CHUNK_SIZE;
 			q += CHUNK_SIZE;
 		}
@@ -241,11 +236,11 @@ inline void Tesselator::tesselateNeigh<-1, 0, 0>(Block const *p, Block const *q,
 }
 
 template<>
-inline void Tesselator::tesselateNeigh<1, 0, 0>(Block const *p, Block const *q, unsigned &end) {
+inline void Tesselator::tesselateNeigh<1, 0, 0>(Block const *p, Block const *q) {
 	p += CHUNK_SIZE - 1;
 	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
 		for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
-			tesselateSingleBlockFace<1, 0, 0>(*p, *q, CHUNK_SIZE - 1, y, z, end);
+			tesselateSingleBlockFace<1, 0, 0>(*p, *q, CHUNK_SIZE - 1, y, z);
 			p += CHUNK_SIZE;
 			q += CHUNK_SIZE;
 		}
@@ -253,11 +248,11 @@ inline void Tesselator::tesselateNeigh<1, 0, 0>(Block const *p, Block const *q, 
 }
 
 template<>
-inline void Tesselator::tesselateNeigh<0, -1, 0>(Block const *p, Block const *q, unsigned &end) {
+inline void Tesselator::tesselateNeigh<0, -1, 0>(Block const *p, Block const *q) {
 	q += CHUNK_SIZE * (CHUNK_SIZE - 1);
 	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
 		for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
-			tesselateSingleBlockFace<0, -1, 0>(*p, *q, x, (unsigned)0, z, end);
+			tesselateSingleBlockFace<0, -1, 0>(*p, *q, x, (unsigned)0, z);
 			++p;
 			++q;
 		}
@@ -267,11 +262,11 @@ inline void Tesselator::tesselateNeigh<0, -1, 0>(Block const *p, Block const *q,
 }
 
 template<>
-inline void Tesselator::tesselateNeigh<0, 1, 0>(Block const *p, Block const *q, unsigned &end) {
+inline void Tesselator::tesselateNeigh<0, 1, 0>(Block const *p, Block const *q) {
 	p += CHUNK_SIZE * (CHUNK_SIZE - 1);
 	for (unsigned z = 0; z < CHUNK_SIZE; ++z) {
 		for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
-			tesselateSingleBlockFace<0, 1, 0>(*p, *q, x, CHUNK_SIZE - 1, z, end);
+			tesselateSingleBlockFace<0, 1, 0>(*p, *q, x, CHUNK_SIZE - 1, z);
 			++p;
 			++q;
 		}
@@ -281,11 +276,11 @@ inline void Tesselator::tesselateNeigh<0, 1, 0>(Block const *p, Block const *q, 
 }
 
 template<>
-inline void Tesselator::tesselateNeigh<0, 0, -1>(Block const *p, Block const *q, unsigned &end) {
+inline void Tesselator::tesselateNeigh<0, 0, -1>(Block const *p, Block const *q) {
 	q += CHUNK_SIZE * CHUNK_SIZE * (CHUNK_SIZE - 1);
 	for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
 		for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
-			tesselateSingleBlockFace<0, 0, -1>(*p, *q, x, y, (unsigned)0, end);
+			tesselateSingleBlockFace<0, 0, -1>(*p, *q, x, y, (unsigned)0);
 			++p;
 			++q;
 		}
@@ -293,11 +288,11 @@ inline void Tesselator::tesselateNeigh<0, 0, -1>(Block const *p, Block const *q,
 }
 
 template<>
-inline void Tesselator::tesselateNeigh<0, 0, 1>(Block const *p, Block const *q, unsigned &end) {
+inline void Tesselator::tesselateNeigh<0, 0, 1>(Block const *p, Block const *q) {
 	p += CHUNK_SIZE * CHUNK_SIZE * (CHUNK_SIZE - 1);
 	for (unsigned y = 0; y < CHUNK_SIZE; ++y) {
 		for (unsigned x = 0; x < CHUNK_SIZE; ++x) {
-			tesselateSingleBlockFace<0, 0, 1>(*p, *q, x, y, CHUNK_SIZE - 1, end);
+			tesselateSingleBlockFace<0, 0, 1>(*p, *q, x, y, CHUNK_SIZE - 1);
 			++p;
 			++q;
 		}
