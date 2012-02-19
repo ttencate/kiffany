@@ -33,6 +33,9 @@ struct Flags {
 	float mieDirectionality;
 	unsigned atmosphereLayers;
 	unsigned atmosphereAngles;
+
+	// Benchmark flags
+	unsigned benchmarkSize;
 };
 
 extern Flags flags;

@@ -16,7 +16,7 @@ class Tesselator {
 	NormalArray *normals;
 
 	RawChunkData rawData;
-	RawChunkData rawNeighData; // Reused to save allocations
+	RawChunkData rawNeighData;
 
 	public:
 

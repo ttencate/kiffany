@@ -10,7 +10,7 @@
 int main(int argc, char **argv) {
 	parseCommandLine(argc, argv);
 
-	int size = 5;
+	int const size = flags.benchmarkSize;
 	int3 min = int3(-size / 2);
 	int3 max = min + int3(size);
 	std::cout << "Chunks from " << glm::to_string(min) << " to " << glm::to_string(max) << std::endl;

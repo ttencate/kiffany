@@ -44,6 +44,7 @@ po::options_description const &getOptionsDescription() {
 			("mie_directionality", po::value<float>(&flags.mieDirectionality)->default_value(0.7f), "Mie directonality (-1 backwards ... 0 symmetric ... 1 forwards)") // Bruneton and Neyret: 0.76f
 			("atmosphere_layers", po::value<unsigned>(&flags.atmosphereLayers)->default_value(8), "number of layers for atmosphere rendering")
 			("atmosphere_angles", po::value<unsigned>(&flags.atmosphereAngles)->default_value(256), "number of angles for atmosphere tables")
+			("benchmark_size", po::value<unsigned>(&flags.benchmarkSize)->default_value(5), "size of benchmark cube (will be NxNxN chunks)")
 		;
 		initialized = true;
 	}
