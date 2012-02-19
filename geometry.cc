@@ -140,8 +140,8 @@ class Tesselator {
 
 		void computeRaycastDirections() {
 			std::vector<vec3> directions;
-			// TODO fiddle with the values -- theoretical optimum is not clear ATM
-			vec3 const d = normalize(vec3(1.0f, 0.5f, 0.5f));
+			// Value of 0.4 chosen by handwaving
+			vec3 const d = normalize(vec3(1.0f, 0.4f, 0.4f));
 			directions.push_back(d);
 			directions.push_back(vec3(d.z, d.x, d.y));
 			directions.push_back(vec3(d.y, d.z, d.x));
