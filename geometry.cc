@@ -67,51 +67,25 @@ class Tesselator {
 		};
 
 		void computeRaycastDirections() {
+			std::vector<vec3> directions;
+			// TODO fiddle with the values -- theoretical optimum is not clear ATM
+			vec3 const d = normalize(vec3(1.0f, 0.5f, 0.5f));
+			directions.push_back(d);
+			directions.push_back(vec3(d.z, d.x, d.y));
+			directions.push_back(vec3(d.y, d.z, d.x));
+
 			unsigned index = 0;
 			for (int z = -1; z <= 1; z += 2) {
 				for (int y = -1; y <= 1; y += 2) {
 					for (int x = -1; x <= 1; x += 2) {
-						// TODO reinstate the 3 rays instead of one
-						raycastDirections[index].push_back(normalize(vec3(x, y, z)));
+						vec3 const mirror = vec3(x, y, z);
+						for (unsigned i = 0; i < directions.size(); ++i) {
+							raycastDirections[index].push_back(directions[i] * mirror);
+						}
 						++index;
 					}
 				}
 			}
-			/*
-			static short const *face = CUBE_FACES[FaceIndex<dx, dy, dz>::value];
-			vec3 const a(face[0], face[1], face[2]);
-			vec3 const b(face[3], face[4], face[5]);
-			vec3 const c(face[9], face[10], face[11]);
-			vec3 const tangent = b - a;
-			vec3 const binormal = c - a;
-			vec3 const normal = cross(tangent, binormal); // No need to normalize, edges are 1.
-
-			mat3 const rotation(tangent, binormal, normal);
-
-			// TODO We can avoid casting duplicate rays for adjacent quads by
-			// casting and caching them for each of the 8 'quadrants' separately.
-			std::vector<vec3> raycastDirections;
-
-			unsigned const THETA_STEPS = 3;
-			unsigned const PHI_STEPS = 4;
-			for (unsigned t = 1; t <= THETA_STEPS; ++t) {
-				float const theta = 0.5f * M_PI * t / (THETA_STEPS + 1);
-				for (unsigned p = 0; p < PHI_STEPS; ++p) {
-					float const phi = 2.0f * M_PI * (p + (t % 2 == 0 ? 0.5f : 0.0f)) / PHI_STEPS;
-					float const cosTheta = cosf(theta);
-					float const sinTheta = sinf(theta);
-					float const cosPhi = cosf(phi);
-					float const sinPhi = sinf(phi);
-					vec3 const direction = rotation * vec3(
-						cosTheta * cosPhi,
-						cosTheta * sinPhi,
-						sinTheta);
-					raycastDirections.push_back(direction);
-				}
-			}
-
-			return raycastDirections;
-			*/
 		}
 
 		template<int dx, int dy, int dz>
