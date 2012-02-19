@@ -1,5 +1,6 @@
 #include "chunkdata.h"
 #include "chunkmap.h"
+#include "flags.h"
 #include "octree.h"
 #include "stats.h"
 #include "terragen.h"
@@ -7,11 +8,9 @@
 #include <sstream>
 
 int main(int argc, char **argv) {
+	parseCommandLine(argc, argv);
+
 	int size = 5;
-	if (argc >= 2) {
-		std::istringstream ss(argv[1]);
-		ss >> size;
-	}
 	int3 min = int3(-size / 2);
 	int3 max = min + int3(size);
 	std::cout << "Chunks from " << glm::to_string(min) << " to " << glm::to_string(max) << std::endl;
