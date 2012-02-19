@@ -17,6 +17,52 @@ template<> int FaceIndex< 0,  1,  0>::value = 3;
 template<> int FaceIndex< 0,  0, -1>::value = 4;
 template<> int FaceIndex< 0,  0,  1>::value = 5;
 
+short const CUBE_FACES[6][12] = {
+	{ 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0 },
+	{ 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1 },
+	{ 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1 },
+	{ 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0 },
+	{ 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0 },
+	{ 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1 }
+};
+
+template<int dx, int dy, int dz>
+std::vector<vec3> computeRaycastDirections() {
+	static short const *face = CUBE_FACES[FaceIndex<dx, dy, dz>::value];
+	vec3 const a(face[0], face[1], face[2]);
+	vec3 const b(face[3], face[4], face[5]);
+	vec3 const c(face[9], face[10], face[11]);
+	vec3 const tangent = b - a;
+	vec3 const binormal = c - a;
+	vec3 const normal = cross(tangent, binormal); // No need to normalize, edges are 1.
+
+	mat3 const rotation(tangent, binormal, normal);
+
+	// TODO We can avoid casting duplicate rays for adjacent quads by
+	// casting and caching them for each of the 8 'quadrants' separately.
+	std::vector<vec3> raycastDirections;
+
+	unsigned const THETA_STEPS = 3;
+	unsigned const PHI_STEPS = 4;
+	for (unsigned t = 1; t <= THETA_STEPS; ++t) {
+		float const theta = 0.5f * M_PI * t / (THETA_STEPS + 1);
+		for (unsigned p = 0; p < PHI_STEPS; ++p) {
+			float const phi = 2.0f * M_PI * (p + (t % 2 == 0 ? 0.5f : 0.0f)) / PHI_STEPS;
+			float const cosTheta = cosf(theta);
+			float const sinTheta = sinf(theta);
+			float const cosPhi = cosf(phi);
+			float const sinPhi = sinf(phi);
+			vec3 const direction = rotation * vec3(
+				cosTheta * cosPhi,
+				cosTheta * sinPhi,
+				sinTheta);
+			raycastDirections.push_back(direction);
+		}
+	}
+
+	return raycastDirections;
+}
+
 template<int dx, int dy, int dz>
 inline void tesselateSingleBlockFace(
 		Block block, Block neigh,
@@ -25,7 +71,7 @@ inline void tesselateSingleBlockFace(
 		VertexArray &vertices, NormalArray &normals, unsigned &end)
 {
 	static char const N = 0x7F;
-	/*
+	/* TODO Boring normals... maybe allow these through a flag?
 	static char const n[12] = {
 		dx * N, dy * N, dz * N,
 		dx * N, dy * N, dz * N,
@@ -33,15 +79,8 @@ inline void tesselateSingleBlockFace(
 		dx * N, dy * N, dz * N,
 	};
 	*/
-	static short const faces[6][12] = {
-		{ 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0 },
-		{ 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1 },
-		{ 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1 },
-		{ 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0 },
-		{ 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0 },
-		{ 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1 }
-	};
-	static short const *face = faces[FaceIndex<dx, dy, dz>::value];
+	static short const *face = CUBE_FACES[FaceIndex<dx, dy, dz>::value];
+	static std::vector<vec3> const raycastDirections = computeRaycastDirections<dx, dy, dz>();
 
 	if (needsDrawing(block) && needsDrawing(block, neigh)) {
 		int3 const pos(x, y, z);
@@ -60,46 +99,22 @@ inline void tesselateSingleBlockFace(
 		float const cutoff = CHUNK_SIZE;
 		Raycaster raycast(chunkMap, cutoff, STONE_BLOCK, BLOCK_MASK);
 
-		// TODO precalc as much as possible
-		vec3 const a(v[0], v[1], v[2]);
-		vec3 const b(v[3], v[4], v[5]);
-		vec3 const c(v[9], v[10], v[11]);
-		vec3 const tangent = b - a;
-		vec3 const binormal = c - a;
-		vec3 const normal = cross(tangent, binormal); // No need to normalize, edges are 1.
-
-		mat3 const rotation(tangent, binormal, normal);
-
-		// TODO We can avoid casting duplicate rays for adjacent quads by
-		// casting and caching them for each of the 8 'quadrants' separately.
 		for (unsigned j = 0; j < 4; ++j) {
+			// TODO try not to convert from short
 			vec3 const vertex(vertices[end], vertices[end + 1], vertices[end + 2]);
 
 			vec3 bentNormal(0, 0, 0);
 			vec3 sum(0, 0, 0);
-			unsigned const THETA_STEPS = 3;
-			unsigned const PHI_STEPS = 4;
-			for (unsigned t = 1; t <= THETA_STEPS; ++t) {
-				float const theta = 0.5f * M_PI * t / (THETA_STEPS + 1);
-				for (unsigned p = 0; p < PHI_STEPS; ++p) {
-					float const phi = 2.0f * M_PI * (p + (t % 2 == 0 ? 0.5f : 0.0f)) / PHI_STEPS;
-					float const cosTheta = cosf(theta);
-					float const sinTheta = sinf(theta);
-					float const cosPhi = cosf(phi);
-					float const sinPhi = sinf(phi);
-					vec3 const direction = rotation * vec3(
-						cosTheta * cosPhi,
-						cosTheta * sinPhi,
-						sinTheta);
-					sum += direction;
+			for (unsigned i = 0; i < raycastDirections.size(); ++i) {
+				vec3 const direction = raycastDirections[i];
+				sum += direction;
 
-					RaycastResult result = raycast(index, vertex + 0.1f * direction, direction);
-					float factor = 1.0f;
-					if (result.status == RaycastResult::HIT) {
-						factor = result.length / cutoff;
-					}
-					bentNormal += factor * direction;
+				RaycastResult result = raycast(index, vertex + 0.1f * direction, direction);
+				float factor = 1.0f;
+				if (result.status == RaycastResult::HIT) {
+					factor = result.length / cutoff;
 				}
+				bentNormal += factor * direction;
 			}
 			bentNormal /= length(sum);
 
