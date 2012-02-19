@@ -77,6 +77,7 @@ inline T lerp(C pos, uvec3 size, T const *values) {
 	int yb = (ya + 1) % size[1];
 	int za = (int)p.z;
 	int zb = (za + 1) % size[2];
+	// TODO floorf (called by fract) takes about 30% of generation time!
 	C f = fract(p);
 	return mix(
 			mix(

@@ -8,6 +8,9 @@
 
 class Tesselator {
 
+	std::vector<vec3> raycastDirections[8];
+	Raycaster raycast;
+
 	ChunkMap const &chunkMap;
 	
 	int3 index;
@@ -20,10 +23,12 @@ class Tesselator {
 
 	public:
 
-		Tesselator(ChunkMap const &chunkMap)
+		Tesselator(ChunkMap const &chunkMap, float raycastCutoff = CHUNK_SIZE)
 		:
+			raycast(chunkMap, raycastCutoff, STONE_BLOCK, BLOCK_MASK),
 			chunkMap(chunkMap)
 		{
+			computeRaycastDirections();
 		}
 
 		void tesselate(int3 index, ChunkGeometryPtr geometry) {
@@ -61,8 +66,18 @@ class Tesselator {
 			static int value;
 		};
 
-		template<int dx, int dy, int dz>
-		std::vector<vec3> computeRaycastDirections() {
+		void computeRaycastDirections() {
+			unsigned index = 0;
+			for (int z = -1; z <= 1; z += 2) {
+				for (int y = -1; y <= 1; y += 2) {
+					for (int x = -1; x <= 1; x += 2) {
+						// TODO reinstate the 3 rays instead of one
+						raycastDirections[index].push_back(normalize(vec3(x, y, z)));
+						++index;
+					}
+				}
+			}
+			/*
 			static short const *face = CUBE_FACES[FaceIndex<dx, dy, dz>::value];
 			vec3 const a(face[0], face[1], face[2]);
 			vec3 const b(face[3], face[4], face[5]);
@@ -96,26 +111,36 @@ class Tesselator {
 			}
 
 			return raycastDirections;
+			*/
 		}
 
 		template<int dx, int dy, int dz>
 		inline vec3 computeBentNormal(vec3 vertex) {
-			static std::vector<vec3> const raycastDirections = computeRaycastDirections<dx, dy, dz>();
+			static unsigned raycastDirectionIndicesTable[6][4] = {
+				{ 0, 2, 4, 6 },
+				{ 1, 3, 5, 7 },
+				{ 0, 1, 4, 5 },
+				{ 2, 3, 6, 7 },
+				{ 0, 1, 2, 3 },
+				{ 4, 5, 6, 7 },
+			};
+			static unsigned *raycastDirectionIndices = raycastDirectionIndicesTable[FaceIndex<dx, dy, dz>::value];
 
-			float const cutoff = CHUNK_SIZE;
-			Raycaster raycast(chunkMap, cutoff, STONE_BLOCK, BLOCK_MASK);
 			vec3 bentNormal(0, 0, 0);
 			vec3 sum(0, 0, 0);
-			for (unsigned i = 0; i < raycastDirections.size(); ++i) {
-				vec3 const direction = raycastDirections[i];
-				sum += direction;
+			for (unsigned i = 0; i < 4; ++i) {
+				std::vector<vec3> const &raycastDirections = this->raycastDirections[raycastDirectionIndices[i]];
+				for (unsigned j = 0; j < raycastDirections.size(); ++j) {
+					vec3 const direction = raycastDirections[j];
+					sum += direction;
 
-				RaycastResult result = raycast(index, vertex + 0.1f * direction, direction);
-				float factor = 1.0f;
-				if (result.status == RaycastResult::HIT) {
-					factor = result.length / cutoff;
+					RaycastResult result = raycast(index, vertex + 0.1f * direction, direction);
+					float factor = 1.0f;
+					if (result.status == RaycastResult::HIT) {
+						factor = result.length / raycast.getCutoff();
+					}
+					bentNormal += factor * direction;
 				}
-				bentNormal += factor * direction;
 			}
 			return bentNormal / length(sum);
 		}
