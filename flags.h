@@ -15,6 +15,7 @@ struct Flags {
 	float startX;
 	float startY;
 	float startZ;
+	bool bentNormals;
 	float startTime;
 	float dayLength;
 	unsigned dayOfYear;

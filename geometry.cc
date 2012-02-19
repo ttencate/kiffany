@@ -2,6 +2,7 @@
 
 #include "chunkdata.h"
 #include "chunkmap.h"
+#include "flags.h"
 #include "raycaster.h"
 #include "stats.h"
 
@@ -93,14 +94,12 @@ inline void tesselateSingleBlockFace(
 		VertexArray &vertices, NormalArray &normals, unsigned &end)
 {
 	static char const N = 0x7F;
-	/* TODO Boring normals... maybe allow these through a flag?
 	static char const n[12] = {
 		dx * N, dy * N, dz * N,
 		dx * N, dy * N, dz * N,
 		dx * N, dy * N, dz * N,
 		dx * N, dy * N, dz * N,
 	};
-	*/
 	static short const *face = CUBE_FACES[FaceIndex<dx, dy, dz>::value];
 
 	if (needsDrawing(block) && needsDrawing(block, neigh)) {
@@ -116,14 +115,18 @@ inline void tesselateSingleBlockFace(
 		vertices.resize(end + 12);
 		normals.resize(end + 12);
 		memcpy(&vertices[end], v, 12 * sizeof(short));
-
-		for (unsigned j = 0; j < 4; ++j) {
-			// TODO try not to convert from short
-			vec3 const vertex(vertices[end], vertices[end + 1], vertices[end + 2]);
-			vec3 normal = computeBentNormal<dx, dy, dz>(vertex, index, chunkMap);
-			normals[end++] = (int)(N * normal.x);
-			normals[end++] = (int)(N * normal.y);
-			normals[end++] = (int)(N * normal.z);
+		if (flags.bentNormals) {
+			for (unsigned j = 0; j < 4; ++j) {
+				// TODO try not to convert from short
+				vec3 const vertex(vertices[end], vertices[end + 1], vertices[end + 2]);
+				vec3 normal = computeBentNormal<dx, dy, dz>(vertex, index, chunkMap);
+				normals[end++] = (int)(N * normal.x);
+				normals[end++] = (int)(N * normal.y);
+				normals[end++] = (int)(N * normal.z);
+			}
+		} else {
+			memcpy(&normals[end], n, 12 * sizeof(char));
+			end += 12;
 		}
 	}
 }
