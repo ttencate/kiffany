@@ -124,7 +124,16 @@ AtmosLayers::Densities AtmosLayers::computeDensities(AtmosParams const &params, 
 	return densities;
 }
 
-inline vec3 transmittanceToNextLayer(Ray ray, AtmosParams const &params, AtmosLayers const &layers, unsigned layer) {
+Atmosphere::Atmosphere(AtmosParams const &params)
+:
+	params(params),
+	layers(params),
+	transmittanceTable(buildTransmittanceTable()),
+	totalTransmittanceTable(buildTotalTransmittanceTable())
+{
+}
+
+inline vec3 Atmosphere::transmittanceToNextLayer(Ray ray, unsigned layer) const {
 	vec3 const rayleighExtinctionCoefficient = params.rayleighCoefficient;
 	vec3 const mieExtinctionCoefficient = params.mieCoefficient + params.mieAbsorption;
 
@@ -153,7 +162,7 @@ void debugPrintTable(std::ostream &out, Vec3Table2D const &table) {
 	}
 }
 
-Vec3Table2D buildTransmittanceTable(AtmosParams const &params, AtmosLayers const &layers) {
+Vec3Table2D Atmosphere::buildTransmittanceTable() const {
 	unsigned const numAngles = params.numAngles;
 	unsigned const numLayers = params.numLayers;
 
@@ -166,7 +175,7 @@ Vec3Table2D buildTransmittanceTable(AtmosParams const &params, AtmosLayers const
 		for (unsigned layer = 0; layer < numLayers; ++layer) {
 			float const height = layers.heights[layer];
 			Ray ray(height, angle);
-			vec3 transmittance = transmittanceToNextLayer(ray, params, layers, layer);
+			vec3 transmittance = transmittanceToNextLayer(ray, layer);
 			transmittanceTable.set(uvec2(layer, a), transmittance);
 		}
 	}
@@ -179,7 +188,7 @@ Vec3Table2D buildTransmittanceTable(AtmosParams const &params, AtmosLayers const
 // Transmittance from the given layer to outer space,
 // for the given angle on that layer.
 // Zero if the earth is in between.
-Vec3Table2D buildTotalTransmittanceTable(AtmosParams const &params, AtmosLayers const &layers) {
+Vec3Table2D Atmosphere::buildTotalTransmittanceTable() const {
 	unsigned const numAngles = params.numAngles;
 	unsigned const numLayers = params.numLayers;
 
@@ -201,7 +210,7 @@ Vec3Table2D buildTotalTransmittanceTable(AtmosParams const &params, AtmosLayers 
 				float const nextAngle = ray.angleUpwards(layers.heights[layer + 1]);
 				
 				totalTransmittance =
-					transmittanceToNextLayer(ray, params, layers, layer) *
+					transmittanceToNextLayer(ray, layer) *
 					totalTransmittanceTable(vec2(layer + 1, nextAngle));
 			}
 			totalTransmittanceTable.set(uvec2(layer, a), totalTransmittance);
@@ -222,13 +231,13 @@ Vec3Table2D buildTotalTransmittanceTable(AtmosParams const &params, AtmosLayers 
 				// Ray hits the layer below
 				float const nextAngle = ray.angleDownwards(layers.heights[layer - 1]);
 				totalTransmittance =
-					transmittanceToNextLayer(ray, params, layers, layer) *
+					transmittanceToNextLayer(ray, layer) *
 					totalTransmittanceTable(vec2(layer - 1, nextAngle));
 			} else {
 				// Ray misses the layer below, hits the current one from below
 				float const nextAngle = ray.angleToSameHeight();
 				totalTransmittance =
-					transmittanceToNextLayer(ray, params, layers, layer) *
+					transmittanceToNextLayer(ray, layer) *
 					totalTransmittanceTable(vec2(layer, nextAngle));
 			}
 			totalTransmittanceTable.set(uvec2(layer, a), totalTransmittance);

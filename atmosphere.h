@@ -4,6 +4,8 @@
 #include "maths.h"
 #include "table.h"
 
+#include <boost/noncopyable.hpp>
+
 #include <vector>
 
 /*
@@ -79,9 +81,34 @@ class AtmosLayers {
 
 typedef Table<vec3, uvec2, vec2> Vec3Table2D;
 
-vec3 transmittanceToNextLayer(Ray ray, AtmosParams const &params, AtmosLayers const &layers, unsigned layer);
+class Atmosphere
+:
+	boost::noncopyable
+{
 
-Vec3Table2D buildTransmittanceTable(AtmosParams const &params, AtmosLayers const &layers);
-Vec3Table2D buildTotalTransmittanceTable(AtmosParams const &params, AtmosLayers const &layers);
+	AtmosParams const params;
+	AtmosLayers const layers;
+
+	Vec3Table2D const transmittanceTable;
+	Vec3Table2D const totalTransmittanceTable;
+
+	public:
+
+		Atmosphere(AtmosParams const &params);
+
+		AtmosParams const &getParams() const { return params; }
+		AtmosLayers const &getLayers() const { return layers; }
+
+		Vec3Table2D const &getTransmittanceTable() const { return transmittanceTable; }
+		Vec3Table2D const &getTotalTransmittanceTable() const { return totalTransmittanceTable; }
+
+	private:
+
+		vec3 transmittanceToNextLayer(Ray ray, unsigned layer) const;
+
+		Vec3Table2D buildTransmittanceTable() const;
+		Vec3Table2D buildTotalTransmittanceTable() const;
+
+};
 
 #endif

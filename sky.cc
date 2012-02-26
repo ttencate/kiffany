@@ -16,13 +16,10 @@ void tableToTexture(Vec3Table2D const &table, GLTexture &texture) {
 	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
-Sky::Sky(AtmosParams const &params, AtmosLayers const &layers, Sun const *sun)
+Sky::Sky(Atmosphere const *atmosphere, Sun const *sun)
 :
-	params(params),
-	layers(layers),
-	sun(sun),
-	transmittanceTable(buildTransmittanceTable(params, layers)),
-	totalTransmittanceTable(buildTotalTransmittanceTable(params, layers))
+	atmosphere(atmosphere),
+	sun(sun)
 {
 
 	int const v[] = {
@@ -58,8 +55,8 @@ Sky::Sky(AtmosParams const &params, AtmosLayers const &layers, Sun const *sun)
 	};
 	vertices.putData(sizeof(v), v, GL_STATIC_DRAW);
 
-	tableToTexture(transmittanceTable, transmittanceTexture);
-	tableToTexture(totalTransmittanceTable, totalTransmittanceTexture);
+	tableToTexture(atmosphere->getTransmittanceTable(), transmittanceTexture);
+	tableToTexture(atmosphere->getTotalTransmittanceTable(), totalTransmittanceTexture);
 
 	shaderProgram.loadAndLink("shaders/sky.vert", "shaders/sky.frag");
 }
@@ -79,6 +76,9 @@ void Sky::render() {
 
 	useProgram(shaderProgram.getProgram());
 
+	AtmosParams const &params = atmosphere->getParams();
+	AtmosLayers const &layers = atmosphere->getLayers();
+
 	shaderProgram.setUniform("params.earthRadius", params.earthRadius);
 	shaderProgram.setUniform("params.rayleighCoefficient", vec3(params.rayleighCoefficient));
 	shaderProgram.setUniform("params.mieCoefficient", vec3(params.mieCoefficient));
@@ -92,11 +92,12 @@ void Sky::render() {
 	shaderProgram.setUniform("layers.rayleighDensities", layers.rayleighDensities);
 	shaderProgram.setUniform("layers.mieDensities", layers.mieDensities);
 
-	activeTexture(1);
-	bindTexture(GL_TEXTURE_RECTANGLE, totalTransmittanceTexture);
 	activeTexture(0);
 	bindTexture(GL_TEXTURE_RECTANGLE, transmittanceTexture);
 	shaderProgram.setUniform("transmittanceSampler", 0);
+
+	activeTexture(1);
+	bindTexture(GL_TEXTURE_RECTANGLE, totalTransmittanceTexture);
 	shaderProgram.setUniform("totalTransmittanceSampler", 1);
 
 	bindFragDataLocation(shaderProgram.getProgram(), 0, "scatteredLight");
