@@ -297,7 +297,7 @@ int main(int argc, char **argv) {
 			&camera,
 			new PerlinTerrainGenerator(32, flags.seed),
 			sun,
-			new Lighting(sun),
+			new Lighting(atmosphere, sun),
 			new Sky(atmosphere, sun));
 	::world = &world;
 

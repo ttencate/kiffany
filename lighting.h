@@ -1,15 +1,19 @@
 #ifndef LIGHTING_H
 #define LIGHTING_H
 
-#include "space.h"
+#include "maths.h"
+
+class GLAtmosphere;
+class Sun;
 
 class Lighting {
 
+	GLAtmosphere const *atmosphere;
 	Sun const *sun;
 
 	public:
 
-		Lighting(Sun const *sun);
+		Lighting(GLAtmosphere const *atmosphere, Sun const *sun);
 
 		vec4 ambientColor() const;
 		vec4 sunColor() const;

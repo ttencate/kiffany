@@ -1,9 +1,12 @@
 #include "lighting.h"
 
+#include "atmosphere.h"
 #include "gl.h"
+#include "space.h"
 
-Lighting::Lighting(Sun const *sun)
+Lighting::Lighting(GLAtmosphere const *atmosphere, Sun const *sun)
 :
+	atmosphere(atmosphere),
 	sun(sun)
 {
 }
