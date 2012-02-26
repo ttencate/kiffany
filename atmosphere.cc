@@ -102,25 +102,25 @@ AtmosphereLayers::AtmosphereLayers(Atmosphere const &atmosphere, unsigned numLay
 }
 
 // Ray length from the given layer to the next,
-// where 'next' might be the one above (for angle <= 0.5fpi),
-// the layer itself (for 0.5fpi < angle < x),
+// where 'next' might be the one above (for angle <= 0.5pi),
+// the layer itself (for 0.5pi < angle < x),
 // or the layer below it (for x <= angle).
-inline float rayLengthToNextLayer(Ray ray, AtmosphereLayers const &layers, unsigned layer) {
-	if (ray.angle <= 0.5f * M_PI && layer == layers.numLayers - 1) {
+float AtmosphereLayers::rayLengthToNextLayer(Ray ray, unsigned layer) const {
+	if (ray.angle <= 0.5f * M_PI && layer == numLayers - 1) {
 		// Ray goes up into space
 		return 0.0f;
 	} else if (ray.angle <= 0.5f * M_PI) {
 		// Ray goes up, hits layer above
-		return rayLengthUpwards(ray, layers.heights[layer + 1]);
+		return rayLengthUpwards(ray, heights[layer + 1]);
 	} else if (layer == 0) {
 		// Ray goes down, into the ground; near infinite
 		return 1e30f;
-	} else if (!rayHitsHeight(ray, layers.heights[layer - 1])) {
+	} else if (!rayHitsHeight(ray, heights[layer - 1])) {
 		// Ray goes down, misses layer below, hits current layer from below
 		return rayLengthToSameHeight(ray);
 	} else {
 		// Ray goes down, hits layer below
-		return rayLengthDownwards(ray, layers.heights[layer - 1]);
+		return rayLengthDownwards(ray, heights[layer - 1]);
 	}
 }
 
@@ -128,8 +128,8 @@ inline vec3 transmittanceToNextLayer(Ray ray, Atmosphere const &atmosphere, Atmo
 	vec3 const rayleighExtinctionCoefficient = atmosphere.rayleighCoefficient;
 	vec3 const mieExtinctionCoefficient = atmosphere.mieCoefficient + atmosphere.mieAbsorption;
 
-	float rayLength = rayLengthToNextLayer(ray, layers, layer);
-	unsigned nextLayer = ray.angle <= 0.5 * M_PI ? layer : (std::max(1u, layer) - 1);
+	float rayLength = layers.rayLengthToNextLayer(ray, layer);
+	unsigned nextLayer = ray.angle <= 0.5f * M_PI ? layer : (std::max(1u, layer) - 1);
 	vec3 const extinction =
 		rayleighExtinctionCoefficient * layers.rayleighDensities[nextLayer] +
 		mieExtinctionCoefficient * layers.mieDensities[nextLayer];

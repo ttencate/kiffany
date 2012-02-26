@@ -71,11 +71,12 @@ class AtmosphereLayers {
 		Densities const mieDensities;
 
 		AtmosphereLayers(Atmosphere const &atmosphere, unsigned numLayers, unsigned numAngles);
+
+		float rayLengthToNextLayer(Ray ray, unsigned layer) const;
 };
 
 typedef Table<vec3, uvec2, vec2> Vec3Table2D;
 
-float rayLengthToNextLayer(Ray ray, AtmosphereLayers const &layers, unsigned layer);
 vec3 transmittanceToNextLayer(Ray ray, Atmosphere const &atmosphere, AtmosphereLayers const &layers, unsigned layer);
 
 Vec3Table2D buildTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers);
