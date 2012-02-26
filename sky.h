@@ -85,7 +85,7 @@ float rayLengthToNextLayer(Ray ray, AtmosphereLayers const &layers, unsigned lay
 vec3 transmittanceToNextLayer(Ray ray, Atmosphere const &atmosphere, AtmosphereLayers const &layers, unsigned layer);
 
 Vec3Table2D buildTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers);
-Vec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers);
+Vec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers, Vec3Table2D const &transmittanceTable);
 
 // TODO in the shader world, everything below this line needs refactor
 
@@ -95,8 +95,10 @@ class Sky : boost::noncopyable {
 	AtmosphereLayers const layers;
 	Sun const *sun;
 
+	Vec3Table2D transmittanceTable;
 	Vec3Table2D totalTransmittanceTable;
 
+	GLTexture transmittanceTexture;
 	GLTexture totalTransmittanceTexture;
 
 	Buffer vertices;

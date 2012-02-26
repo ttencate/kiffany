@@ -112,7 +112,6 @@ AtmosphereLayers::AtmosphereLayers(Atmosphere const &atmosphere, unsigned numLay
 // where 'next' might be the one above (for angle <= 0.5fpi),
 // the layer itself (for 0.5fpi < angle < x),
 // or the layer below it (for x <= angle).
-// ray.height is assumed to be equal to layers.height[layer].
 inline float rayLengthToNextLayer(Ray ray, AtmosphereLayers const &layers, unsigned layer) {
 	if (ray.angle <= 0.5f * M_PI && layer == layers.numLayers - 1) {
 		// Ray goes up into space
@@ -189,7 +188,7 @@ Vec3Table2D buildTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLaye
 // Transmittance from the given layer to outer space,
 // for the given angle on that layer.
 // Zero if the earth is in between.
-Vec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers) {
+Vec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers, Vec3Table2D const &transmittanceTable) {
 	unsigned const numAngles = layers.numAngles;
 	unsigned const numLayers = layers.numLayers;
 
@@ -211,7 +210,7 @@ Vec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, Atmospher
 				float const nextAngle = rayAngleUpwards(ray, layers.heights[layer + 1]);
 				
 				totalTransmittance =
-					transmittanceToNextLayer(ray, atmosphere, layers, layer) *
+					transmittanceTable(vec2(layer, angle)) *
 					totalTransmittanceTable(vec2(layer + 1, nextAngle));
 			}
 			totalTransmittanceTable.set(uvec2(layer, a), totalTransmittance);
@@ -232,13 +231,13 @@ Vec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, Atmospher
 				// Ray hits the layer below
 				float const nextAngle = rayAngleDownwards(ray, layers.heights[layer - 1]);
 				totalTransmittance =
-					transmittanceToNextLayer(ray, atmosphere, layers, layer) *
+					transmittanceTable(vec2(layer, angle)) *
 					totalTransmittanceTable(vec2(layer - 1, nextAngle));
 			} else {
 				// Ray misses the layer below, hits the current one from below
 				float const nextAngle = rayAngleToSameHeight(ray);
 				totalTransmittance =
-					transmittanceToNextLayer(ray, atmosphere, layers, layer) *
+					transmittanceTable(vec2(layer, angle)) *
 					totalTransmittanceTable(vec2(layer, nextAngle));
 			}
 			totalTransmittanceTable.set(uvec2(layer, a), totalTransmittance);
@@ -265,7 +264,8 @@ Sky::Sky(Atmosphere const &atmosphere, AtmosphereLayers const &layers, Sun const
 	atmosphere(atmosphere),
 	layers(layers),
 	sun(sun),
-	totalTransmittanceTable(buildTotalTransmittanceTable(atmosphere, layers))
+	transmittanceTable(buildTransmittanceTable(atmosphere, layers)),
+	totalTransmittanceTable(buildTotalTransmittanceTable(atmosphere, layers, transmittanceTable))
 {
 
 	int const v[] = {
@@ -301,6 +301,7 @@ Sky::Sky(Atmosphere const &atmosphere, AtmosphereLayers const &layers, Sun const
 	};
 	vertices.putData(sizeof(v), v, GL_STATIC_DRAW);
 
+	tableToTexture(transmittanceTable, transmittanceTexture);
 	tableToTexture(totalTransmittanceTable, totalTransmittanceTexture);
 
 	shaderProgram.loadAndLink("shaders/sky.vert", "shaders/sky.frag");
@@ -322,11 +323,9 @@ void Sky::render() {
 	useProgram(shaderProgram.getProgram());
 
 	shaderProgram.setUniform("atmosphere.earthRadius", atmosphere.earthRadius);
-	shaderProgram.setUniform("atmosphere.rayleighCoefficient", atmosphere.rayleighCoefficient);
-	shaderProgram.setUniform("atmosphere.rayleighExtinctionCoefficient", atmosphere.rayleighCoefficient);
-	shaderProgram.setUniform("atmosphere.mieCoefficient", atmosphere.mieCoefficient);
+	shaderProgram.setUniform("atmosphere.rayleighCoefficient", vec3(atmosphere.rayleighCoefficient));
+	shaderProgram.setUniform("atmosphere.mieCoefficient", vec3(atmosphere.mieCoefficient));
 	shaderProgram.setUniform("atmosphere.mieDirectionality", atmosphere.mieDirectionality);
-	shaderProgram.setUniform("atmosphere.mieExtinctionCoefficient", atmosphere.mieCoefficient + atmosphere.mieAbsorption);
 	shaderProgram.setUniform("sun.angularRadius", sun->getAngularRadius());
 	shaderProgram.setUniform("sun.color", sun->getColor());
 	shaderProgram.setUniform("sun.direction", sun->getDirection());
@@ -336,9 +335,12 @@ void Sky::render() {
 	shaderProgram.setUniform("layers.rayleighDensities", layers.rayleighDensities);
 	shaderProgram.setUniform("layers.mieDensities", layers.mieDensities);
 
-	activeTexture(0);
+	activeTexture(1);
 	bindTexture(GL_TEXTURE_RECTANGLE, totalTransmittanceTexture);
-	shaderProgram.setUniform("totalTransmittanceSampler", 0);
+	activeTexture(0);
+	bindTexture(GL_TEXTURE_RECTANGLE, transmittanceTexture);
+	shaderProgram.setUniform("transmittanceSampler", 0);
+	shaderProgram.setUniform("totalTransmittanceSampler", 1);
 
 	bindFragDataLocation(shaderProgram.getProgram(), 0, "scatteredLight");
 
