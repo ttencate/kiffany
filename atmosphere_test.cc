@@ -20,31 +20,9 @@
 #define BOOST_CHECK_CLOSE_3(a, b, eps) BOOST_LEVEL_CLOSE_3(CHECK, a, b, eps)
 #define BOOST_REQUIRE_CLOSE_3(a, b, eps) BOOST_LEVEL_CLOSE_3(REQUIRE, a, b, eps)
 
-namespace {
-	struct Fixture {
-		AtmosParams params;
-		AtmosLayers layers;
-		AtmosParams zeroRadiusEarthAtmosParams;
-		AtmosLayers zeroRadiusEarthLayers;
-		Fixture()
-		:
-			params(),
-			layers(params, 8, 16),
-			zeroRadiusEarthAtmosParams(createZeroRadiusEarthAtmosParams()),
-			zeroRadiusEarthLayers(zeroRadiusEarthAtmosParams, 8, 16)
-		{
-		}
-		static AtmosParams createZeroRadiusEarthAtmosParams() {
-			AtmosParams params;
-			params.earthRadius = 0;
-			return params;
-		}
-	};
-}
+BOOST_AUTO_TEST_SUITE(RayTest)
 
-BOOST_FIXTURE_TEST_SUITE(AtmosphereTest, Fixture)
-
-float const EPS = 0.01; // %
+float const EPS = 0.0001; // %
 
 BOOST_AUTO_TEST_CASE(TestRayLengthUpwardsStraightUp) {
 	BOOST_CHECK_CLOSE( 5.0, Ray( 0.0, 0.0).lengthUpwards( 5.0), EPS);
@@ -67,6 +45,34 @@ BOOST_AUTO_TEST_CASE(TestRayLengthDownwards) {
 	BOOST_CHECK_EQUAL(10.0, Ray(20.0, M_PI).lengthDownwards(10.0));
 }
 
+BOOST_AUTO_TEST_SUITE_END()
+
+namespace {
+	struct Fixture {
+		AtmosParams params;
+		AtmosLayers layers;
+		AtmosParams zeroRadiusEarthAtmosParams;
+		AtmosLayers zeroRadiusEarthLayers;
+		Fixture()
+		:
+			params(),
+			layers(params, 8, 16),
+			zeroRadiusEarthAtmosParams(createZeroRadiusEarthAtmosParams()),
+			zeroRadiusEarthLayers(zeroRadiusEarthAtmosParams, 8, 16)
+		{
+		}
+		static AtmosParams createZeroRadiusEarthAtmosParams() {
+			AtmosParams params;
+			params.earthRadius = 0;
+			return params;
+		}
+	};
+}
+
+BOOST_FIXTURE_TEST_SUITE(AtmosLayersTest, Fixture)
+
+float const EPS = 0.01; // %
+
 BOOST_AUTO_TEST_CASE(TestLayerHeights) {
 	float const thickness = params.rayleighThickness;
 	float const EPS = 0.1; // %
@@ -79,6 +85,12 @@ BOOST_AUTO_TEST_CASE(TestLayerHeights) {
 	}
 	BOOST_CHECK_EQUAL(params.earthRadius + params.atmosphereThickness, layers.heights[layers.numLayers - 1]);
 }
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE(AtmosphereTest, Fixture)
+
+float const EPS = 0.01; // %
 
 BOOST_AUTO_TEST_CASE(TestBuildTransmittanceTable) {
 	Vec3Table2D transmittanceTable = buildTransmittanceTable(params, layers);
