@@ -63,14 +63,14 @@ AtmosParams::AtmosParams()
 	rayleighCoefficient(flags.rayleighCoefficient * vec3(1.00f, 2.33f, 5.71f)),
 	mieCoefficient(flags.mieCoefficient),
 	mieAbsorption(flags.mieAbsorption),
-	mieDirectionality(flags.mieDirectionality)
+	mieDirectionality(flags.mieDirectionality),
+	numLayers(flags.atmosphereLayers),
+	numAngles(flags.atmosphereAngles)
 {
 }
 
-AtmosLayers::AtmosLayers(AtmosParams const &params, unsigned numLayers, unsigned numAngles)
+AtmosLayers::AtmosLayers(AtmosParams const &params)
 :
-	numLayers(numLayers),
-	numAngles(numAngles),
 	heights(computeHeights(params)),
 	rayleighDensities(computeDensities(params, params.rayleighThickness)),
 	mieDensities(computeDensities(params, params.mieThickness))
@@ -82,7 +82,7 @@ AtmosLayers::AtmosLayers(AtmosParams const &params, unsigned numLayers, unsigned
 // the layer itself (for 0.5pi < angle < x),
 // or the layer below it (for x <= angle).
 float AtmosLayers::rayLengthToNextLayer(Ray ray, unsigned layer) const {
-	if (ray.angle <= 0.5f * M_PI && layer == numLayers - 1) {
+	if (ray.angle <= 0.5f * M_PI && layer == heights.size() - 1) {
 		// Ray goes up into space
 		return 0.0f;
 	} else if (ray.angle <= 0.5f * M_PI) {
@@ -101,6 +101,7 @@ float AtmosLayers::rayLengthToNextLayer(Ray ray, unsigned layer) const {
 }
 
 AtmosLayers::Heights AtmosLayers::computeHeights(AtmosParams const &params) {
+	unsigned const numLayers = params.numLayers;
 	Heights heights(numLayers);
 	for (unsigned i = 0; i < numLayers - 1; ++i) {
 		float const containedFraction = 1.0f - (float)i / (numLayers - 1);
@@ -111,6 +112,7 @@ AtmosLayers::Heights AtmosLayers::computeHeights(AtmosParams const &params) {
 }
 
 AtmosLayers::Densities AtmosLayers::computeDensities(AtmosParams const &params, float thickness) {
+	unsigned const numLayers = params.numLayers;
 	Densities densities(numLayers);
 	for (unsigned i = 0; i < numLayers - 1; ++i) {
 		// Density, averaged analytically over the space between the layers
@@ -152,8 +154,8 @@ void debugPrintTable(std::ostream &out, Vec3Table2D const &table) {
 }
 
 Vec3Table2D buildTransmittanceTable(AtmosParams const &params, AtmosLayers const &layers) {
-	unsigned const numAngles = layers.numAngles;
-	unsigned const numLayers = layers.numLayers;
+	unsigned const numAngles = params.numAngles;
+	unsigned const numLayers = params.numLayers;
 
 	Vec3Table2D transmittanceTable = Vec3Table2D::createWithCoordsSizeAndOffset(
 			uvec2(numLayers, numAngles),
@@ -178,8 +180,8 @@ Vec3Table2D buildTransmittanceTable(AtmosParams const &params, AtmosLayers const
 // for the given angle on that layer.
 // Zero if the earth is in between.
 Vec3Table2D buildTotalTransmittanceTable(AtmosParams const &params, AtmosLayers const &layers) {
-	unsigned const numAngles = layers.numAngles;
-	unsigned const numLayers = layers.numLayers;
+	unsigned const numAngles = params.numAngles;
+	unsigned const numLayers = params.numLayers;
 
 	Vec3Table2D totalTransmittanceTable = Vec3Table2D::createWithCoordsSizeAndOffset(
 			uvec2(numLayers, numAngles),

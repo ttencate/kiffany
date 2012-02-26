@@ -50,6 +50,9 @@ struct AtmosParams {
 	vec3 mieAbsorption;
 	float mieDirectionality;
 
+	unsigned numLayers;
+	unsigned numAngles;
+
 	AtmosParams();
 };
 
@@ -60,13 +63,11 @@ class AtmosLayers {
 		typedef std::vector<float> Heights;
 		typedef std::vector<float> Densities;
 
-		unsigned const numLayers;
-		unsigned const numAngles;
 		Heights const heights;
 		Densities const rayleighDensities;
 		Densities const mieDensities;
 
-		AtmosLayers(AtmosParams const &atmosphere, unsigned numLayers, unsigned numAngles);
+		AtmosLayers(AtmosParams const &atmosphere);
 
 		float rayLengthToNextLayer(Ray ray, unsigned layer) const;
 	

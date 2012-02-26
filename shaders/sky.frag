@@ -12,6 +12,8 @@ struct AtmosParams {
 	vec3 rayleighCoefficient;
 	vec3 mieCoefficient;
 	float mieDirectionality;
+	int numLayers;
+	int numAngles;
 };
 
 struct Sun {
@@ -21,8 +23,6 @@ struct Sun {
 };
 
 struct AtmosLayers {
-	int numLayers;
-	int numAngles;
 	float heights[32];
 	float rayleighDensities[32];
 	float mieDensities[32];
@@ -72,7 +72,7 @@ float miePhaseFunction(float lightAngle) {
 vec3 sampleTable(sampler2DRect tableSampler, int layer, float angle) {
 	return vec3(texture(tableSampler, vec2(
 					layer + 0.5,
-					angle / PI * (layers.numAngles - 1) + 0.5)));
+					angle / PI * (params.numAngles - 1) + 0.5)));
 }
 
 void main() {
@@ -89,7 +89,7 @@ void main() {
 
 	scatteredLight = (1.0 - smoothstep(sun.angularRadius, sun.angularRadius * 1.2, lightAngle)) * sun.color;
 	scatteredLight *= 0.5 + 0.5 * sign(viewDirection.z);
-	for (int layer = layers.numLayers - 2; layer >= 0; --layer) {
+	for (int layer = params.numLayers - 2; layer >= 0; --layer) {
 		float height = layers.heights[layer];
 
 		Ray viewRay = Ray(height, rayAngleUpwards(groundViewRay, height));

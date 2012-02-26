@@ -297,7 +297,7 @@ int main(int argc, char **argv) {
 			new PerlinTerrainGenerator(32, flags.seed),
 			sun,
 			new Lighting(sun),
-			new Sky(params, AtmosLayers(params, flags.atmosphereLayers, flags.atmosphereAngles), sun));
+			new Sky(params, AtmosLayers(params), sun));
 	::world = &world;
 
 	run();

@@ -55,14 +55,19 @@ namespace {
 		AtmosLayers zeroRadiusEarthLayers;
 		Fixture()
 		:
-			params(),
-			layers(params, 8, 16),
+			params(createDefaultParams()),
+			layers(params),
 			zeroRadiusEarthAtmosParams(createZeroRadiusEarthAtmosParams()),
-			zeroRadiusEarthLayers(zeroRadiusEarthAtmosParams, 8, 16)
+			zeroRadiusEarthLayers(zeroRadiusEarthAtmosParams)
 		{
 		}
-		static AtmosParams createZeroRadiusEarthAtmosParams() {
+		static AtmosParams createDefaultParams() {
 			AtmosParams params;
+			params.numAngles = 16;
+			return params;
+		}
+		static AtmosParams createZeroRadiusEarthAtmosParams() {
+			AtmosParams params = createDefaultParams();
 			params.earthRadius = 0;
 			return params;
 		}
@@ -77,13 +82,13 @@ BOOST_AUTO_TEST_CASE(TestLayerHeights) {
 	float const thickness = params.rayleighThickness;
 	float const EPS = 0.1; // %
 	BOOST_CHECK_CLOSE(params.earthRadius, layers.heights[0], EPS);
-	for (unsigned i = 0; i < layers.numLayers - 1; ++i) {
+	for (unsigned i = 0; i < params.numLayers - 1; ++i) {
 		BOOST_CHECK_LE(0.0, layers.heights[i]);
 		BOOST_CHECK_LT(layers.heights[i], layers.heights[i + 1]);
 		float cumulativeDensity = thickness * (1.0 - exp(-(layers.heights[i] - params.earthRadius) / thickness));
-		BOOST_CHECK_CLOSE((float)i / (float)(layers.numLayers - 1) * thickness, cumulativeDensity, EPS);
+		BOOST_CHECK_CLOSE((float)i / (float)(params.numLayers - 1) * thickness, cumulativeDensity, EPS);
 	}
-	BOOST_CHECK_EQUAL(params.earthRadius + params.atmosphereThickness, layers.heights[layers.numLayers - 1]);
+	BOOST_CHECK_EQUAL(params.earthRadius + params.atmosphereThickness, layers.heights[params.numLayers - 1]);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -94,8 +99,8 @@ float const EPS = 0.01; // %
 
 BOOST_AUTO_TEST_CASE(TestBuildTransmittanceTable) {
 	Vec3Table2D transmittanceTable = buildTransmittanceTable(params, layers);
-	unsigned numLayers = layers.numLayers;
-	unsigned numAngles = layers.numAngles;
+	unsigned numLayers = params.numLayers;
+	unsigned numAngles = params.numAngles;
 	BOOST_REQUIRE_EQUAL(numLayers, transmittanceTable.getSize().x);
 	BOOST_REQUIRE_EQUAL(numAngles, transmittanceTable.getSize().y);
 	for (unsigned a = 0; a < numAngles; ++a) {
@@ -118,8 +123,8 @@ BOOST_AUTO_TEST_CASE(TestBuildTransmittanceTableForZeroRadiusEarth) {
 	AtmosLayers const &layers = zeroRadiusEarthLayers;
 
 	Vec3Table2D transmittanceTable = buildTransmittanceTable(params, layers);
-	unsigned numLayers = layers.numLayers;
-	unsigned numAngles = layers.numAngles;
+	unsigned numLayers = params.numLayers;
+	unsigned numAngles = params.numAngles;
 	BOOST_REQUIRE_EQUAL(numLayers, transmittanceTable.getSize().x);
 	BOOST_REQUIRE_EQUAL(numAngles, transmittanceTable.getSize().y);
 	for (unsigned a = 0; a < numAngles; ++a) {
@@ -143,8 +148,8 @@ BOOST_AUTO_TEST_CASE(TestBuildTransmittanceTableForZeroRadiusEarth) {
 
 BOOST_AUTO_TEST_CASE(TestBuildTotalTransmittanceTable) {
 	Vec3Table2D totalTransmittanceTable = buildTotalTransmittanceTable(params, layers);
-	unsigned numLayers = layers.numLayers;
-	unsigned numAngles = layers.numAngles;
+	unsigned numLayers = params.numLayers;
+	unsigned numAngles = params.numAngles;
 	BOOST_REQUIRE_EQUAL(numLayers, totalTransmittanceTable.getSize().x);
 	BOOST_REQUIRE_EQUAL(numAngles, totalTransmittanceTable.getSize().y);
 	for (unsigned a = 0; a < numAngles; ++a) {
@@ -171,8 +176,8 @@ BOOST_AUTO_TEST_CASE(TestBuildTotalTransmittanceTableForZeroRadiusEarth) {
 	AtmosLayers const &layers = zeroRadiusEarthLayers;
 
 	Vec3Table2D totalTransmittanceTable = buildTotalTransmittanceTable(params, layers);
-	unsigned numLayers = layers.numLayers;
-	unsigned numAngles = layers.numAngles;
+	unsigned numLayers = params.numLayers;
+	unsigned numAngles = params.numAngles;
 	BOOST_REQUIRE_EQUAL(numLayers, totalTransmittanceTable.getSize().x);
 	BOOST_REQUIRE_EQUAL(numAngles, totalTransmittanceTable.getSize().y);
 	for (unsigned a = 0; a < numAngles; ++a) {
