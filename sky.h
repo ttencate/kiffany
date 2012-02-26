@@ -15,8 +15,8 @@
 
 class Sky : boost::noncopyable {
 
-	Atmosphere const atmosphere;
-	AtmosphereLayers const layers;
+	AtmosParams const params;
+	AtmosLayers const layers;
 	Sun const *sun;
 
 	Vec3Table2D transmittanceTable;
@@ -31,7 +31,7 @@ class Sky : boost::noncopyable {
 
 	public:
 
-		Sky(Atmosphere const &atmosphere, AtmosphereLayers const &layers, Sun const *sun);
+		Sky(AtmosParams const &atmosphere, AtmosLayers const &layers, Sun const *sun);
 
 		void setSun(Sun const *sun) { this->sun = sun; }
 

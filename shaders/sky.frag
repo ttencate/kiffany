@@ -7,7 +7,7 @@ struct Ray {
 	float angle;
 };
 
-struct Atmosphere {
+struct AtmosParams {
 	float earthRadius;
 	vec3 rayleighCoefficient;
 	vec3 mieCoefficient;
@@ -20,7 +20,7 @@ struct Sun {
 	vec3 direction;
 };
 
-struct Layers {
+struct AtmosLayers {
 	int numLayers;
 	int numAngles;
 	float heights[32];
@@ -28,9 +28,9 @@ struct Layers {
 	float mieDensities[32];
 };
 
-uniform Atmosphere atmosphere;
+uniform AtmosParams params;
 uniform Sun sun;
-uniform Layers layers;
+uniform AtmosLayers layers;
 uniform sampler2DRect transmittanceSampler;
 uniform sampler2DRect totalTransmittanceSampler;
 
@@ -63,7 +63,7 @@ float rayleighPhaseFunction(float lightAngle) {
 
 float miePhaseFunction(float lightAngle) {
 	float mu = cos(lightAngle);
-	float g = atmosphere.mieDirectionality;
+	float g = params.mieDirectionality;
 	return 3.0 / (8.0 * PI) *
 		(1 - pow2(g)) * (1 + pow2(mu)) /
 		((2 + pow2(g)) * pow(1 + pow2(g) - 2.0 * g * mu, 3.0 / 2.0));
@@ -81,8 +81,8 @@ void main() {
 	float lightAngle = acos(dot(viewDirection, sun.direction));
 	float groundViewAngle = acos(viewDirection.z);
 	float groundSunAngle = acos(sun.direction.z);
-	Ray groundViewRay = Ray(atmosphere.earthRadius, groundViewAngle);
-	Ray groundSunRay = Ray(atmosphere.earthRadius, groundSunAngle);
+	Ray groundViewRay = Ray(params.earthRadius, groundViewAngle);
+	Ray groundSunRay = Ray(params.earthRadius, groundSunAngle);
 
 	vec3 rayleighPhase = vec3(rayleighPhaseFunction(lightAngle));
 	vec3 miePhase = vec3(miePhaseFunction(lightAngle));
@@ -107,7 +107,7 @@ void main() {
 
 		// TODO this is probably wrong; needs to use the total ray length from the ground to this point,
 		// not the ray length of this particular segment
-		vec3 vertical = normalize(vec3(0.0, 0.0, atmosphere.earthRadius) + vec3(rayLength) * viewDirection);
+		vec3 vertical = normalize(vec3(0.0, 0.0, params.earthRadius) + vec3(rayLength) * viewDirection);
 		// Compensate for roundoff errors when the dot product is near 1
 		float sunAngle = acos(0.99999 * dot(sun.direction, vertical));
 
@@ -117,11 +117,11 @@ void main() {
 
 		// Add inscattering, attenuated by optical depth to the sun
 		vec3 rayleighInscattering =
-			atmosphere.rayleighCoefficient *
+			params.rayleighCoefficient *
 			layers.rayleighDensities[layer] *
 			rayleighPhase;
 		vec3 mieInscattering =
-			atmosphere.mieCoefficient *
+			params.mieCoefficient *
 			layers.mieDensities[layer] *
 			miePhase;
 		vec3 transmittance = sampleTable(totalTransmittanceSampler, layer, sunAngle);

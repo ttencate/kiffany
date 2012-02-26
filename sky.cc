@@ -16,13 +16,13 @@ void tableToTexture(Vec3Table2D const &table, GLTexture &texture) {
 	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
-Sky::Sky(Atmosphere const &atmosphere, AtmosphereLayers const &layers, Sun const *sun)
+Sky::Sky(AtmosParams const &params, AtmosLayers const &layers, Sun const *sun)
 :
-	atmosphere(atmosphere),
+	params(params),
 	layers(layers),
 	sun(sun),
-	transmittanceTable(buildTransmittanceTable(atmosphere, layers)),
-	totalTransmittanceTable(buildTotalTransmittanceTable(atmosphere, layers))
+	transmittanceTable(buildTransmittanceTable(params, layers)),
+	totalTransmittanceTable(buildTotalTransmittanceTable(params, layers))
 {
 
 	int const v[] = {
@@ -79,10 +79,10 @@ void Sky::render() {
 
 	useProgram(shaderProgram.getProgram());
 
-	shaderProgram.setUniform("atmosphere.earthRadius", atmosphere.earthRadius);
-	shaderProgram.setUniform("atmosphere.rayleighCoefficient", vec3(atmosphere.rayleighCoefficient));
-	shaderProgram.setUniform("atmosphere.mieCoefficient", vec3(atmosphere.mieCoefficient));
-	shaderProgram.setUniform("atmosphere.mieDirectionality", atmosphere.mieDirectionality);
+	shaderProgram.setUniform("params.earthRadius", params.earthRadius);
+	shaderProgram.setUniform("params.rayleighCoefficient", vec3(params.rayleighCoefficient));
+	shaderProgram.setUniform("params.mieCoefficient", vec3(params.mieCoefficient));
+	shaderProgram.setUniform("params.mieDirectionality", params.mieDirectionality);
 	shaderProgram.setUniform("sun.angularRadius", sun->getAngularRadius());
 	shaderProgram.setUniform("sun.color", sun->getColor());
 	shaderProgram.setUniform("sun.direction", sun->getDirection());

@@ -22,22 +22,22 @@
 
 namespace {
 	struct Fixture {
-		Atmosphere atmosphere;
-		AtmosphereLayers layers;
-		Atmosphere zeroRadiusEarthAtmosphere;
-		AtmosphereLayers zeroRadiusEarthLayers;
+		AtmosParams params;
+		AtmosLayers layers;
+		AtmosParams zeroRadiusEarthAtmosParams;
+		AtmosLayers zeroRadiusEarthLayers;
 		Fixture()
 		:
-			atmosphere(),
-			layers(atmosphere, 8, 16),
-			zeroRadiusEarthAtmosphere(createZeroRadiusEarthAtmosphere()),
-			zeroRadiusEarthLayers(zeroRadiusEarthAtmosphere, 8, 16)
+			params(),
+			layers(params, 8, 16),
+			zeroRadiusEarthAtmosParams(createZeroRadiusEarthAtmosParams()),
+			zeroRadiusEarthLayers(zeroRadiusEarthAtmosParams, 8, 16)
 		{
 		}
-		static Atmosphere createZeroRadiusEarthAtmosphere() {
-			Atmosphere atmosphere;
-			atmosphere.earthRadius = 0;
-			return atmosphere;
+		static AtmosParams createZeroRadiusEarthAtmosParams() {
+			AtmosParams params;
+			params.earthRadius = 0;
+			return params;
 		}
 	};
 }
@@ -68,20 +68,20 @@ BOOST_AUTO_TEST_CASE(TestRayLengthDownwards) {
 }
 
 BOOST_AUTO_TEST_CASE(TestLayerHeights) {
-	float const thickness = atmosphere.rayleighThickness;
+	float const thickness = params.rayleighThickness;
 	float const EPS = 0.1; // %
-	BOOST_CHECK_CLOSE(atmosphere.earthRadius, layers.heights[0], EPS);
+	BOOST_CHECK_CLOSE(params.earthRadius, layers.heights[0], EPS);
 	for (unsigned i = 0; i < layers.numLayers - 1; ++i) {
 		BOOST_CHECK_LE(0.0, layers.heights[i]);
 		BOOST_CHECK_LT(layers.heights[i], layers.heights[i + 1]);
-		float cumulativeDensity = thickness * (1.0 - exp(-(layers.heights[i] - atmosphere.earthRadius) / thickness));
+		float cumulativeDensity = thickness * (1.0 - exp(-(layers.heights[i] - params.earthRadius) / thickness));
 		BOOST_CHECK_CLOSE((float)i / (float)(layers.numLayers - 1) * thickness, cumulativeDensity, EPS);
 	}
-	BOOST_CHECK_EQUAL(atmosphere.earthRadius + atmosphere.atmosphereThickness, layers.heights[layers.numLayers - 1]);
+	BOOST_CHECK_EQUAL(params.earthRadius + params.atmosphereThickness, layers.heights[layers.numLayers - 1]);
 }
 
 BOOST_AUTO_TEST_CASE(TestBuildTransmittanceTable) {
-	Vec3Table2D transmittanceTable = buildTransmittanceTable(atmosphere, layers);
+	Vec3Table2D transmittanceTable = buildTransmittanceTable(params, layers);
 	unsigned numLayers = layers.numLayers;
 	unsigned numAngles = layers.numAngles;
 	BOOST_REQUIRE_EQUAL(numLayers, transmittanceTable.getSize().x);
@@ -102,10 +102,10 @@ BOOST_AUTO_TEST_CASE(TestBuildTransmittanceTable) {
 }
 
 BOOST_AUTO_TEST_CASE(TestBuildTransmittanceTableForZeroRadiusEarth) {
-	Atmosphere const &atmosphere = zeroRadiusEarthAtmosphere;
-	AtmosphereLayers const &layers = zeroRadiusEarthLayers;
+	AtmosParams const &params = zeroRadiusEarthAtmosParams;
+	AtmosLayers const &layers = zeroRadiusEarthLayers;
 
-	Vec3Table2D transmittanceTable = buildTransmittanceTable(atmosphere, layers);
+	Vec3Table2D transmittanceTable = buildTransmittanceTable(params, layers);
 	unsigned numLayers = layers.numLayers;
 	unsigned numAngles = layers.numAngles;
 	BOOST_REQUIRE_EQUAL(numLayers, transmittanceTable.getSize().x);
@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE(TestBuildTransmittanceTableForZeroRadiusEarth) {
 }
 
 BOOST_AUTO_TEST_CASE(TestBuildTotalTransmittanceTable) {
-	Vec3Table2D totalTransmittanceTable = buildTotalTransmittanceTable(atmosphere, layers);
+	Vec3Table2D totalTransmittanceTable = buildTotalTransmittanceTable(params, layers);
 	unsigned numLayers = layers.numLayers;
 	unsigned numAngles = layers.numAngles;
 	BOOST_REQUIRE_EQUAL(numLayers, totalTransmittanceTable.getSize().x);
@@ -155,10 +155,10 @@ BOOST_AUTO_TEST_CASE(TestBuildTotalTransmittanceTable) {
 }
 
 BOOST_AUTO_TEST_CASE(TestBuildTotalTransmittanceTableForZeroRadiusEarth) {
-	Atmosphere const &atmosphere = zeroRadiusEarthAtmosphere;
-	AtmosphereLayers const &layers = zeroRadiusEarthLayers;
+	AtmosParams const &params = zeroRadiusEarthAtmosParams;
+	AtmosLayers const &layers = zeroRadiusEarthLayers;
 
-	Vec3Table2D totalTransmittanceTable = buildTotalTransmittanceTable(atmosphere, layers);
+	Vec3Table2D totalTransmittanceTable = buildTotalTransmittanceTable(params, layers);
 	unsigned numLayers = layers.numLayers;
 	unsigned numAngles = layers.numAngles;
 	BOOST_REQUIRE_EQUAL(numLayers, totalTransmittanceTable.getSize().x);

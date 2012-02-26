@@ -33,7 +33,7 @@ float rayAngleUpwards(Ray ray, float targetHeight);
 float rayAngleToSameHeight(Ray ray);
 float rayAngleDownwards(Ray ray, float targetHeight);
 
-struct Atmosphere {
+struct AtmosParams {
 
 	vec3 lambda;
 
@@ -47,10 +47,10 @@ struct Atmosphere {
 	vec3 mieAbsorption;
 	float mieDirectionality;
 
-	Atmosphere();
+	AtmosParams();
 };
 
-class AtmosphereLayers {
+class AtmosLayers {
 
 	public:
 
@@ -59,8 +59,8 @@ class AtmosphereLayers {
 	
 	private:
 
-		Heights computeHeights(Atmosphere const &atmosphere);
-		Densities computeDensities(Atmosphere const &atmosphere, float thickness);
+		Heights computeHeights(AtmosParams const &atmosphere);
+		Densities computeDensities(AtmosParams const &atmosphere, float thickness);
 
 	public:
 
@@ -70,16 +70,16 @@ class AtmosphereLayers {
 		Densities const rayleighDensities;
 		Densities const mieDensities;
 
-		AtmosphereLayers(Atmosphere const &atmosphere, unsigned numLayers, unsigned numAngles);
+		AtmosLayers(AtmosParams const &atmosphere, unsigned numLayers, unsigned numAngles);
 
 		float rayLengthToNextLayer(Ray ray, unsigned layer) const;
 };
 
 typedef Table<vec3, uvec2, vec2> Vec3Table2D;
 
-vec3 transmittanceToNextLayer(Ray ray, Atmosphere const &atmosphere, AtmosphereLayers const &layers, unsigned layer);
+vec3 transmittanceToNextLayer(Ray ray, AtmosParams const &params, AtmosLayers const &layers, unsigned layer);
 
-Vec3Table2D buildTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers);
-Vec3Table2D buildTotalTransmittanceTable(Atmosphere const &atmosphere, AtmosphereLayers const &layers);
+Vec3Table2D buildTransmittanceTable(AtmosParams const &params, AtmosLayers const &layers);
+Vec3Table2D buildTotalTransmittanceTable(AtmosParams const &params, AtmosLayers const &layers);
 
 #endif
