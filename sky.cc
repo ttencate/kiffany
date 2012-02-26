@@ -22,7 +22,7 @@ Sky::Sky(Atmosphere const &atmosphere, AtmosphereLayers const &layers, Sun const
 	layers(layers),
 	sun(sun),
 	transmittanceTable(buildTransmittanceTable(atmosphere, layers)),
-	totalTransmittanceTable(buildTotalTransmittanceTable(atmosphere, layers, transmittanceTable))
+	totalTransmittanceTable(buildTotalTransmittanceTable(atmosphere, layers))
 {
 
 	int const v[] = {

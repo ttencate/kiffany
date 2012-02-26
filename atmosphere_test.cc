@@ -130,8 +130,7 @@ BOOST_AUTO_TEST_CASE(TestBuildTransmittanceTableForZeroRadiusEarth) {
 }
 
 BOOST_AUTO_TEST_CASE(TestBuildTotalTransmittanceTable) {
-	Vec3Table2D transmittanceTable = buildTransmittanceTable(atmosphere, layers);
-	Vec3Table2D totalTransmittanceTable = buildTotalTransmittanceTable(atmosphere, layers, transmittanceTable);
+	Vec3Table2D totalTransmittanceTable = buildTotalTransmittanceTable(atmosphere, layers);
 	unsigned numLayers = layers.numLayers;
 	unsigned numAngles = layers.numAngles;
 	BOOST_REQUIRE_EQUAL(numLayers, totalTransmittanceTable.getSize().x);
@@ -159,8 +158,7 @@ BOOST_AUTO_TEST_CASE(TestBuildTotalTransmittanceTableForZeroRadiusEarth) {
 	Atmosphere const &atmosphere = zeroRadiusEarthAtmosphere;
 	AtmosphereLayers const &layers = zeroRadiusEarthLayers;
 
-	Vec3Table2D transmittanceTable = buildTransmittanceTable(atmosphere, layers);
-	Vec3Table2D totalTransmittanceTable = buildTotalTransmittanceTable(atmosphere, layers, transmittanceTable);
+	Vec3Table2D totalTransmittanceTable = buildTotalTransmittanceTable(atmosphere, layers);
 	unsigned numLayers = layers.numLayers;
 	unsigned numAngles = layers.numAngles;
 	BOOST_REQUIRE_EQUAL(numLayers, totalTransmittanceTable.getSize().x);
