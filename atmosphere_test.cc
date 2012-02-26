@@ -1,4 +1,4 @@
-#include "sky.h"
+#include "atmosphere.h"
 
 #include <boost/test/unit_test.hpp>
 #include <boost/bind.hpp>
@@ -42,7 +42,7 @@ namespace {
 	};
 }
 
-BOOST_FIXTURE_TEST_SUITE(SkyTest, Fixture)
+BOOST_FIXTURE_TEST_SUITE(AtmosphereTest, Fixture)
 
 float const EPS = 0.01; // %
 

@@ -21,6 +21,7 @@ set(GLFW_LIBRARY glfw)
 set(GLEW_LIBRARY GLEW)
 
 set(sources
+	atmosphere.cc atmosphere.h
 	block.cc block.h
 	buffer.cc buffer.h
 	camera.cc camera.h
@@ -66,10 +67,10 @@ include_directories(
 	)
 
 set(test_sources
+	atmosphere_test.cc
 	octree_test.cc
 	perlin_test.cc
 	raycaster_test.cc
-	sky_test.cc
 	table_test.cc
 	)
 
