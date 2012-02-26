@@ -105,6 +105,8 @@ void main() {
 			rayLengthLong = rayLength;
 		}
 
+		// TODO this is probably wrong; needs to use the total ray length from the ground to this point,
+		// not the ray length of this particular segment
 		vec3 vertical = normalize(vec3(0.0, 0.0, atmosphere.earthRadius) + vec3(rayLength) * viewDirection);
 		// Compensate for roundoff errors when the dot product is near 1
 		float sunAngle = acos(0.99999 * dot(sun.direction, vertical));
