@@ -10,8 +10,10 @@ struct Ray {
 struct Atmosphere {
 	float earthRadius;
 	vec3 rayleighCoefficient;
+	vec3 rayleighExtinctionCoefficient;
 	vec3 mieCoefficient;
 	float mieDirectionality;
+	vec3 mieExtinctionCoefficient;
 };
 
 struct Sun {
@@ -31,7 +33,6 @@ struct Layers {
 uniform Atmosphere atmosphere;
 uniform Sun sun;
 uniform Layers layers;
-uniform sampler2DRect transmittanceSampler;
 uniform sampler2DRect totalTransmittanceSampler;
 
 in vec3 viewDirectionUnnormalized;
@@ -42,8 +43,8 @@ float pow2(float x) {
 	return x * x;
 }
 
-float rayAngleUpwards(Ray ray, float targetHeight) {
-	return asin(ray.height * sin(ray.angle) / targetHeight);
+bool rayHitsHeight(Ray ray, float targetHeight) {
+	return ray.height * sin(ray.angle) < targetHeight;
 }
 
 float rayLengthUpwards(Ray ray, float targetHeight) {
@@ -52,6 +53,22 @@ float rayLengthUpwards(Ray ray, float targetHeight) {
 			pow2(ray.height) * (pow2(cosAngle) - 1.0) +
 			pow2(targetHeight))
 		- ray.height * cosAngle;
+}
+
+float rayLengthToSameHeight(Ray ray) {
+	return -2.0 * ray.height * cos(ray.angle);
+}
+
+float rayLengthDownwards(Ray ray, float targetHeight) {
+	float cosAngle = cos(ray.angle);
+	return -sqrt(
+			pow2(ray.height) * (pow2(cosAngle) - 1.0) +
+			pow2(targetHeight))
+		- ray.height * cosAngle;
+}
+
+float rayAngleUpwards(Ray ray, float targetHeight) {
+	return asin(ray.height * sin(ray.angle) / targetHeight);
 }
 
 float rayleighPhaseFunction(float lightAngle) {
@@ -73,6 +90,39 @@ vec3 sampleTable(sampler2DRect tableSampler, int layer, float angle) {
 	return vec3(texture(tableSampler, vec2(
 					layer + 0.5,
 					angle / PI * (layers.numAngles - 1) + 0.5)));
+}
+
+// Ray length from the given layer to the next,
+// where 'next' might be the one above (for angle <= 0.5pi),
+// the layer itself (for 0.5pi < angle < x),
+// or the layer below it (for x <= angle).
+// ray.height is assumed to be equal to layers.height[layer].
+float rayLengthToNextLayer(Ray ray, int layer) {
+	if (ray.angle <= 0.5 * PI && layer == layers.numLayers - 1) {
+		// Ray goes up into space
+		return 0.0;
+	} else if (ray.angle <= 0.5 * PI) {
+		// Ray goes up, hits layer above
+		return rayLengthUpwards(ray, layers.heights[layer + 1]);
+	} else if (layer == 0) {
+		// Ray goes down, into the ground; near infinite
+		return 1e30;
+	} else if (!rayHitsHeight(ray, layers.heights[layer - 1])) {
+		// Ray goes down, misses layer below, hits current layer from below
+		return rayLengthToSameHeight(ray);
+	} else {
+		// Ray goes down, hits layer below
+		return rayLengthDownwards(ray, layers.heights[layer - 1]);
+	}
+}
+
+vec3 transmittanceToNextLayer(Ray ray, int layer) {
+	float rayLength = rayLengthToNextLayer(ray, layer);
+	int nextLayer = ray.angle <= 0.5 * PI ? layer : (max(1, layer) - 1);
+	vec3 extinction =
+		atmosphere.rayleighExtinctionCoefficient * layers.rayleighDensities[nextLayer] +
+		atmosphere.mieExtinctionCoefficient * layers.mieDensities[nextLayer];
+	return exp(-extinction * rayLength);
 }
 
 void main() {
@@ -110,7 +160,7 @@ void main() {
 		float sunAngle = acos(0.99999 * dot(sun.direction, vertical));
 
 		// Multiply transmittance
-		vec3 layerTransmittance = sampleTable(transmittanceSampler, layer, viewRay.angle);
+		vec3 layerTransmittance = transmittanceToNextLayer(viewRay, layer);
 		scatteredLight *= layerTransmittance;
 
 		// Add inscattering, attenuated by optical depth to the sun

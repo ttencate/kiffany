@@ -95,10 +95,8 @@ class Sky : boost::noncopyable {
 	AtmosphereLayers const layers;
 	Sun const *sun;
 
-	Vec3Table2D transmittanceTable;
 	Vec3Table2D totalTransmittanceTable;
 
-	GLTexture transmittanceTexture;
 	GLTexture totalTransmittanceTexture;
 
 	Buffer vertices;
