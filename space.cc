@@ -1,5 +1,7 @@
 #include "space.h"
 
+#include "flags.h"
+
 Sun::Sun(float season, float latitude, float axialTilt, float dayLength, float angularRadius, float brightness, vec3 color, float timeOfDay)
 :
 	season(season),
@@ -26,6 +28,9 @@ vec3 Sun::directionAtTime(float timeOfDay) const {
 void Sun::update(float dt) {
 	if (dayLength > 0) {
 		timeOfDay += dt / dayLength;
+		if (flags.skipNight && timeOfDay > 0.77f) {
+			timeOfDay += 0.46f;
+		}
 		while (timeOfDay >= 1.0f) {
 			timeOfDay -= 1.0f;
 		}

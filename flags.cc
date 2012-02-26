@@ -29,6 +29,7 @@ po::options_description const &getOptionsDescription() {
 			("bent_normals", po::value<bool>(&flags.bentNormals)->default_value(true), "use raycasting to compute bent normals for better lighting")
 			("start_time", po::value<float>(&flags.startTime)->default_value(12.0f), "start time of day (0-24)")
 			("day_length", po::value<float>(&flags.dayLength)->default_value(0.0f), "day length (seconds)")
+			("skip_night", po::bool_switch(&flags.skipNight), "shortly after sunset, jump forward to shortly before sunrise")
 			("day_of_year", po::value<unsigned>(&flags.dayOfYear)->default_value(183), "day of year (1-365)")
 			("latitude", po::value<float>(&flags.latitude)->default_value(51.5f), "latitude (degrees)")
 			("axial_tilt", po::value<float>(&flags.axialTilt)->default_value(23.5f), "axial tilt (degrees)")

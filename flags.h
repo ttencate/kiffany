@@ -18,6 +18,7 @@ struct Flags {
 	bool bentNormals;
 	float startTime;
 	float dayLength;
+	bool skipNight;
 	unsigned dayOfYear;
 	float latitude;
 	float axialTilt;
