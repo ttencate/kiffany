@@ -59,13 +59,6 @@ class AtmosLayers {
 
 		typedef std::vector<float> Heights;
 		typedef std::vector<float> Densities;
-	
-	private:
-
-		Heights computeHeights(AtmosParams const &atmosphere);
-		Densities computeDensities(AtmosParams const &atmosphere, float thickness);
-
-	public:
 
 		unsigned const numLayers;
 		unsigned const numAngles;
@@ -76,6 +69,11 @@ class AtmosLayers {
 		AtmosLayers(AtmosParams const &atmosphere, unsigned numLayers, unsigned numAngles);
 
 		float rayLengthToNextLayer(Ray ray, unsigned layer) const;
+	
+	private:
+
+		Heights computeHeights(AtmosParams const &atmosphere);
+		Densities computeDensities(AtmosParams const &atmosphere, float thickness);
 };
 
 typedef Table<vec3, uvec2, vec2> Vec3Table2D;

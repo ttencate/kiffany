@@ -67,28 +67,6 @@ AtmosParams::AtmosParams()
 {
 }
 
-AtmosLayers::Heights AtmosLayers::computeHeights(AtmosParams const &params) {
-	Heights heights(numLayers);
-	for (unsigned i = 0; i < numLayers - 1; ++i) {
-		float const containedFraction = 1.0f - (float)i / (numLayers - 1);
-		heights[i] = params.earthRadius - params.rayleighThickness * log(containedFraction);
-	}
-	heights[numLayers - 1] = std::max(heights[numLayers - 1] * 1.01f, params.earthRadius + params.atmosphereThickness);
-	return heights;
-}
-
-AtmosLayers::Densities AtmosLayers::computeDensities(AtmosParams const &params, float thickness) {
-	Densities densities(numLayers);
-	for (unsigned i = 0; i < numLayers - 1; ++i) {
-		// Density, averaged analytically over the space between the layers
-		densities[i] = thickness / (heights[i + 1] - heights[i]) * (
-				exp(-(heights[i] - params.earthRadius) / thickness) -
-				exp(-(heights[i + 1] - params.earthRadius) / thickness));
-	}
-	densities[numLayers - 1] = 0.0f;
-	return densities;
-}
-
 AtmosLayers::AtmosLayers(AtmosParams const &params, unsigned numLayers, unsigned numAngles)
 :
 	numLayers(numLayers),
@@ -120,6 +98,28 @@ float AtmosLayers::rayLengthToNextLayer(Ray ray, unsigned layer) const {
 		// Ray goes down, hits layer below
 		return ray.lengthDownwards(heights[layer - 1]);
 	}
+}
+
+AtmosLayers::Heights AtmosLayers::computeHeights(AtmosParams const &params) {
+	Heights heights(numLayers);
+	for (unsigned i = 0; i < numLayers - 1; ++i) {
+		float const containedFraction = 1.0f - (float)i / (numLayers - 1);
+		heights[i] = params.earthRadius - params.rayleighThickness * log(containedFraction);
+	}
+	heights[numLayers - 1] = std::max(heights[numLayers - 1] * 1.01f, params.earthRadius + params.atmosphereThickness);
+	return heights;
+}
+
+AtmosLayers::Densities AtmosLayers::computeDensities(AtmosParams const &params, float thickness) {
+	Densities densities(numLayers);
+	for (unsigned i = 0; i < numLayers - 1; ++i) {
+		// Density, averaged analytically over the space between the layers
+		densities[i] = thickness / (heights[i + 1] - heights[i]) * (
+				exp(-(heights[i] - params.earthRadius) / thickness) -
+				exp(-(heights[i + 1] - params.earthRadius) / thickness));
+	}
+	densities[numLayers - 1] = 0.0f;
+	return densities;
 }
 
 inline vec3 transmittanceToNextLayer(Ray ray, AtmosParams const &params, AtmosLayers const &layers, unsigned layer) {
