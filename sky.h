@@ -10,8 +10,6 @@
 
 #include <boost/noncopyable.hpp>
 
-// TODO in the shader world, everything below this line needs refactor
-
 class Sky : boost::noncopyable {
 
 	GLAtmosphere const *atmosphere;
