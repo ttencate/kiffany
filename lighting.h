@@ -15,9 +15,10 @@ class Lighting {
 
 		Lighting(GLAtmosphere const *atmosphere, Sun const *sun);
 
+		GLAtmosphere const &getAtmosphere() const { return *atmosphere; }
+		Sun const &getSun() const { return *sun; }
+
 		vec4 ambientColor() const;
-		vec4 sunColor() const;
-		vec3 sunDirection() const;
 
 };
 

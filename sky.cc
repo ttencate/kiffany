@@ -72,7 +72,7 @@ void Sky::render() {
 	shaderProgram.setUniform("params.numLayers", (int)params.numLayers);
 	shaderProgram.setUniform("params.numAngles", (int)params.numAngles);
 	shaderProgram.setUniform("sun.angularRadius", sun->getAngularRadius());
-	shaderProgram.setUniform("sun.color", sun->getColor());
+	shaderProgram.setUniform("sun.color", sun->getScaledColor());
 	shaderProgram.setUniform("sun.direction", sun->getDirection());
 	shaderProgram.setUniform("layers.heights", layers.heights);
 	shaderProgram.setUniform("layers.rayleighDensities", layers.rayleighDensities);

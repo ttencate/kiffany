@@ -291,7 +291,8 @@ int main(int argc, char **argv) {
 			radians(flags.axialTilt),
 			flags.dayLength,
 			radians(flags.sunAngularDiameter / 2.0f),
-			flags.sunBrightness * vec3(1.0f),
+			flags.sunBrightness,
+			vec3(1.0f),
 			flags.startTime / 24.0f);
 	World world(
 			&camera,

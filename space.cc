@@ -1,12 +1,13 @@
 #include "space.h"
 
-Sun::Sun(float season, float latitude, float axialTilt, float dayLength, float angularRadius, vec3 color, float timeOfDay)
+Sun::Sun(float season, float latitude, float axialTilt, float dayLength, float angularRadius, float brightness, vec3 color, float timeOfDay)
 :
 	season(season),
 	latitude(latitude),
 	axialTilt(axialTilt),
 	dayLength(dayLength),
 	angularRadius(angularRadius),
+	brightness(brightness),
 	color(color),
 	timeOfDay(timeOfDay)
 {

@@ -1,7 +1,9 @@
 #include "terrain.h"
 
+#include "atmosphere.h"
 #include "flags.h"
 #include "lighting.h"
+#include "space.h"
 #include "stats.h"
 #include "terragen.h"
 
@@ -28,6 +30,10 @@ void Terrain::update(float dt) {
 }
 
 void Terrain::render(Camera const &camera, Lighting const &lighting) {
+	GLAtmosphere const &atmosphere = lighting.getAtmosphere();
+	AtmosParams const &params = atmosphere.getParams();
+	Sun const &sun = lighting.getSun();
+
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_NORMAL_ARRAY);
 
@@ -35,9 +41,20 @@ void Terrain::render(Camera const &camera, Lighting const &lighting) {
 	shaderProgram.setUniform("material.ambient", vec4(0.5f, 0.5f, 0.5f, 1.0f));
 	shaderProgram.setUniform("material.diffuse", vec4(0.5f, 0.5f, 0.5f, 1.0f));
 	shaderProgram.setUniform("lighting.ambientColor", lighting.ambientColor());
-	shaderProgram.setUniform("lighting.sunColor", lighting.sunColor());
-	shaderProgram.setUniform("lighting.sunDirection", lighting.sunDirection());
+	shaderProgram.setUniform("sun.color", vec3(sun.getColor()));
+	shaderProgram.setUniform("sun.direction", sun.getDirection());
+	shaderProgram.setUniform("params.rayleighCoefficient", params.rayleighCoefficient);
+	shaderProgram.setUniform("params.mieCoefficient", params.mieCoefficient);
+	shaderProgram.setUniform("params.mieDirectionality", params.mieDirectionality);
+	shaderProgram.setUniform("params.extinctionCoefficient",
+			params.rayleighCoefficient + params.mieCoefficient + params.mieAbsorption);
+	shaderProgram.setUniform("params.numAngles", (int)params.numAngles);
+	shaderProgram.setUniform("cameraPosition", camera.getPosition());
 	bindFragDataLocation(shaderProgram.getProgram(), 0, "color");
+
+	activeTexture(0);
+	bindTexture(GL_TEXTURE_RECTANGLE, atmosphere.getTotalTransmittanceTexture());
+	shaderProgram.setUniform("totalTransmittanceSampler", 0);
 
 	int3 center = chunkIndexFromPoint(camera.getPosition());
 	int radius = flags.viewDistance / CHUNK_SIZE;
@@ -45,7 +62,10 @@ void Terrain::render(Camera const &camera, Lighting const &lighting) {
 		for (int y = -radius; y <= radius; ++y) {
 			for (int x = -radius; x <= radius; ++x) {
 				// TODO sphere check
-				renderChunk(camera, center + int3(x, y, z));
+				int3 const index = center + int3(x, y, z);
+				// TODO do this properly by emulating the matrix stack
+				shaderProgram.setUniform("vertexOffset", chunkMin(index));
+				renderChunk(camera, index);
 			}
 		}
 	}
