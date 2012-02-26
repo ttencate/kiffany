@@ -9,7 +9,6 @@ struct AtmosParams {
 	vec3 rayleighCoefficient;
 	vec3 mieCoefficient;
 	float mieDirectionality;
-	vec3 extinctionCoefficient;
 	int numLayers;
 	int numAngles;
 };
@@ -77,17 +76,13 @@ void main() {
 	vec3 sunTransmittance = sampleTable(totalTransmittanceSampler, 0, sunAngle);
 	vec4 diffuse = dot(normal, sun.direction) * vec4(sun.color * sunTransmittance, 1.0) * material.diffuse;
 
-	// Transmittance
-	float rayLength = length(viewRay) * 300.0;
-	vec3 transmittance = exp(-params.extinctionCoefficient * rayLength);
-	transmittance = vec3(1.0);
-
 	// Inscattering
+	float rayLength = length(viewRay);
 	vec3 viewDirection = normalize(viewRay);
 	float lightAngle = acos(dot(viewDirection, sun.direction));
 	vec3 rayleighInscattering = params.rayleighCoefficient * rayleighPhaseFunction(lightAngle);
 	vec3 mieInscattering = params.mieCoefficient * miePhaseFunction(lightAngle);
 	vec3 inscattering = rayLength * sun.color * sunTransmittance * (rayleighInscattering + mieInscattering);
 
-	color = (ambient + diffuse) * vec4(transmittance, 1.0) + vec4(inscattering, 1.0);
+	color = ambient + diffuse + vec4(inscattering, 1.0);
 }

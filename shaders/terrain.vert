@@ -10,4 +10,5 @@ void main() {
 	gl_Position = ftransform();
 	normal = gl_Normal;
 	viewRay = vertexOffset + vec3(gl_Vertex) - cameraPosition;
+	viewRay *= 200.0; // TODO parametrize
 }

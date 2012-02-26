@@ -46,8 +46,6 @@ void Terrain::render(Camera const &camera, Lighting const &lighting) {
 	shaderProgram.setUniform("params.rayleighCoefficient", params.rayleighCoefficient);
 	shaderProgram.setUniform("params.mieCoefficient", params.mieCoefficient);
 	shaderProgram.setUniform("params.mieDirectionality", params.mieDirectionality);
-	shaderProgram.setUniform("params.extinctionCoefficient",
-			params.rayleighCoefficient + params.mieCoefficient + params.mieAbsorption);
 	shaderProgram.setUniform("params.numAngles", (int)params.numAngles);
 	shaderProgram.setUniform("cameraPosition", camera.getPosition());
 	bindFragDataLocation(shaderProgram.getProgram(), 0, "color");
