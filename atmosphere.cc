@@ -17,42 +17,40 @@
  * http://www.springerlink.com/content/nrq497r40xmw4821/fulltext.pdf
  */
 
-bool rayHitsHeight(Ray ray, float targetHeight) {
-	return ray.height * sin(ray.angle) < targetHeight;
+bool Ray::hitsHeight(float targetHeight) const {
+	return height * sin(angle) < targetHeight;
 }
 
-float rayLengthUpwards(Ray ray, float targetHeight) {
-	float cosAngle = cos(ray.angle);
+float Ray::lengthUpwards(float targetHeight) const {
+	float cosAngle = cos(angle);
 	return sqrt(
-			pow2(ray.height) * (pow2(cosAngle) - 1.0f) +
+			pow2(height) * (pow2(cosAngle) - 1.0f) +
 			pow2(targetHeight))
-		- ray.height * cosAngle;
+		- height * cosAngle;
 }
 
-float rayLengthToSameHeight(Ray ray) {
-	return -2.0f * ray.height * cos(ray.angle);
+float Ray::lengthToSameHeight() const {
+	return -2.0f * height * cos(angle);
 }
 
-float rayLengthDownwards(Ray ray, float targetHeight) {
-	float cosAngle = cos(ray.angle);
+float Ray::lengthDownwards(float targetHeight) const {
+	float cosAngle = cos(angle);
 	return -sqrt(
-			pow2(ray.height) * (pow2(cosAngle) - 1.0f) +
+			pow2(height) * (pow2(cosAngle) - 1.0f) +
 			pow2(targetHeight))
-		- ray.height * cosAngle;
+		- height * cosAngle;
 }
 
-float rayAngleUpwards(Ray ray, float targetHeight) {
-	float rayAngle = asinf(clamp(ray.height * sinf(ray.angle) / targetHeight, -1.0f, 1.0f));
-	return rayAngle;
+float Ray::angleUpwards(float targetHeight) const {
+	return asinf(clamp(height * sinf(angle) / targetHeight, -1.0f, 1.0f));
 }
 
-float rayAngleToSameHeight(Ray ray) {
-	return M_PI - ray.angle;
+float Ray::angleToSameHeight() const {
+	return M_PI - angle;
 }
 
-float rayAngleDownwards(Ray ray, float targetHeight) {
-	float rayAngle = M_PI - asinf(clamp(ray.height * sinf(ray.angle) / targetHeight, -1.0f, 1.0f));
-	return rayAngle;
+float Ray::angleDownwards(float targetHeight) const {
+	return M_PI - asinf(clamp(height * sinf(angle) / targetHeight, -1.0f, 1.0f));
 }
 
 AtmosParams::AtmosParams()
@@ -111,16 +109,16 @@ float AtmosLayers::rayLengthToNextLayer(Ray ray, unsigned layer) const {
 		return 0.0f;
 	} else if (ray.angle <= 0.5f * M_PI) {
 		// Ray goes up, hits layer above
-		return rayLengthUpwards(ray, heights[layer + 1]);
+		return ray.lengthUpwards(heights[layer + 1]);
 	} else if (layer == 0) {
 		// Ray goes down, into the ground; near infinite
 		return 1e30f;
-	} else if (!rayHitsHeight(ray, heights[layer - 1])) {
+	} else if (!ray.hitsHeight(heights[layer - 1])) {
 		// Ray goes down, misses layer below, hits current layer from below
-		return rayLengthToSameHeight(ray);
+		return ray.lengthToSameHeight();
 	} else {
 		// Ray goes down, hits layer below
-		return rayLengthDownwards(ray, heights[layer - 1]);
+		return ray.lengthDownwards(heights[layer - 1]);
 	}
 }
 
@@ -198,7 +196,7 @@ Vec3Table2D buildTotalTransmittanceTable(AtmosParams const &params, AtmosLayers 
 				totalTransmittance = vec3(1.0f);
 			} else {
 				// Ray passes through some layers
-				float const nextAngle = rayAngleUpwards(ray, layers.heights[layer + 1]);
+				float const nextAngle = ray.angleUpwards(layers.heights[layer + 1]);
 				
 				totalTransmittance =
 					transmittanceToNextLayer(ray, params, layers, layer) *
@@ -218,15 +216,15 @@ Vec3Table2D buildTotalTransmittanceTable(AtmosParams const &params, AtmosLayers 
 			if (layer == 0) {
 				// Ray goes directly into the ground
 				totalTransmittance = vec3(0.0f);
-			} else if (rayHitsHeight(ray, layers.heights[layer - 1])) {
+			} else if (ray.hitsHeight(layers.heights[layer - 1])) {
 				// Ray hits the layer below
-				float const nextAngle = rayAngleDownwards(ray, layers.heights[layer - 1]);
+				float const nextAngle = ray.angleDownwards(layers.heights[layer - 1]);
 				totalTransmittance =
 					transmittanceToNextLayer(ray, params, layers, layer) *
 					totalTransmittanceTable(vec2(layer - 1, nextAngle));
 			} else {
 				// Ray misses the layer below, hits the current one from below
-				float const nextAngle = rayAngleToSameHeight(ray);
+				float const nextAngle = ray.angleToSameHeight();
 				totalTransmittance =
 					transmittanceToNextLayer(ray, params, layers, layer) *
 					totalTransmittanceTable(vec2(layer, nextAngle));

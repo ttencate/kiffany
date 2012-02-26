@@ -18,20 +18,23 @@
  */
 
 struct Ray {
+
 	float height;
 	float angle;
+
 	Ray(float height, float angle) : height(height), angle(angle) {}
+
+	bool hitsHeight(float targetHeight) const;
+
+	float lengthUpwards(float targetHeight) const;
+	float lengthToSameHeight() const;
+	float lengthDownwards(float targetHeight) const;
+
+	float angleUpwards(float targetHeight) const;
+	float angleToSameHeight() const;
+	float angleDownwards(float targetHeight) const;
+
 };
-
-bool rayHitsHeight(Ray ray, float targetHeight);
-
-float rayLengthUpwards(Ray ray, float targetHeight);
-float rayLengthToSameHeight(Ray ray);
-float rayLengthDownwards(Ray ray, float targetHeight);
-
-float rayAngleUpwards(Ray ray, float targetHeight);
-float rayAngleToSameHeight(Ray ray);
-float rayAngleDownwards(Ray ray, float targetHeight);
 
 struct AtmosParams {
 

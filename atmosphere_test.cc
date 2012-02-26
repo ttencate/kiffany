@@ -47,24 +47,24 @@ BOOST_FIXTURE_TEST_SUITE(AtmosphereTest, Fixture)
 float const EPS = 0.01; // %
 
 BOOST_AUTO_TEST_CASE(TestRayLengthUpwardsStraightUp) {
-	BOOST_CHECK_CLOSE( 5.0, rayLengthUpwards(Ray( 0.0, 0.0),  5.0), EPS);
-	BOOST_CHECK_CLOSE( 5.0, rayLengthUpwards(Ray( 0.0, 0.0),  5.0), EPS);
-	BOOST_CHECK_CLOSE( 5.0, rayLengthUpwards(Ray( 0.0, 0.0),  5.0), EPS);
-	BOOST_CHECK_CLOSE(10.0, rayLengthUpwards(Ray(50.0, 0.0), 60.0), EPS);
-	BOOST_CHECK_CLOSE(10.0, rayLengthUpwards(Ray(50.0, 0.0), 60.0), EPS);
-	BOOST_CHECK_CLOSE(10.0, rayLengthUpwards(Ray(50.0, 0.0), 60.0), EPS);
+	BOOST_CHECK_CLOSE( 5.0, Ray( 0.0, 0.0).lengthUpwards( 5.0), EPS);
+	BOOST_CHECK_CLOSE( 5.0, Ray( 0.0, 0.0).lengthUpwards( 5.0), EPS);
+	BOOST_CHECK_CLOSE( 5.0, Ray( 0.0, 0.0).lengthUpwards( 5.0), EPS);
+	BOOST_CHECK_CLOSE(10.0, Ray(50.0, 0.0).lengthUpwards(60.0), EPS);
+	BOOST_CHECK_CLOSE(10.0, Ray(50.0, 0.0).lengthUpwards(60.0), EPS);
+	BOOST_CHECK_CLOSE(10.0, Ray(50.0, 0.0).lengthUpwards(60.0), EPS);
 }
 
 BOOST_AUTO_TEST_CASE(TestRayLengthUpwardsSideways) {
-	BOOST_CHECK_CLOSE(50.0, rayLengthUpwards(Ray( 0.0, 0.5 * M_PI), 50.0), EPS);
-	BOOST_CHECK_CLOSE(20.0, rayLengthUpwards(Ray( 0.0, 0.5 * M_PI), 20.0), EPS);
-	BOOST_CHECK_CLOSE(40.0, rayLengthUpwards(Ray(30.0, 0.5 * M_PI), 50.0), EPS);
+	BOOST_CHECK_CLOSE(50.0, Ray( 0.0, 0.5 * M_PI).lengthUpwards(50.0), EPS);
+	BOOST_CHECK_CLOSE(20.0, Ray( 0.0, 0.5 * M_PI).lengthUpwards(20.0), EPS);
+	BOOST_CHECK_CLOSE(40.0, Ray(30.0, 0.5 * M_PI).lengthUpwards(50.0), EPS);
 }
 
 BOOST_AUTO_TEST_CASE(TestRayLengthDownwards) {
-	BOOST_CHECK_EQUAL(40.0, rayLengthDownwards(Ray(50.0, M_PI), 10.0));
-	BOOST_CHECK_EQUAL(20.0, rayLengthDownwards(Ray(50.0, M_PI), 30.0));
-	BOOST_CHECK_EQUAL(10.0, rayLengthDownwards(Ray(20.0, M_PI), 10.0));
+	BOOST_CHECK_EQUAL(40.0, Ray(50.0, M_PI).lengthDownwards(10.0));
+	BOOST_CHECK_EQUAL(20.0, Ray(50.0, M_PI).lengthDownwards(30.0));
+	BOOST_CHECK_EQUAL(10.0, Ray(20.0, M_PI).lengthDownwards(10.0));
 }
 
 BOOST_AUTO_TEST_CASE(TestLayerHeights) {
