@@ -3,7 +3,6 @@
 
 #include "atmosphere.h"
 #include "buffer.h"
-#include "gl.h"
 #include "shader.h"
 #include "space.h"
 
@@ -15,11 +14,8 @@
 
 class Sky : boost::noncopyable {
 
-	Atmosphere const *atmosphere;
+	GLAtmosphere const *atmosphere;
 	Sun const *sun;
-
-	GLTexture transmittanceTexture;
-	GLTexture totalTransmittanceTexture;
 
 	Buffer vertices;
 
@@ -27,7 +23,7 @@ class Sky : boost::noncopyable {
 
 	public:
 
-		Sky(Atmosphere const *atmosphere, Sun const *sun);
+		Sky(GLAtmosphere const *atmosphere, Sun const *sun);
 
 		void setSun(Sun const *sun) { this->sun = sun; }
 

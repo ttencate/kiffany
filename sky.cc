@@ -1,22 +1,11 @@
 #include "sky.h"
 
 #include <boost/assert.hpp>
-#include <boost/static_assert.hpp>
 
 #include <algorithm>
 #include <limits>
 
-void tableToTexture(Vec3Table2D const &table, GLTexture &texture) {
-	BOOST_STATIC_ASSERT(sizeof(vec3) == 3 * sizeof(float));
-	bindTexture(GL_TEXTURE_RECTANGLE, texture);
-	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA32F, table.getSize().x, table.getSize().y, 0, GL_RGB, GL_FLOAT, (float const *)table.raw());
-	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-}
-
-Sky::Sky(Atmosphere const *atmosphere, Sun const *sun)
+Sky::Sky(GLAtmosphere const *atmosphere, Sun const *sun)
 :
 	atmosphere(atmosphere),
 	sun(sun)
@@ -55,9 +44,6 @@ Sky::Sky(Atmosphere const *atmosphere, Sun const *sun)
 	};
 	vertices.putData(sizeof(v), v, GL_STATIC_DRAW);
 
-	tableToTexture(atmosphere->getTransmittanceTable(), transmittanceTexture);
-	tableToTexture(atmosphere->getTotalTransmittanceTable(), totalTransmittanceTexture);
-
 	shaderProgram.loadAndLink("shaders/sky.vert", "shaders/sky.frag");
 }
 
@@ -93,11 +79,11 @@ void Sky::render() {
 	shaderProgram.setUniform("layers.mieDensities", layers.mieDensities);
 
 	activeTexture(0);
-	bindTexture(GL_TEXTURE_RECTANGLE, transmittanceTexture);
+	bindTexture(GL_TEXTURE_RECTANGLE, atmosphere->getTransmittanceTexture());
 	shaderProgram.setUniform("transmittanceSampler", 0);
 
 	activeTexture(1);
-	bindTexture(GL_TEXTURE_RECTANGLE, totalTransmittanceTexture);
+	bindTexture(GL_TEXTURE_RECTANGLE, atmosphere->getTotalTransmittanceTexture());
 	shaderProgram.setUniform("totalTransmittanceSampler", 1);
 
 	bindFragDataLocation(shaderProgram.getProgram(), 0, "scatteredLight");

@@ -2,6 +2,8 @@
 
 #include "flags.h"
 
+#include <boost/static_assert.hpp>
+
 /* References:
  * Preetham, Shirley, Smits, "A practical model for daylight",
  *     http://www.cs.utah.edu/~shirley/papers/sunsky/sunsky.pdf
@@ -145,6 +147,16 @@ inline vec3 Atmosphere::transmittanceToNextLayer(Ray ray, unsigned layer) const 
 	return exp(-extinction * rayLength);
 }
 
+void tableToTexture(Vec3Table2D const &table, GLTexture &texture) {
+	BOOST_STATIC_ASSERT(sizeof(vec3) == 3 * sizeof(float));
+	bindTexture(GL_TEXTURE_RECTANGLE, texture);
+	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA32F, table.getSize().x, table.getSize().y, 0, GL_RGB, GL_FLOAT, (float const *)table.raw());
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+}
+
 void debugPrintTable(std::ostream &out, Vec3Table2D const &table) {
 	unsigned const numLayers = table.getSize().x;
 	unsigned const numAngles = table.getSize().y;
@@ -249,3 +261,10 @@ Vec3Table2D Atmosphere::buildTotalTransmittanceTable() const {
 	return totalTransmittanceTable;
 }
 
+GLAtmosphere::GLAtmosphere(AtmosParams const &params)
+:
+	Atmosphere(params)
+{
+	tableToTexture(getTransmittanceTable(), transmittanceTexture);
+	tableToTexture(getTotalTransmittanceTable(), totalTransmittanceTexture);
+}

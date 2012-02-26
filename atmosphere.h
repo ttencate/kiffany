@@ -1,6 +1,7 @@
 #ifndef ATMOSPHERE_H
 #define ATMOSPHERE_H
 
+#include "gl.h"
 #include "maths.h"
 #include "table.h"
 
@@ -108,6 +109,23 @@ class Atmosphere
 
 		Vec3Table2D buildTransmittanceTable() const;
 		Vec3Table2D buildTotalTransmittanceTable() const;
+
+};
+
+class GLAtmosphere
+:
+	public Atmosphere
+{
+
+	GLTexture transmittanceTexture;
+	GLTexture totalTransmittanceTexture;
+
+	public:
+
+		GLAtmosphere(AtmosParams const &params);
+
+		GLTexture const &getTransmittanceTexture() const { return transmittanceTexture; }
+		GLTexture const &getTotalTransmittanceTexture() const { return totalTransmittanceTexture; }
 
 };
 

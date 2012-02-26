@@ -284,7 +284,7 @@ int main(int argc, char **argv) {
 	::camera = &camera;
 
 	// TODO make owned by world, do not leak
-	Atmosphere *atmosphere = new Atmosphere(AtmosParams());
+	GLAtmosphere *atmosphere = new GLAtmosphere(AtmosParams());
 	Sun *sun = new Sun(
 			(flags.dayOfYear - 1.0f) / 365.0f,
 			radians(flags.latitude),
