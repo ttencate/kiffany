@@ -6,7 +6,7 @@
 #include "terragen.h"
 #include "world.h"
 
-#include <GL/glfw.h>
+#include <GLFW/glfw3.h>
 
 #include <iostream>
 #include <cstdlib>
@@ -14,8 +14,9 @@
 World *world = 0;
 Camera *camera = 0;
 
+GLFWwindow *window;
 bool mouseLook;
-int2 mousePos;
+int2 cursorPos;
 bool fullscreen;
 bool running = true;
 
@@ -76,15 +77,18 @@ void testRaycast() {
 void setMouseLook(bool mouseLook) {
 	::mouseLook = mouseLook;
 	if (mouseLook) {
-		glfwGetMousePos(&mousePos[0], &mousePos[1]);
-		glfwDisable(GLFW_MOUSE_CURSOR);
+    double mouseX, mouseY;
+		glfwGetCursorPos(window, &mouseX, &mouseY);
+    cursorPos[0] = (int) mouseX;
+    cursorPos[1] = (int) mouseY;
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	} else {
-		glfwEnable(GLFW_MOUSE_CURSOR);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 	}
 }
 
-void GLFWCALL keyCallback(int key, int state) {
-	if (state == GLFW_PRESS) {
+void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+	if (action == GLFW_PRESS) {
 		switch (key) {
 			case 'Q':
 				running = false;
@@ -97,7 +101,7 @@ void GLFWCALL keyCallback(int key, int state) {
 	}
 }
 
-void GLFWCALL mouseButtonCallback(int button, int action) {
+void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
 	if (action == GLFW_PRESS) {
 		switch (button) {
 			case GLFW_MOUSE_BUTTON_LEFT:
@@ -109,20 +113,20 @@ void GLFWCALL mouseButtonCallback(int button, int action) {
 	}
 }
 
-void GLFWCALL mousePosCallback(int x, int y) {
+void cursorPosCallback(GLFWwindow *window, double x, double y) {
 	if (mouseLook) {
-		int2 newMousePos(x, y);
-		int2 delta = newMousePos - mousePos;
+		int2 newCursorPos((int) x, (int) y);
+		int2 delta = newCursorPos - cursorPos;
 
 		float const s = 0.5f;
 		camera->setAzimuth(camera->getAzimuth() + s * -delta.x);
 		camera->setElevation(camera->getElevation() + s * -delta.y);
 
-		mousePos = newMousePos;
+		cursorPos = newCursorPos;
 	}
 }
 
-void GLFWCALL windowSizeCallback(int width, int height) {
+void windowSizeCallback(GLFWwindow *window, int width, int height) {
 	glViewport(0, 0, width, height);
 	mat4 projectionMatrix = perspective(45.0f, (float)width / height, 0.1f, 1000.0f);
 	camera->setProjectionMatrix(projectionMatrix);
@@ -147,27 +151,27 @@ void update(float dt) {
 		vec3 absDelta;
 		bool pressed = false;
 
-		if (glfwGetKey('O')) {
+		if (glfwGetKey(window, 'O')) {
 			relDelta += -X_AXIS;
 			pressed = true;
 		}
-		if (glfwGetKey('U')) {
+		if (glfwGetKey(window, 'U')) {
 			relDelta += X_AXIS;
 			pressed = true;
 		}
-		if (glfwGetKey('E')) {
+		if (glfwGetKey(window, 'E')) {
 			relDelta += -Y_AXIS;
 			pressed = true;
 		}
-		if (glfwGetKey('.')) {
+		if (glfwGetKey(window, '.')) {
 			relDelta += Y_AXIS;
 			pressed = true;
 		}
-		if (glfwGetKey(GLFW_KEY_LSHIFT)) {
+		if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT)) {
 			absDelta -= Z_AXIS;
 			pressed = true;
 		}
-		if (glfwGetKey(' ')) {
+		if (glfwGetKey(window, ' ')) {
 			absDelta += Z_AXIS;
 			pressed = true;
 		}
@@ -199,10 +203,10 @@ void render() {
 }
 
 void run() {
-	glfwSetWindowSizeCallback(windowSizeCallback); // also calls it immediately
-	glfwSetKeyCallback(keyCallback);
-	glfwSetMouseButtonCallback(mouseButtonCallback);
-	glfwSetMousePosCallback(mousePosCallback);
+	glfwSetWindowSizeCallback(window, windowSizeCallback); // also calls it immediately
+	glfwSetKeyCallback(window, keyCallback);
+	glfwSetMouseButtonCallback(window, mouseButtonCallback);
+	glfwSetCursorPosCallback(window, cursorPosCallback);
 	setMouseLook(flags.mouseLook);
 
 	setup();
@@ -210,7 +214,7 @@ void run() {
 	{
 		timespec lastUpdate;
 		clock_gettime(CLOCK_MONOTONIC, &lastUpdate);
-		while (running && glfwGetWindowParam(GLFW_OPENED)) {
+		while (running && !glfwWindowShouldClose(window)) {
 			TimerStat::Timed t = stats.runningTime.timed();
 
 			float dt;
@@ -229,13 +233,17 @@ void run() {
 			update(dt);
 			render();
 			stats.framesRendered.increment();
-			glfwSwapBuffers();
+			glfwSwapBuffers(window);
 
 			if (flags.exitAfter && stats.framesRendered.get() >= flags.exitAfter) {
 				break;
 			}
 		}
 	}
+}
+
+void errorCallback(int error, char const *description) {
+  std::cerr << "GLFW error " << error << ": " << description << '\n';
 }
 
 int main(int argc, char **argv) {
@@ -247,35 +255,44 @@ int main(int argc, char **argv) {
 		return EXIT_SUCCESS;
 	}
 
+  glfwSetErrorCallback(errorCallback);
+
 	if (!glfwInit()) {
 		return EXIT_FAILURE;
 	}
 
+	GLFWmonitor *monitor;
 	int width;
 	int height;
-	int mode;
 	if (flags.fullscreen) {
-		GLFWvidmode videoMode;
-		glfwGetDesktopMode(&videoMode);
-		width = videoMode.Width;
-		height = videoMode.Height;
-		mode = GLFW_FULLSCREEN;
+		monitor = glfwGetPrimaryMonitor();
+		GLFWvidmode const *videoMode = glfwGetVideoMode(monitor);
+    if (!videoMode) {
+      return EXIT_FAILURE;
+    }
+		width = videoMode->width;
+		height = videoMode->height;
 	} else {
+		monitor = NULL;
 		width = 1024;
 		height = 768;
-		mode = GLFW_WINDOW;
 	}
-	glfwOpenWindow(width, height, 8, 8, 8, 8, 16, 0, mode);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	window = glfwCreateWindow(width, height, "Kiffany", monitor, NULL);
+  if (!window) {
+    return EXIT_FAILURE;
+  }
+
+  glfwMakeContextCurrent(window);
 	glfwSwapInterval(flags.vsync ? 1 : 0);
-	glfwSetWindowTitle("Kiffany");
 
 	GLenum err = glewInit();
 	if (err != GLEW_OK) {
-		std::cerr << "Error: " << glewGetErrorString(err) << "\n";
+		std::cerr << "GLEW error: " << glewGetErrorString(err) << "\n";
 		return EXIT_FAILURE;
 	}
 	if (!GLEW_VERSION_1_4) {
-		std::cerr << "Error: OpenGL 2.0 not supported\n";
+		std::cerr << "GLEW error: OpenGL 2.0 not supported\n";
 		return EXIT_FAILURE;
 	}
 
