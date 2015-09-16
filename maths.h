@@ -57,19 +57,19 @@ extern int3 const Y_STEP;
 extern int3 const Z_STEP;
 
 template<typename T>
-std::ostream &operator<<(std::ostream &stream, glm::detail::tvec2<T> const &v) {
+std::ostream &operator<<(std::ostream &stream, glm::tvec2<T> const &v) {
 	stream << glm::to_string(v);
 	return stream;
 }
 
 template<typename T>
-std::ostream &operator<<(std::ostream &stream, glm::detail::tvec3<T> const &v) {
+std::ostream &operator<<(std::ostream &stream, glm::tvec3<T> const &v) {
 	stream << glm::to_string(v);
 	return stream;
 }
 
 template<typename T>
-std::ostream &operator<<(std::ostream &stream, glm::detail::tvec4<T> const &v) {
+std::ostream &operator<<(std::ostream &stream, glm::tvec4<T> const &v) {
 	stream << glm::to_string(v);
 	return stream;
 }
